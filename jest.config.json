@@ -1,0 +1,15 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "moduleFileExtensions": ["ts", "js", "json", "node"],
+  "transform": {
+    "^.+\\.tsx?$": [
+      "ts-jest",
+      {
+        "tsconfig": "tsconfig.spec.json"
+      }
+    ]
+  },
+  "testMatch": ["**/src/**/*.spec.ts", "**/src/**/*.test.ts"],
+  "verbose": true
+}
