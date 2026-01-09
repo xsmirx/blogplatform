@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["jest", "node"],
+    "noEmit": true,
+    "emitDecoratorMetadata": false,
+    "composite": false
+  },
+  "include": [
+    "jest.config.ts",
+    "jest.config.cts",
+    "./**/*.ts",
+    "./**/*.test.ts",
+    "./**/*.spec.ts",
+    "./**/*.d.ts"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    }
+  ]
+}
