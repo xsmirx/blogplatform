@@ -2,5 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "name": "hometask-02",
-  "buildCommand": "pnpm run build && node dist/index.js"
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist",
+  "builds": [{ "src": "src/index.ts", "use": "@vercel/node" }],
+  "routes": [{ "src": "/(.*)", "dest": "src/index.ts" }]
 }
