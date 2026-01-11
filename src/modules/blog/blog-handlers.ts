@@ -12,6 +12,7 @@ export const getBlogHandler: RequestHandler<{ id: string }> = (req, res) => {
   const blog = blogRepository.findById(blogId);
   if (!blog) {
     res.status(404).send();
+    return;
   }
   res.status(200).send(blog);
 };

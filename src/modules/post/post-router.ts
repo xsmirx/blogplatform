@@ -8,6 +8,7 @@ import {
 } from './post-handlers';
 import { idValidation, postDTOValidation } from './post-validators';
 import { inputValidationResultMiddleware } from '../../core/middleware/input-validation-result.middleware';
+import { superAdminGuardMiddleware } from '../auth/super-admin-guard.middleware';
 
 export const postRouter: Router = Router();
 
@@ -16,12 +17,14 @@ postRouter
   .get('/:id', idValidation, inputValidationResultMiddleware, getPostHandler)
   .post(
     '/',
+    superAdminGuardMiddleware,
     postDTOValidation,
     inputValidationResultMiddleware,
     createPostHandler,
   )
   .put(
     '/:id',
+    superAdminGuardMiddleware,
     idValidation,
     postDTOValidation,
     inputValidationResultMiddleware,
@@ -29,6 +32,7 @@ postRouter
   )
   .delete(
     '/:id',
+    superAdminGuardMiddleware,
     idValidation,
     inputValidationResultMiddleware,
     deletePostHandler,
