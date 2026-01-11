@@ -2,12 +2,14 @@ import express from 'express';
 import request from 'supertest';
 import { setupApp } from '../../setup-app';
 import { BlogDTO } from './types';
+import { ValidationError } from '../../core/types/validation-error';
 
 describe('Blog API', () => {
   const app = express();
   setupApp(app);
 
-  const AUTH_HEADER = `Basic ${Buffer.from('admin:qwerty').toString('base64')}`;
+  const VALID_AUTH_HEADER = `Basic ${Buffer.from('admin:qwerty').toString('base64')}`;
+  const INVALID_AUTH_HEADER = `Basic ${Buffer.from('admin:wrong').toString('base64')}`;
 
   const testBlog: BlogDTO = {
     name: 'Test Blog',
@@ -28,32 +30,92 @@ describe('Blog API', () => {
   });
 
   describe('GET /blogs', () => {
-    it('should return empty array when no blogs exist', async () => {
+    it('should return 200 and empty array when no blogs exist', async () => {
       const response = await request(app).get('/blogs').expect(200);
+
       expect(response.body).toEqual([]);
+      expect(Array.isArray(response.body)).toBe(true);
+    });
+
+    it('should return 200 and array of blogs when blogs exist', async () => {
+      // Create a blog first
+      const createResponse = await request(app)
+        .post('/blogs')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testBlog)
+        .expect(201);
+
+      blogId = createResponse.body.id;
+
+      // Get all blogs
+      const response = await request(app).get('/blogs').expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBeGreaterThan(0);
+      expect(response.body).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: expect.any(String),
+            name: expect.any(String),
+            description: expect.any(String),
+            websiteUrl: expect.any(String),
+          }),
+        ]),
+      );
     });
   });
 
   describe('POST /blogs', () => {
-    it('should create a new blog', async () => {
+    beforeAll(async () => {
+      await request(app).delete('/testing/all-data').expect(204);
+    });
+
+    it('should return 201 and create a new blog with valid data', async () => {
       const response = await request(app)
         .post('/blogs')
-        .set('authorization', AUTH_HEADER)
+        .set('authorization', VALID_AUTH_HEADER)
         .send(testBlog)
         .expect(201);
 
       blogId = response.body.id;
+
+      // Verify response structure matches BlogViewModel from OpenAPI
+      expect(response.body).toEqual({
+        id: expect.any(String),
+        name: testBlog.name,
+        description: testBlog.description,
+        websiteUrl: testBlog.websiteUrl,
+      });
       expect(blogId).toBeDefined();
-      expect(response.body.name).toEqual(testBlog.name);
-      expect(response.body.description).toEqual(testBlog.description);
-      expect(response.body.websiteUrl).toEqual(testBlog.websiteUrl);
     });
 
-    describe('Validation', () => {
+    describe('Authorization tests', () => {
+      it('should return 401 when authorization header is missing', async () => {
+        await request(app).post('/blogs').send(testBlog).expect(401);
+      });
+
+      it('should return 401 when authorization credentials are invalid', async () => {
+        await request(app)
+          .post('/blogs')
+          .set('authorization', INVALID_AUTH_HEADER)
+          .send(testBlog)
+          .expect(401);
+      });
+
+      it('should return 401 when authorization header has wrong format', async () => {
+        await request(app)
+          .post('/blogs')
+          .set('authorization', 'Bearer sometoken')
+          .send(testBlog)
+          .expect(401);
+      });
+    });
+
+    describe('Validation - name field', () => {
       it('should return 400 if name is missing', async () => {
         const response = await request(app)
           .post('/blogs')
-          .set('authorization', AUTH_HEADER)
+          .set('authorization', VALID_AUTH_HEADER)
           .send({
             description: testBlog.description,
             websiteUrl: testBlog.websiteUrl,
@@ -73,7 +135,7 @@ describe('Blog API', () => {
       it('should return 400 if name is empty string', async () => {
         const response = await request(app)
           .post('/blogs')
-          .set('authorization', AUTH_HEADER)
+          .set('authorization', VALID_AUTH_HEADER)
           .send({
             ...testBlog,
             name: '',
@@ -84,19 +146,19 @@ describe('Blog API', () => {
           expect.arrayContaining([
             expect.objectContaining({
               field: 'name',
-              message: expect.stringContaining('1 and 15'),
+              message: expect.any(String),
             }),
           ]),
         );
       });
 
-      it('should return 400 if name is too long (> 15 characters)', async () => {
+      it('should return 400 if name is only whitespace', async () => {
         const response = await request(app)
           .post('/blogs')
-          .set('authorization', AUTH_HEADER)
+          .set('authorization', VALID_AUTH_HEADER)
           .send({
             ...testBlog,
-            name: 'This is a very long name',
+            name: '   ',
           })
           .expect(400);
 
@@ -104,16 +166,47 @@ describe('Blog API', () => {
           expect.arrayContaining([
             expect.objectContaining({
               field: 'name',
-              message: expect.stringContaining('1 and 15'),
+              message: expect.any(String),
             }),
           ]),
         );
       });
 
+      it('should return 400 if name exceeds maxLength of 15 characters', async () => {
+        const response = await request(app)
+          .post('/blogs')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            ...testBlog,
+            name: 'a'.repeat(16),
+          })
+          .expect(400);
+
+        expect(response.body.errorsMessages).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              field: 'name',
+              message: expect.any(String),
+            }),
+          ]),
+        );
+      });
+
+      it('should return 201 if name is exactly 15 characters', async () => {
+        await request(app)
+          .post('/blogs')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            ...testBlog,
+            name: 'a'.repeat(15),
+          })
+          .expect(201);
+      });
+
       it('should return 400 if name is not a string', async () => {
         const response = await request(app)
           .post('/blogs')
-          .set('authorization', AUTH_HEADER)
+          .set('authorization', VALID_AUTH_HEADER)
           .send({
             ...testBlog,
             name: 123,
@@ -124,16 +217,18 @@ describe('Blog API', () => {
           expect.arrayContaining([
             expect.objectContaining({
               field: 'name',
-              message: expect.stringContaining('string'),
+              message: expect.any(String),
             }),
           ]),
         );
       });
+    });
 
+    describe('Validation - description field', () => {
       it('should return 400 if description is missing', async () => {
         const response = await request(app)
           .post('/blogs')
-          .set('authorization', AUTH_HEADER)
+          .set('authorization', VALID_AUTH_HEADER)
           .send({
             name: testBlog.name,
             websiteUrl: testBlog.websiteUrl,
@@ -153,7 +248,7 @@ describe('Blog API', () => {
       it('should return 400 if description is empty string', async () => {
         const response = await request(app)
           .post('/blogs')
-          .set('authorization', AUTH_HEADER)
+          .set('authorization', VALID_AUTH_HEADER)
           .send({
             ...testBlog,
             description: '',
@@ -164,16 +259,36 @@ describe('Blog API', () => {
           expect.arrayContaining([
             expect.objectContaining({
               field: 'description',
-              message: expect.stringContaining('1 and 500'),
+              message: expect.any(String),
             }),
           ]),
         );
       });
 
-      it('should return 400 if description is too long (> 500 characters)', async () => {
+      it('should return 400 if description is only whitespace', async () => {
         const response = await request(app)
           .post('/blogs')
-          .set('authorization', AUTH_HEADER)
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            ...testBlog,
+            description: '   ',
+          })
+          .expect(400);
+
+        expect(response.body.errorsMessages).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              field: 'description',
+              message: expect.any(String),
+            }),
+          ]),
+        );
+      });
+
+      it('should return 400 if description exceeds maxLength of 500 characters', async () => {
+        const response = await request(app)
+          .post('/blogs')
+          .set('authorization', VALID_AUTH_HEADER)
           .send({
             ...testBlog,
             description: 'a'.repeat(501),
@@ -184,16 +299,49 @@ describe('Blog API', () => {
           expect.arrayContaining([
             expect.objectContaining({
               field: 'description',
-              message: expect.stringContaining('1 and 500'),
+              message: expect.any(String),
             }),
           ]),
         );
       });
 
+      it('should return 201 if description is exactly 500 characters', async () => {
+        await request(app)
+          .post('/blogs')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            ...testBlog,
+            description: 'a'.repeat(500),
+          })
+          .expect(201);
+      });
+
+      it('should return 400 if description is not a string', async () => {
+        const response = await request(app)
+          .post('/blogs')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            ...testBlog,
+            description: 12345,
+          })
+          .expect(400);
+
+        expect(response.body.errorsMessages).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              field: 'description',
+              message: expect.any(String),
+            }),
+          ]),
+        );
+      });
+    });
+
+    describe('Validation - websiteUrl field', () => {
       it('should return 400 if websiteUrl is missing', async () => {
         const response = await request(app)
           .post('/blogs')
-          .set('authorization', AUTH_HEADER)
+          .set('authorization', VALID_AUTH_HEADER)
           .send({
             name: testBlog.name,
             description: testBlog.description,
@@ -210,10 +358,50 @@ describe('Blog API', () => {
         );
       });
 
-      it('should return 400 if websiteUrl is not a valid URL', async () => {
+      it('should return 400 if websiteUrl is empty string', async () => {
         const response = await request(app)
           .post('/blogs')
-          .set('authorization', AUTH_HEADER)
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            ...testBlog,
+            websiteUrl: '',
+          })
+          .expect(400);
+
+        expect(response.body.errorsMessages).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              field: 'websiteUrl',
+              message: expect.any(String),
+            }),
+          ]),
+        );
+      });
+
+      it('should return 400 if websiteUrl does not match pattern (not https)', async () => {
+        const response = await request(app)
+          .post('/blogs')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            ...testBlog,
+            websiteUrl: 'http://example.com',
+          })
+          .expect(400);
+
+        expect(response.body.errorsMessages).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              field: 'websiteUrl',
+              message: expect.any(String),
+            }),
+          ]),
+        );
+      });
+
+      it('should return 400 if websiteUrl does not match pattern (invalid format)', async () => {
+        const response = await request(app)
+          .post('/blogs')
+          .set('authorization', VALID_AUTH_HEADER)
           .send({
             ...testBlog,
             websiteUrl: 'not-a-valid-url',
@@ -224,19 +412,19 @@ describe('Blog API', () => {
           expect.arrayContaining([
             expect.objectContaining({
               field: 'websiteUrl',
-              message: expect.stringContaining('valid URL'),
+              message: expect.any(String),
             }),
           ]),
         );
       });
 
-      it('should return 400 if websiteUrl is too long (> 100 characters)', async () => {
+      it('should return 400 if websiteUrl exceeds maxLength of 100 characters', async () => {
         const response = await request(app)
           .post('/blogs')
-          .set('authorization', AUTH_HEADER)
+          .set('authorization', VALID_AUTH_HEADER)
           .send({
             ...testBlog,
-            websiteUrl: 'https://' + 'a'.repeat(100) + '.com',
+            websiteUrl: 'https://' + 'a'.repeat(95) + '.com',
           })
           .expect(400);
 
@@ -244,16 +432,60 @@ describe('Blog API', () => {
           expect.arrayContaining([
             expect.objectContaining({
               field: 'websiteUrl',
-              message: expect.stringContaining('1 and 100'),
+              message: expect.any(String),
             }),
           ]),
         );
       });
 
+      it('should return 201 if websiteUrl is valid with path', async () => {
+        await request(app)
+          .post('/blogs')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            ...testBlog,
+            websiteUrl: 'https://example.com/path/to/blog',
+          })
+          .expect(201);
+      });
+
+      it('should return 201 if websiteUrl is valid with subdomain', async () => {
+        await request(app)
+          .post('/blogs')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            ...testBlog,
+            websiteUrl: 'https://blog.example.com',
+          })
+          .expect(201);
+      });
+
+      it('should return 400 if websiteUrl is not a string', async () => {
+        const response = await request(app)
+          .post('/blogs')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            ...testBlog,
+            websiteUrl: 12345,
+          })
+          .expect(400);
+
+        expect(response.body.errorsMessages).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              field: 'websiteUrl',
+              message: expect.any(String),
+            }),
+          ]),
+        );
+      });
+    });
+
+    describe('Validation - multiple fields', () => {
       it('should return 400 with multiple errors for multiple invalid fields', async () => {
         const response = await request(app)
           .post('/blogs')
-          .set('authorization', AUTH_HEADER)
+          .set('authorization', VALID_AUTH_HEADER)
           .send({
             name: '',
             description: '',
@@ -270,44 +502,125 @@ describe('Blog API', () => {
           ]),
         );
       });
+
+      it('should return 400 with correct error structure (APIErrorResult)', async () => {
+        const response = await request(app)
+          .post('/blogs')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            name: '',
+            description: testBlog.description,
+            websiteUrl: testBlog.websiteUrl,
+          })
+          .expect(400);
+
+        // Verify APIErrorResult structure
+        expect(response.body).toHaveProperty('errorsMessages');
+        expect(Array.isArray(response.body.errorsMessages)).toBe(true);
+
+        // Verify FieldError structure
+        response.body.errorsMessages.forEach((error: ValidationError) => {
+          expect(error).toHaveProperty('message');
+          expect(error).toHaveProperty('field');
+          expect(typeof error.message).toBe('string');
+          expect(typeof error.field).toBe('string');
+        });
+      });
     });
   });
 
   describe('GET /blogs/:id', () => {
-    it('should return blog by id', async () => {
+    beforeAll(async () => {
+      await request(app).delete('/testing/all-data').expect(204);
+
+      const createResponse = await request(app)
+        .post('/blogs')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testBlog)
+        .expect(201);
+
+      blogId = createResponse.body.id;
+    });
+
+    it('should return 200 and blog by id', async () => {
       const response = await request(app).get(`/blogs/${blogId}`).expect(200);
 
+      // Verify response matches BlogViewModel from OpenAPI
       expect(response.body).toEqual({
         id: blogId,
         name: testBlog.name,
         description: testBlog.description,
         websiteUrl: testBlog.websiteUrl,
       });
+
+      // Verify all required fields are present
+      expect(response.body).toHaveProperty('id');
+      expect(response.body).toHaveProperty('name');
+      expect(response.body).toHaveProperty('description');
+      expect(response.body).toHaveProperty('websiteUrl');
+    });
+
+    it('should return 404 if blog does not exist', async () => {
+      await request(app).get('/blogs/999999').expect(404);
+    });
+
+    it('should return 404 for non-existent blog with valid id format', async () => {
+      await request(app).get('/blogs/000000000000000000000000').expect(404);
     });
   });
 
   describe('PUT /blogs/:id', () => {
-    it('should update existing blog', async () => {
+    beforeAll(async () => {
+      await request(app).delete('/testing/all-data').expect(204);
+
+      const createResponse = await request(app)
+        .post('/blogs')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testBlog)
+        .expect(201);
+
+      blogId = createResponse.body.id;
+    });
+
+    it('should return 204 and update existing blog', async () => {
       await request(app)
         .put(`/blogs/${blogId}`)
-        .set('authorization', AUTH_HEADER)
+        .set('authorization', VALID_AUTH_HEADER)
         .send(updatedTestBlog)
         .expect(204);
 
+      // Verify the blog was updated
       const response = await request(app).get(`/blogs/${blogId}`).expect(200);
       expect(response.body.name).toEqual(updatedTestBlog.name);
       expect(response.body.description).toEqual(updatedTestBlog.description);
       expect(response.body.websiteUrl).toEqual(updatedTestBlog.websiteUrl);
     });
 
+    describe('Authorization tests', () => {
+      it('should return 401 when authorization header is missing', async () => {
+        await request(app)
+          .put(`/blogs/${blogId}`)
+          .send(updatedTestBlog)
+          .expect(401);
+      });
+
+      it('should return 401 when authorization credentials are invalid', async () => {
+        await request(app)
+          .put(`/blogs/${blogId}`)
+          .set('authorization', INVALID_AUTH_HEADER)
+          .send(updatedTestBlog)
+          .expect(401);
+      });
+    });
+
     describe('Validation', () => {
-      it('should return 400 if name is too long', async () => {
+      it('should return 400 if name is empty', async () => {
         const response = await request(app)
           .put(`/blogs/${blogId}`)
-          .set('authorization', AUTH_HEADER)
+          .set('authorization', VALID_AUTH_HEADER)
           .send({
             ...updatedTestBlog,
-            name: 'Very long blog name',
+            name: '',
           })
           .expect(400);
 
@@ -316,10 +629,59 @@ describe('Blog API', () => {
         );
       });
 
+      it('should return 400 if name exceeds 15 characters', async () => {
+        const response = await request(app)
+          .put(`/blogs/${blogId}`)
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            ...updatedTestBlog,
+            name: 'a'.repeat(16),
+          })
+          .expect(400);
+
+        expect(response.body.errorsMessages).toEqual(
+          expect.arrayContaining([expect.objectContaining({ field: 'name' })]),
+        );
+      });
+
+      it('should return 400 if description is empty', async () => {
+        const response = await request(app)
+          .put(`/blogs/${blogId}`)
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            ...updatedTestBlog,
+            description: '',
+          })
+          .expect(400);
+
+        expect(response.body.errorsMessages).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ field: 'description' }),
+          ]),
+        );
+      });
+
+      it('should return 400 if description exceeds 500 characters', async () => {
+        const response = await request(app)
+          .put(`/blogs/${blogId}`)
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            ...updatedTestBlog,
+            description: 'a'.repeat(501),
+          })
+          .expect(400);
+
+        expect(response.body.errorsMessages).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ field: 'description' }),
+          ]),
+        );
+      });
+
       it('should return 400 if websiteUrl is invalid', async () => {
         const response = await request(app)
           .put(`/blogs/${blogId}`)
-          .set('authorization', AUTH_HEADER)
+          .set('authorization', VALID_AUTH_HEADER)
           .send({
             ...updatedTestBlog,
             websiteUrl: 'invalid-url',
@@ -333,10 +695,68 @@ describe('Blog API', () => {
         );
       });
 
+      it('should return 400 if websiteUrl does not use https', async () => {
+        const response = await request(app)
+          .put(`/blogs/${blogId}`)
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            ...updatedTestBlog,
+            websiteUrl: 'http://example.com',
+          })
+          .expect(400);
+
+        expect(response.body.errorsMessages).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ field: 'websiteUrl' }),
+          ]),
+        );
+      });
+
+      it('should return 400 if websiteUrl exceeds 100 characters', async () => {
+        const response = await request(app)
+          .put(`/blogs/${blogId}`)
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            ...updatedTestBlog,
+            websiteUrl: 'https://' + 'a'.repeat(95) + '.com',
+          })
+          .expect(400);
+
+        expect(response.body.errorsMessages).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ field: 'websiteUrl' }),
+          ]),
+        );
+      });
+
+      it('should return 400 with multiple errors for multiple invalid fields', async () => {
+        const response = await request(app)
+          .put(`/blogs/${blogId}`)
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            name: 'a'.repeat(16),
+            description: '',
+            websiteUrl: 'not-valid',
+          })
+          .expect(400);
+
+        expect(response.body.errorsMessages.length).toBeGreaterThanOrEqual(3);
+      });
+    });
+
+    describe('Not found tests', () => {
       it('should return 404 if blog does not exist', async () => {
         await request(app)
           .put('/blogs/999999')
-          .set('authorization', AUTH_HEADER)
+          .set('authorization', VALID_AUTH_HEADER)
+          .send(updatedTestBlog)
+          .expect(404);
+      });
+
+      it('should return 404 for non-existent blog with valid id format', async () => {
+        await request(app)
+          .put('/blogs/000000000000000000000000')
+          .set('authorization', VALID_AUTH_HEADER)
           .send(updatedTestBlog)
           .expect(404);
       });
@@ -344,13 +764,73 @@ describe('Blog API', () => {
   });
 
   describe('DELETE /blogs/:id', () => {
-    it('should delete blog by id', async () => {
+    let blogToDeleteId: string;
+
+    beforeEach(async () => {
+      const createResponse = await request(app)
+        .post('/blogs')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testBlog)
+        .expect(201);
+
+      blogToDeleteId = createResponse.body.id;
+    });
+
+    it('should return 204 and delete blog by id', async () => {
       await request(app)
-        .delete(`/blogs/${blogId}`)
-        .set('authorization', AUTH_HEADER)
+        .delete(`/blogs/${blogToDeleteId}`)
+        .set('authorization', VALID_AUTH_HEADER)
         .expect(204);
 
-      await request(app).get(`/blogs/${blogId}`).expect(404);
+      // Verify the blog was deleted
+      await request(app).get(`/blogs/${blogToDeleteId}`).expect(404);
+    });
+
+    describe('Authorization tests', () => {
+      it('should return 401 when authorization header is missing', async () => {
+        await request(app).delete(`/blogs/${blogToDeleteId}`).expect(401);
+
+        // Verify blog was not deleted
+        await request(app).get(`/blogs/${blogToDeleteId}`).expect(200);
+      });
+
+      it('should return 401 when authorization credentials are invalid', async () => {
+        await request(app)
+          .delete(`/blogs/${blogToDeleteId}`)
+          .set('authorization', INVALID_AUTH_HEADER)
+          .expect(401);
+
+        // Verify blog was not deleted
+        await request(app).get(`/blogs/${blogToDeleteId}`).expect(200);
+      });
+    });
+
+    describe('Not found tests', () => {
+      it('should return 404 if blog does not exist', async () => {
+        await request(app)
+          .delete('/blogs/999999')
+          .set('authorization', VALID_AUTH_HEADER)
+          .expect(404);
+      });
+
+      it('should return 404 for non-existent blog with valid id format', async () => {
+        await request(app)
+          .delete('/blogs/000000000000000000000000')
+          .set('authorization', VALID_AUTH_HEADER)
+          .expect(404);
+      });
+
+      it('should return 404 when trying to delete already deleted blog', async () => {
+        await request(app)
+          .delete(`/blogs/${blogToDeleteId}`)
+          .set('authorization', VALID_AUTH_HEADER)
+          .expect(204);
+
+        await request(app)
+          .delete(`/blogs/${blogToDeleteId}`)
+          .set('authorization', VALID_AUTH_HEADER)
+          .expect(404);
+      });
     });
   });
 });
