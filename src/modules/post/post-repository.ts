@@ -20,7 +20,7 @@ class PostRepository {
     return newPost;
   }
 
-  public update(id: string, dto: Partial<PostDTO>) {
+  public update(id: string, dto: PostDTO) {
     const post = db.posts.find((post) => post.id === id);
 
     if (!post) {

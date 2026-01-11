@@ -16,15 +16,15 @@ class BlogRepository {
     return newBLog;
   }
 
-  update(id: string, dto: Partial<BlogDTO>) {
+  update(id: string, dto: BlogDTO) {
     const blog = db.blogs.find((blog) => blog.id === id);
     if (!blog) {
       throw new Error('Blog not found');
     }
 
-    blog.name = dto.name ?? blog.name;
-    blog.description = dto.description ?? blog.description;
-    blog.websiteUrl = dto.websiteUrl ?? blog.websiteUrl;
+    blog.name = dto.name;
+    blog.description = dto.description;
+    blog.websiteUrl = dto.websiteUrl;
 
     return blog;
   }

@@ -32,14 +32,14 @@ export const createPostHandler: RequestHandler<
     });
     res.status(201).send(newPost);
   } catch {
-    res.status(400).send();
+    res.status(404).send();
   }
 };
 
 export const updatePostHandler: RequestHandler<
   { id: string },
   unknown,
-  Partial<PostDTO>
+  PostDTO
 > = async (req, res) => {
   const postId = req.params.id;
   const { title, shortDescription, content, blogId } = req.body;

@@ -28,7 +28,7 @@ export const createBlogHandler: RequestHandler<unknown, unknown, BlogDTO> = (
 export const updateBlogHandler: RequestHandler<
   { id: string },
   unknown,
-  Partial<BlogDTO>
+  BlogDTO
 > = async (req, res) => {
   const blogId = req.params.id;
   const { name, description, websiteUrl } = req.body;
