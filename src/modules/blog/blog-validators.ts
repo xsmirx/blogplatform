@@ -8,8 +8,8 @@ export const idValidation = param('id')
   .withMessage('ID must be a string')
   .isLength({ min: 1 })
   .withMessage('ID must not be empty')
-  .isNumeric()
-  .withMessage('ID must be a numeric string');
+  .isMongoId()
+  .withMessage('ID must be a valid Mongo ID');
 
 export const nameValidation = body('name')
   .exists()
@@ -26,7 +26,6 @@ export const descriptionValidation = body('description')
   .isString()
   .trim()
   .withMessage('Description must be a string')
-  .trim()
   .isLength({ min: 1, max: 500 })
   .withMessage('Description must be between 1 and 500 characters');
 
