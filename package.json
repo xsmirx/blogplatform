@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc --project tsconfig.app.json",
-    "watch": "tsc -w --project tsconfig.app.json",
+    "watch": "tsc -w --project tsconfig.app.json --sourceMap",
     "dev": "nodemon --inspect dist/index.js",
     "jest": "jest -i",
     "lint": "eslint --fix .",

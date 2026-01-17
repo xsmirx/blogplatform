@@ -8,12 +8,12 @@ export const getPostListHandler: RequestHandler = (req, res) => {
 };
 
 export const getPostHandler: RequestHandler<{ id: string }> = (req, res) => {
-  const postId = req.params.id;
-  const post = postRepository.findById(postId);
-  if (!post) {
-    res.status(404).send();
-  }
-  res.status(200).send(post);
+  // const postId = req.params.id;
+  // const post = postRepository.findById(postId);
+  // if (!post) {
+  //   res.status(404).send();
+  // }
+  res.status(200).send({});
 };
 
 export const createPostHandler: RequestHandler<

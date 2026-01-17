@@ -1,6 +1,7 @@
 import { ObjectId, WithId } from 'mongodb';
 import { BlogNotFoundError } from './blog-errors';
-import { Blog, databaseConnection } from '../../bd';
+import { databaseConnection } from '../../bd';
+import { Blog } from './types';
 
 const dataBase = databaseConnection.getDb();
 const blogCollection = dataBase.collection<Blog>('blogs');

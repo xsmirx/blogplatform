@@ -25,22 +25,18 @@ export const getBlogHandler: RequestHandler<
 > = async (req, res) => {
   const blogId = req.params.id;
   const blog = await blogRepository.findByIdOrFail(blogId);
-  try {
-    res.status(200).send({
-      id: blog._id.toString(),
-      name: blog.name,
-      description: blog.description,
-      websiteUrl: blog.websiteUrl,
-      createdAt: blog.createdAt.toISOString(),
-      isMembership: blog.isMembership,
-    });
-  } catch {
-    res.status(404).send();
-  }
+  res.status(200).send({
+    id: blog._id.toString(),
+    name: blog.name,
+    description: blog.description,
+    websiteUrl: blog.websiteUrl,
+    createdAt: blog.createdAt.toISOString(),
+    isMembership: blog.isMembership,
+  });
 };
 
 export const createBlogHandler: RequestHandler<
-  undefined,
+  unknown,
   BlogOutputDTO,
   BlogInputDTO
 > = async (req, res) => {
