@@ -1,52 +1,102 @@
 import { RequestHandler } from 'express';
 import { blogRepository } from './blog-repository';
-import { BlogDTO } from './types';
+import { BlogInputDTO, BlogOutputDTO } from './types';
 
-export const getBlogListHandler: RequestHandler = (req, res) => {
-  const blogs = blogRepository.findAll();
-  res.status(200).send(blogs);
+export const getBlogListHandler: RequestHandler<
+  unknown,
+  BlogOutputDTO[]
+> = async (req, res) => {
+  const blogs = await blogRepository.findAll();
+  res.status(200).send(
+    blogs.map((blog) => ({
+      id: blog._id.toString(),
+      name: blog.name,
+      description: blog.description,
+      websiteUrl: blog.websiteUrl,
+      createdAt: blog.createdAt.toISOString(),
+      isMembership: blog.isMembership,
+    })),
+  );
 };
 
-export const getBlogHandler: RequestHandler<{ id: string }> = (req, res) => {
+export const getBlogHandler: RequestHandler<
+  { id: string },
+  BlogOutputDTO
+> = async (req, res) => {
   const blogId = req.params.id;
-  const blog = blogRepository.findById(blogId);
-  if (!blog) {
+  const blog = await blogRepository.findByIdOrFail(blogId);
+  try {
+    res.status(200).send({
+      id: blog._id.toString(),
+      name: blog.name,
+      description: blog.description,
+      websiteUrl: blog.websiteUrl,
+      createdAt: blog.createdAt.toISOString(),
+      isMembership: blog.isMembership,
+    });
+  } catch {
     res.status(404).send();
-    return;
   }
-  res.status(200).send(blog);
 };
 
-export const createBlogHandler: RequestHandler<unknown, unknown, BlogDTO> = (
-  req,
-  res,
-) => {
+export const createBlogHandler: RequestHandler<
+  undefined,
+  BlogOutputDTO,
+  BlogInputDTO
+> = async (req, res) => {
   const { name, description, websiteUrl } = req.body;
-  const newBlog = blogRepository.create({ name, description, websiteUrl });
-  res.status(201).send(newBlog);
+
+  try {
+    const newBlog: Parameters<typeof blogRepository.create>[0] = {
+      name,
+      description,
+      websiteUrl,
+      createdAt: new Date(),
+      isMembership: false,
+    };
+    const newBlogId = await blogRepository.create(newBlog);
+    res.status(201).send({
+      id: newBlogId.toString(),
+      name: newBlog.name,
+      description: newBlog.description,
+      websiteUrl: newBlog.websiteUrl,
+      createdAt: newBlog.createdAt.toISOString(),
+      isMembership: newBlog.isMembership,
+    });
+  } catch {
+    res.status(404).send();
+  }
 };
 
 export const updateBlogHandler: RequestHandler<
   { id: string },
-  unknown,
-  BlogDTO
+  void,
+  BlogInputDTO
 > = async (req, res) => {
   const blogId = req.params.id;
   const { name, description, websiteUrl } = req.body;
 
   try {
-    blogRepository.update(blogId, { name, description, websiteUrl });
+    await blogRepository.update(blogId, {
+      name,
+      description,
+      websiteUrl,
+      isMembership: false,
+    });
     res.status(204).send();
   } catch {
     res.status(404).send();
   }
 };
 
-export const deleteBlogHandler: RequestHandler<{ id: string }> = (req, res) => {
+export const deleteBlogHandler: RequestHandler<{ id: string }> = async (
+  req,
+  res,
+) => {
   const blogId = req.params.id;
 
   try {
-    blogRepository.delete(blogId);
+    await blogRepository.delete(blogId);
     res.status(204).send();
   } catch {
     res.status(404).send();

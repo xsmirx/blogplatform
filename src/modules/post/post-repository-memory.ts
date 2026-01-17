@@ -1,15 +1,9 @@
 import { db } from '../../bd';
-import { databaseConnection } from '../../bd/mongo.db';
 import { PostDTO } from './types';
 
-const dataBase = databaseConnection.getDb();
-const postsCollection = dataBase.collection('posts');
-class PostRepository {
-  public async findAll() {
-    const posts = await postsCollection.find().toArray();
-    console.log(posts);
-
-    return postsCollection.find();
+class PostRepositoryMemory {
+  public findAll() {
+    return db.posts;
   }
 
   public findById(id: string) {
@@ -60,4 +54,4 @@ class PostRepository {
   }
 }
 
-export const postRepository = new PostRepository();
+export const postRepository = new PostRepositoryMemory();

@@ -1,12 +1,12 @@
 {
   "openapi": "3.0.1",
   "info": {
-    "title": "h02 API - V1",
-    "description": "CRUD operations for Blog and Post.\n\nBasic-authorization with login\\password admin\\qwerty",
-    "version": "h02"
+    "title": "h03 API - V1",
+    "description": "Should migrate to <b>MongoDB</b>.\n        </br></br>added some properties:\n        </br>✔ “createdAt” property for Blog and Post.\n        </br>✔ “isMembership“ property for Blog (always false. This will be implemented later).",
+    "version": "h03"
   },
   "paths": {
-    "/ht_02/api/blogs": {
+    "/hometask_03/api/blogs": {
       "get": {
         "tags": ["Blogs"],
         "summary": "Returns all blogs",
@@ -17,25 +17,19 @@
               "text/plain": {
                 "schema": {
                   "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/h02.db.BlogViewModel"
-                  }
+                  "items": { "$ref": "#/components/schemas/h03.BlogViewModel" }
                 }
               },
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/h02.db.BlogViewModel"
-                  }
+                  "items": { "$ref": "#/components/schemas/h03.BlogViewModel" }
                 }
               },
               "text/json": {
                 "schema": {
                   "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/h02.db.BlogViewModel"
-                  }
+                  "items": { "$ref": "#/components/schemas/h03.BlogViewModel" }
                 }
               }
             }
@@ -64,19 +58,13 @@
             "description": "Returns the newly created blog",
             "content": {
               "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/h02.db.BlogViewModel"
-                }
+                "schema": { "$ref": "#/components/schemas/h03.BlogViewModel" }
               },
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/h02.db.BlogViewModel"
-                }
+                "schema": { "$ref": "#/components/schemas/h03.BlogViewModel" }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/h02.db.BlogViewModel"
-                }
+                "schema": { "$ref": "#/components/schemas/h03.BlogViewModel" }
               }
             }
           },
@@ -101,7 +89,7 @@
         ]
       }
     },
-    "/ht_02/api/blogs/{id}": {
+    "/hometask_03/api/blogs/{id}": {
       "get": {
         "tags": ["Blogs"],
         "summary": "Returns blog by id",
@@ -119,19 +107,13 @@
             "description": "Success",
             "content": {
               "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/h02.db.BlogViewModel"
-                }
+                "schema": { "$ref": "#/components/schemas/h03.BlogViewModel" }
               },
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/h02.db.BlogViewModel"
-                }
+                "schema": { "$ref": "#/components/schemas/h03.BlogViewModel" }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/h02.db.BlogViewModel"
-                }
+                "schema": { "$ref": "#/components/schemas/h03.BlogViewModel" }
               }
             }
           },
@@ -208,7 +190,7 @@
         ]
       }
     },
-    "/ht_02/api/posts": {
+    "/hometask_03/api/posts": {
       "get": {
         "tags": ["Posts"],
         "summary": "Returns all posts",
@@ -219,25 +201,19 @@
               "text/plain": {
                 "schema": {
                   "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/h02.db.PostViewModel"
-                  }
+                  "items": { "$ref": "#/components/schemas/h03.PostViewModel" }
                 }
               },
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/h02.db.PostViewModel"
-                  }
+                  "items": { "$ref": "#/components/schemas/h03.PostViewModel" }
                 }
               },
               "text/json": {
                 "schema": {
                   "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/h02.db.PostViewModel"
-                  }
+                  "items": { "$ref": "#/components/schemas/h03.PostViewModel" }
                 }
               }
             }
@@ -266,19 +242,13 @@
             "description": "Returns the newly created post",
             "content": {
               "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/h02.db.PostViewModel"
-                }
+                "schema": { "$ref": "#/components/schemas/h03.PostViewModel" }
               },
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/h02.db.PostViewModel"
-                }
+                "schema": { "$ref": "#/components/schemas/h03.PostViewModel" }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/h02.db.PostViewModel"
-                }
+                "schema": { "$ref": "#/components/schemas/h03.PostViewModel" }
               }
             }
           },
@@ -303,7 +273,7 @@
         ]
       }
     },
-    "/ht_02/api/posts/{id}": {
+    "/hometask_03/api/posts/{id}": {
       "get": {
         "tags": ["Posts"],
         "summary": "Return post by id",
@@ -321,19 +291,13 @@
             "description": "Success",
             "content": {
               "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/h02.db.PostViewModel"
-                }
+                "schema": { "$ref": "#/components/schemas/h03.PostViewModel" }
               },
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/h02.db.PostViewModel"
-                }
+                "schema": { "$ref": "#/components/schemas/h03.PostViewModel" }
               },
               "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/h02.db.PostViewModel"
-                }
+                "schema": { "$ref": "#/components/schemas/h03.PostViewModel" }
               }
             }
           },
@@ -410,7 +374,7 @@
         ]
       }
     },
-    "/ht_02/api/testing/all-data": {
+    "/hometask_03/api/testing/all-data": {
       "delete": {
         "tags": ["Testing"],
         "summary": "Clear database: delete all data from all tables/collections",
@@ -461,17 +425,6 @@
         },
         "additionalProperties": false
       },
-      "h02.db.BlogViewModel": {
-        "required": ["description", "id", "name", "websiteUrl"],
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "description": { "type": "string" },
-          "websiteUrl": { "type": "string" }
-        },
-        "additionalProperties": false
-      },
       "h02.db.PostInputModel": {
         "required": ["blogId", "content", "shortDescription", "title"],
         "type": "object",
@@ -483,7 +436,23 @@
         },
         "additionalProperties": false
       },
-      "h02.db.PostViewModel": {
+      "h03.BlogViewModel": {
+        "required": ["description", "id", "name", "websiteUrl"],
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "websiteUrl": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "isMembership": {
+            "type": "boolean",
+            "description": "True if user has not expired membership subscription to blog"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h03.PostViewModel": {
         "required": [
           "blogId",
           "blogName",
@@ -499,7 +468,8 @@
           "shortDescription": { "type": "string" },
           "content": { "type": "string" },
           "blogId": { "type": "string" },
-          "blogName": { "type": "string" }
+          "blogName": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
         },
         "additionalProperties": false
       }

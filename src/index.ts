@@ -1,14 +1,24 @@
 import express from 'express';
-import { setupApp } from './setup-app';
+import { databaseConnection } from './bd/mongo.db';
+import { settings } from './core/settings/settings';
 
-// создание приложения
-const app = express();
-setupApp(app);
+const bootstrap = async () => {
+  // connect tot DB
+  await databaseConnection.connect({
+    mongoURL: settings.MONGO_URL,
+    dbName: settings.MONGO_DB_NAME,
+  });
 
-// порт приложения
-const PORT = process.env.PORT || 3000;
+  const { setupApp } = await import('./setup-app.js');
 
-// запуск приложения
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}`);
-});
+  // создание приложения
+  const app = express();
+  setupApp(app);
+
+  // запуск приложения
+  app.listen(settings.PORT, settings.HOST, () => {
+    console.log(`Example app listening on port ${settings.PORT}`);
+  });
+};
+
+bootstrap();

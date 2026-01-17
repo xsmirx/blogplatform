@@ -2,7 +2,7 @@ import express from 'express';
 import request from 'supertest';
 import { setupApp } from '../../setup-app';
 import { PostDTO } from './types';
-import { BlogDTO } from '../blog/types';
+import { BlogInputDTO } from '../blog/types';
 import { ValidationError } from '../../core/types/validation-error';
 
 describe('Post API', () => {
@@ -12,7 +12,7 @@ describe('Post API', () => {
   const VALID_AUTH_HEADER = `Basic ${Buffer.from('admin:qwerty').toString('base64')}`;
   const INVALID_AUTH_HEADER = `Basic ${Buffer.from('admin:wrong').toString('base64')}`;
 
-  const testBlog: BlogDTO = {
+  const testBlog: BlogInputDTO = {
     name: 'Test Blog',
     description: 'This is a test blog',
     websiteUrl: 'https://testblog.com',
