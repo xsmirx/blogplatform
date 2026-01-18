@@ -1,8 +1,13 @@
 import { ErrorRequestHandler } from 'express';
 import { BlogNotFoundError } from '../../modules/blog/blog-errors';
+import { PostNotFoundError } from '../../modules/post/post-errors';
 
 export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
   if (error instanceof BlogNotFoundError) {
+    res.status(404).send();
+    return;
+  }
+  if (error instanceof PostNotFoundError) {
     res.status(404).send();
     return;
   }

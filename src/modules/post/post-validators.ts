@@ -8,8 +8,7 @@ export const idValidation = param('id')
   .withMessage('ID must be a string')
   .isLength({ min: 1 })
   .withMessage('ID must not be empty')
-  .isNumeric()
-  .withMessage('ID must be a numeric string');
+  .isMongoId();
 
 export const titleValidation = body('title')
   .exists()
@@ -45,7 +44,9 @@ export const blogIdValidation = body('blogId')
   .trim()
   .withMessage('Blog ID must be a string')
   .isLength({ min: 1 })
-  .withMessage('Blog ID must not be empty');
+  .withMessage('Blog ID must not be empty')
+  .isMongoId()
+  .withMessage('Blog ID must be a valid Mongo ID');
 
 export const postDTOValidation = [
   titleValidation,

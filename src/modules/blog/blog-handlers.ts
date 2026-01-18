@@ -42,26 +42,23 @@ export const createBlogHandler: RequestHandler<
 > = async (req, res) => {
   const { name, description, websiteUrl } = req.body;
 
-  try {
-    const newBlog: Parameters<typeof blogRepository.create>[0] = {
-      name,
-      description,
-      websiteUrl,
-      createdAt: new Date(),
-      isMembership: false,
-    };
-    const newBlogId = await blogRepository.create(newBlog);
-    res.status(201).send({
-      id: newBlogId.toString(),
-      name: newBlog.name,
-      description: newBlog.description,
-      websiteUrl: newBlog.websiteUrl,
-      createdAt: newBlog.createdAt.toISOString(),
-      isMembership: newBlog.isMembership,
-    });
-  } catch {
-    res.status(404).send();
-  }
+  const newBlog: Parameters<typeof blogRepository.create>[0] = {
+    name,
+    description,
+    websiteUrl,
+    createdAt: new Date(),
+    isMembership: false,
+  };
+  const newBlogId = await blogRepository.create(newBlog);
+  res.status(201).send({
+    id: newBlogId.toString(),
+    name: newBlog.name,
+    description: newBlog.description,
+    websiteUrl: newBlog.websiteUrl,
+    createdAt: newBlog.createdAt.toISOString(),
+    isMembership: newBlog.isMembership,
+  });
+  res.status(404).send();
 };
 
 export const updateBlogHandler: RequestHandler<
@@ -72,17 +69,13 @@ export const updateBlogHandler: RequestHandler<
   const blogId = req.params.id;
   const { name, description, websiteUrl } = req.body;
 
-  try {
-    await blogRepository.update(blogId, {
-      name,
-      description,
-      websiteUrl,
-      isMembership: false,
-    });
-    res.status(204).send();
-  } catch {
-    res.status(404).send();
-  }
+  await blogRepository.update(blogId, {
+    name,
+    description,
+    websiteUrl,
+    isMembership: false,
+  });
+  res.status(204).send();
 };
 
 export const deleteBlogHandler: RequestHandler<{ id: string }> = async (
@@ -91,10 +84,6 @@ export const deleteBlogHandler: RequestHandler<{ id: string }> = async (
 ) => {
   const blogId = req.params.id;
 
-  try {
-    await blogRepository.delete(blogId);
-    res.status(204).send();
-  } catch {
-    res.status(404).send();
-  }
+  await blogRepository.delete(blogId);
+  res.status(204).send();
 };
