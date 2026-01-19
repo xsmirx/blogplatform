@@ -4,6 +4,7 @@ import { setupApp } from '../../setup-app';
 import { PostDTO } from './types';
 import { BlogInputDTO } from '../blog/types';
 import { ValidationError } from '../../core/types/validation-error';
+import { databaseConnection } from '../../bd';
 
 describe('Post API', () => {
   const app = express();
@@ -36,6 +37,11 @@ describe('Post API', () => {
   let postId: string;
 
   beforeAll(async () => {
+    await databaseConnection.connect({
+      mongoURL: 'mongodb://admin:admin@localhost:27017',
+      dbName: 'blogplatform-test',
+    });
+
     await request(app).delete('/testing/all-data').expect(204);
 
     // Create a blog first to use in post tests
@@ -82,9 +88,14 @@ describe('Post API', () => {
             content: expect.any(String),
             blogId: expect.any(String),
             blogName: expect.any(String),
+            createdAt: expect.any(String),
           }),
         ]),
       );
+
+      // Verify createdAt is valid ISO date string
+      const post = response.body[0];
+      expect(new Date(post.createdAt).toISOString()).toBe(post.createdAt);
     });
   });
 
@@ -121,11 +132,38 @@ describe('Post API', () => {
         content: testPost.content,
         blogId: testPost.blogId,
         blogName: testBlog.name,
+        createdAt: expect.any(String),
       });
       expect(postId).toBeDefined();
 
       // Verify blogName is included in response
       expect(response.body.blogName).toEqual(testBlog.name);
+
+      // Verify createdAt is valid ISO 8601 date-time format
+      expect(new Date(response.body.createdAt).toISOString()).toBe(
+        response.body.createdAt,
+      );
+    });
+
+    it('should create post with createdAt timestamp close to current time', async () => {
+      const beforeCreate = new Date();
+
+      const response = await request(app)
+        .post('/posts')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testPost)
+        .expect(201);
+
+      const afterCreate = new Date();
+      const createdAt = new Date(response.body.createdAt);
+
+      // Verify createdAt is between before and after timestamps (with 1 second tolerance)
+      expect(createdAt.getTime()).toBeGreaterThanOrEqual(
+        beforeCreate.getTime() - 1000,
+      );
+      expect(createdAt.getTime()).toBeLessThanOrEqual(
+        afterCreate.getTime() + 1000,
+      );
     });
 
     describe('Authorization tests', () => {
@@ -233,7 +271,7 @@ describe('Post API', () => {
       });
 
       it('should return 201 if title is exactly 30 characters', async () => {
-        await request(app)
+        const response = await request(app)
           .post('/posts')
           .set('authorization', VALID_AUTH_HEADER)
           .send({
@@ -241,6 +279,9 @@ describe('Post API', () => {
             title: 'a'.repeat(30),
           })
           .expect(201);
+
+        // Verify new field is present
+        expect(response.body).toHaveProperty('createdAt');
       });
 
       it('should return 400 if title is not a string', async () => {
@@ -347,7 +388,7 @@ describe('Post API', () => {
       });
 
       it('should return 201 if shortDescription is exactly 100 characters', async () => {
-        await request(app)
+        const response = await request(app)
           .post('/posts')
           .set('authorization', VALID_AUTH_HEADER)
           .send({
@@ -355,6 +396,9 @@ describe('Post API', () => {
             shortDescription: 'a'.repeat(100),
           })
           .expect(201);
+
+        // Verify new field is present
+        expect(response.body).toHaveProperty('createdAt');
       });
 
       it('should return 400 if shortDescription is not a string', async () => {
@@ -461,7 +505,7 @@ describe('Post API', () => {
       });
 
       it('should return 201 if content is exactly 1000 characters', async () => {
-        await request(app)
+        const response = await request(app)
           .post('/posts')
           .set('authorization', VALID_AUTH_HEADER)
           .send({
@@ -469,6 +513,9 @@ describe('Post API', () => {
             content: 'a'.repeat(1000),
           })
           .expect(201);
+
+        // Verify new field is present
+        expect(response.body).toHaveProperty('createdAt');
       });
 
       it('should return 400 if content is not a string', async () => {
@@ -660,6 +707,7 @@ describe('Post API', () => {
         content: testPost.content,
         blogId: testPost.blogId,
         blogName: testBlog.name,
+        createdAt: expect.any(String),
       });
 
       // Verify all required fields are present
@@ -669,14 +717,20 @@ describe('Post API', () => {
       expect(response.body).toHaveProperty('content');
       expect(response.body).toHaveProperty('blogId');
       expect(response.body).toHaveProperty('blogName');
+      expect(response.body).toHaveProperty('createdAt');
+
+      // Verify createdAt is valid ISO 8601 date-time format
+      expect(new Date(response.body.createdAt).toISOString()).toBe(
+        response.body.createdAt,
+      );
     });
 
     it('should return 404 if post does not exist', async () => {
-      await request(app).get('/posts/999999').expect(404);
+      await request(app).get('/posts/507f1f77bcf86cd799439011').expect(404);
     });
 
     it('should return 404 for non-existent post with valid id format', async () => {
-      await request(app).get('/posts/000000000000000000000000').expect(404);
+      await request(app).get('/posts/000000000000000000000001').expect(404);
     });
   });
 
@@ -705,6 +759,12 @@ describe('Post API', () => {
     });
 
     it('should return 204 and update existing post', async () => {
+      // Get original createdAt value
+      const originalPost = await request(app)
+        .get(`/posts/${postId}`)
+        .expect(200);
+      const originalCreatedAt = originalPost.body.createdAt;
+
       await request(app)
         .put(`/posts/${postId}`)
         .set('authorization', VALID_AUTH_HEADER)
@@ -719,6 +779,12 @@ describe('Post API', () => {
       );
       expect(response.body.content).toEqual(updatedTestPost.content);
       expect(response.body.blogId).toEqual(updatedTestPost.blogId);
+
+      // Verify new field is still present after update
+      expect(response.body).toHaveProperty('createdAt');
+
+      // Verify createdAt doesn't change after update
+      expect(response.body.createdAt).toBe(originalCreatedAt);
     });
 
     describe('Authorization tests', () => {
@@ -873,7 +939,7 @@ describe('Post API', () => {
     describe('Not found tests', () => {
       it('should return 404 if post does not exist', async () => {
         await request(app)
-          .put('/posts/999999')
+          .put('/posts/507f1f77bcf86cd799439011')
           .set('authorization', VALID_AUTH_HEADER)
           .send(updatedTestPost)
           .expect(404);
@@ -881,7 +947,7 @@ describe('Post API', () => {
 
       it('should return 404 for non-existent post with valid id format', async () => {
         await request(app)
-          .put('/posts/000000000000000000000000')
+          .put('/posts/000000000000000000000001')
           .set('authorization', VALID_AUTH_HEADER)
           .send(updatedTestPost)
           .expect(404);
@@ -934,14 +1000,14 @@ describe('Post API', () => {
     describe('Not found tests', () => {
       it('should return 404 if post does not exist', async () => {
         await request(app)
-          .delete('/posts/999999')
+          .delete('/posts/507f1f77bcf86cd799439011')
           .set('authorization', VALID_AUTH_HEADER)
           .expect(404);
       });
 
       it('should return 404 for non-existent post with valid id format', async () => {
         await request(app)
-          .delete('/posts/000000000000000000000000')
+          .delete('/posts/000000000000000000000001')
           .set('authorization', VALID_AUTH_HEADER)
           .expect(404);
       });

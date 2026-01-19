@@ -1,8 +1,9 @@
 import express from 'express';
 import request from 'supertest';
-import { setupApp } from '../../setup-app';
 import { BlogInputDTO } from './types';
 import { ValidationError } from '../../core/types/validation-error';
+import { databaseConnection } from '../../bd';
+import { setupApp } from '../../setup-app';
 
 describe('Blog API', () => {
   const app = express();
@@ -26,6 +27,11 @@ describe('Blog API', () => {
   let blogId: string;
 
   beforeAll(async () => {
+    await databaseConnection.connect({
+      mongoURL: 'mongodb://admin:admin@localhost:27017',
+      dbName: 'blogplatform-test',
+    });
+
     await request(app).delete('/testing/all-data').expect(204);
   });
 
@@ -59,9 +65,18 @@ describe('Blog API', () => {
             name: expect.any(String),
             description: expect.any(String),
             websiteUrl: expect.any(String),
+            createdAt: expect.any(String),
+            isMembership: expect.any(Boolean),
           }),
         ]),
       );
+
+      // Verify createdAt is valid ISO date string
+      const blog = response.body[0];
+      expect(new Date(blog.createdAt).toISOString()).toBe(blog.createdAt);
+
+      // Verify isMembership is false (as per OpenAPI spec)
+      expect(blog.isMembership).toBe(false);
     });
   });
 
@@ -85,8 +100,50 @@ describe('Blog API', () => {
         name: testBlog.name,
         description: testBlog.description,
         websiteUrl: testBlog.websiteUrl,
+        createdAt: expect.any(String),
+        isMembership: expect.any(Boolean),
       });
       expect(blogId).toBeDefined();
+
+      // Verify createdAt is valid ISO 8601 date-time format
+      expect(new Date(response.body.createdAt).toISOString()).toBe(
+        response.body.createdAt,
+      );
+
+      // Verify isMembership is false (as per OpenAPI spec)
+      expect(response.body.isMembership).toBe(false);
+    });
+
+    it('should create blog with createdAt timestamp close to current time', async () => {
+      const beforeCreate = new Date();
+
+      const response = await request(app)
+        .post('/blogs')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testBlog)
+        .expect(201);
+
+      const afterCreate = new Date();
+      const createdAt = new Date(response.body.createdAt);
+
+      // Verify createdAt is between before and after timestamps (with 1 second tolerance)
+      expect(createdAt.getTime()).toBeGreaterThanOrEqual(
+        beforeCreate.getTime() - 1000,
+      );
+      expect(createdAt.getTime()).toBeLessThanOrEqual(
+        afterCreate.getTime() + 1000,
+      );
+    });
+
+    it('should always set isMembership to false for new blogs', async () => {
+      const response = await request(app)
+        .post('/blogs')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testBlog)
+        .expect(201);
+
+      // As per OpenAPI spec: isMembership is always false for now
+      expect(response.body.isMembership).toBe(false);
     });
 
     describe('Authorization tests', () => {
@@ -193,7 +250,7 @@ describe('Blog API', () => {
       });
 
       it('should return 201 if name is exactly 15 characters', async () => {
-        await request(app)
+        const response = await request(app)
           .post('/blogs')
           .set('authorization', VALID_AUTH_HEADER)
           .send({
@@ -201,6 +258,10 @@ describe('Blog API', () => {
             name: 'a'.repeat(15),
           })
           .expect(201);
+
+        // Verify new fields are present
+        expect(response.body).toHaveProperty('createdAt');
+        expect(response.body).toHaveProperty('isMembership');
       });
 
       it('should return 400 if name is not a string', async () => {
@@ -306,7 +367,7 @@ describe('Blog API', () => {
       });
 
       it('should return 201 if description is exactly 500 characters', async () => {
-        await request(app)
+        const response = await request(app)
           .post('/blogs')
           .set('authorization', VALID_AUTH_HEADER)
           .send({
@@ -314,6 +375,10 @@ describe('Blog API', () => {
             description: 'a'.repeat(500),
           })
           .expect(201);
+
+        // Verify new fields are present
+        expect(response.body).toHaveProperty('createdAt');
+        expect(response.body).toHaveProperty('isMembership');
       });
 
       it('should return 400 if description is not a string', async () => {
@@ -439,7 +504,7 @@ describe('Blog API', () => {
       });
 
       it('should return 201 if websiteUrl is valid with path', async () => {
-        await request(app)
+        const response = await request(app)
           .post('/blogs')
           .set('authorization', VALID_AUTH_HEADER)
           .send({
@@ -447,10 +512,14 @@ describe('Blog API', () => {
             websiteUrl: 'https://example.com/path/to/blog',
           })
           .expect(201);
+
+        // Verify new fields are present
+        expect(response.body).toHaveProperty('createdAt');
+        expect(response.body).toHaveProperty('isMembership');
       });
 
       it('should return 201 if websiteUrl is valid with subdomain', async () => {
-        await request(app)
+        const response = await request(app)
           .post('/blogs')
           .set('authorization', VALID_AUTH_HEADER)
           .send({
@@ -458,6 +527,10 @@ describe('Blog API', () => {
             websiteUrl: 'https://blog.example.com',
           })
           .expect(201);
+
+        // Verify new fields are present
+        expect(response.body).toHaveProperty('createdAt');
+        expect(response.body).toHaveProperty('isMembership');
       });
 
       it('should return 400 if websiteUrl is not a string', async () => {
@@ -551,6 +624,8 @@ describe('Blog API', () => {
         name: testBlog.name,
         description: testBlog.description,
         websiteUrl: testBlog.websiteUrl,
+        createdAt: expect.any(String),
+        isMembership: expect.any(Boolean),
       });
 
       // Verify all required fields are present
@@ -558,14 +633,24 @@ describe('Blog API', () => {
       expect(response.body).toHaveProperty('name');
       expect(response.body).toHaveProperty('description');
       expect(response.body).toHaveProperty('websiteUrl');
+      expect(response.body).toHaveProperty('createdAt');
+      expect(response.body).toHaveProperty('isMembership');
+
+      // Verify createdAt is valid ISO 8601 date-time format
+      expect(new Date(response.body.createdAt).toISOString()).toBe(
+        response.body.createdAt,
+      );
+
+      // Verify isMembership is false (as per OpenAPI spec)
+      expect(response.body.isMembership).toBe(false);
     });
 
     it('should return 404 if blog does not exist', async () => {
-      await request(app).get('/blogs/999999').expect(404);
+      await request(app).get('/blogs/507f1f77bcf86cd799439011').expect(404);
     });
 
     it('should return 404 for non-existent blog with valid id format', async () => {
-      await request(app).get('/blogs/000000000000000000000000').expect(404);
+      await request(app).get('/blogs/000000000000000000000001').expect(404);
     });
   });
 
@@ -583,6 +668,12 @@ describe('Blog API', () => {
     });
 
     it('should return 204 and update existing blog', async () => {
+      // Get original createdAt value
+      const originalBlog = await request(app)
+        .get(`/blogs/${blogId}`)
+        .expect(200);
+      const originalCreatedAt = originalBlog.body.createdAt;
+
       await request(app)
         .put(`/blogs/${blogId}`)
         .set('authorization', VALID_AUTH_HEADER)
@@ -594,6 +685,14 @@ describe('Blog API', () => {
       expect(response.body.name).toEqual(updatedTestBlog.name);
       expect(response.body.description).toEqual(updatedTestBlog.description);
       expect(response.body.websiteUrl).toEqual(updatedTestBlog.websiteUrl);
+
+      // Verify new fields are still present after update
+      expect(response.body).toHaveProperty('createdAt');
+      expect(response.body).toHaveProperty('isMembership');
+      expect(response.body.isMembership).toBe(false);
+
+      // Verify createdAt doesn't change after update
+      expect(response.body.createdAt).toBe(originalCreatedAt);
     });
 
     describe('Authorization tests', () => {
@@ -747,7 +846,7 @@ describe('Blog API', () => {
     describe('Not found tests', () => {
       it('should return 404 if blog does not exist', async () => {
         await request(app)
-          .put('/blogs/999999')
+          .put('/blogs/507f1f77bcf86cd799439011')
           .set('authorization', VALID_AUTH_HEADER)
           .send(updatedTestBlog)
           .expect(404);
@@ -755,7 +854,7 @@ describe('Blog API', () => {
 
       it('should return 404 for non-existent blog with valid id format', async () => {
         await request(app)
-          .put('/blogs/000000000000000000000000')
+          .put('/blogs/000000000000000000000001')
           .set('authorization', VALID_AUTH_HEADER)
           .send(updatedTestBlog)
           .expect(404);
@@ -808,14 +907,14 @@ describe('Blog API', () => {
     describe('Not found tests', () => {
       it('should return 404 if blog does not exist', async () => {
         await request(app)
-          .delete('/blogs/999999')
+          .delete('/blogs/507f1f77bcf86cd799439011')
           .set('authorization', VALID_AUTH_HEADER)
           .expect(404);
       });
 
       it('should return 404 for non-existent blog with valid id format', async () => {
         await request(app)
-          .delete('/blogs/000000000000000000000000')
+          .delete('/blogs/000000000000000000000001')
           .set('authorization', VALID_AUTH_HEADER)
           .expect(404);
       });

@@ -1,6 +1,7 @@
 import express from 'express';
 import { databaseConnection } from './bd/mongo.db';
 import { settings } from './core/settings/settings';
+import { setupApp } from './setup-app';
 
 const bootstrap = async () => {
   // connect tot DB
@@ -8,8 +9,6 @@ const bootstrap = async () => {
     mongoURL: settings.MONGO_URL,
     dbName: settings.MONGO_DB_NAME,
   });
-
-  const { setupApp } = await import('./setup-app.js');
 
   // создание приложения
   const app = express();

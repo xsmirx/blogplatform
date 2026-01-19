@@ -1,21 +1,25 @@
-import { ObjectId, WithId } from 'mongodb';
+import { Collection, ObjectId, WithId } from 'mongodb';
 import { databaseConnection } from '../../bd/mongo.db';
 import { Post } from './types';
 import { PostNotFoundError } from './post-errors';
 
-const dataBase = databaseConnection.getDb();
-const postCollection = dataBase.collection<Post>('posts');
 class PostRepository {
+  public getCollection(): Collection<Post> {
+    return databaseConnection.getDb().collection<Post>('posts');
+  }
+
   public async findAll(): Promise<WithId<Post>[]> {
-    return postCollection.find().toArray();
+    return this.getCollection().find().toArray();
   }
 
   public findById(id: string): Promise<WithId<Post> | null> {
-    return postCollection.findOne({ _id: new ObjectId(id) });
+    return this.getCollection().findOne({ _id: new ObjectId(id) });
   }
 
   async findByIdOrFail(id: string): Promise<WithId<Post>> {
-    const result = await postCollection.findOne({ _id: new ObjectId(id) });
+    const result = await this.getCollection().findOne({
+      _id: new ObjectId(id),
+    });
     if (!result) {
       throw new PostNotFoundError(`Post with id ${id} not found`);
     }
@@ -23,7 +27,7 @@ class PostRepository {
   }
 
   public async create(post: Post): Promise<ObjectId> {
-    const result = await postCollection.insertOne({ ...post });
+    const result = await this.getCollection().insertOne({ ...post });
     return result.insertedId;
   }
 
@@ -31,7 +35,7 @@ class PostRepository {
     id: string,
     post: Omit<Post, 'createdAt'>,
   ): Promise<void> {
-    const result = await postCollection.updateOne(
+    const result = await this.getCollection().updateOne(
       { _id: new ObjectId(id) },
       {
         $set: {
@@ -52,7 +56,9 @@ class PostRepository {
   }
 
   public async delete(id: string): Promise<void> {
-    const result = await postCollection.deleteOne({ _id: new ObjectId(id) });
+    const result = await this.getCollection().deleteOne({
+      _id: new ObjectId(id),
+    });
 
     if (result.deletedCount === 0) {
       throw new PostNotFoundError(`Post with id ${id} not found`);

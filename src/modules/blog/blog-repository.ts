@@ -1,22 +1,25 @@
-import { ObjectId, WithId } from 'mongodb';
+import { Collection, ObjectId, WithId } from 'mongodb';
 import { BlogNotFoundError } from './blog-errors';
 import { databaseConnection } from '../../bd';
 import { Blog } from './types';
 
-const dataBase = databaseConnection.getDb();
-const blogCollection = dataBase.collection<Blog>('blogs');
-
 class BlogRepository {
+  public getCollection(): Collection<Blog> {
+    return databaseConnection.getDb().collection<Blog>('blogs');
+  }
+
   public async findAll(): Promise<WithId<Blog>[]> {
-    return blogCollection.find().toArray();
+    return this.getCollection().find().toArray();
   }
 
   public async findById(id: string): Promise<WithId<Blog> | null> {
-    return blogCollection.findOne({ _id: new ObjectId(id) });
+    return this.getCollection().findOne({ _id: new ObjectId(id) });
   }
 
   async findByIdOrFail(id: string): Promise<WithId<Blog>> {
-    const result = await blogCollection.findOne({ _id: new ObjectId(id) });
+    const result = await this.getCollection().findOne({
+      _id: new ObjectId(id),
+    });
     if (!result) {
       throw new BlogNotFoundError(`Blog with id ${id} not found`);
     }
@@ -24,7 +27,7 @@ class BlogRepository {
   }
 
   public async create(blog: Blog): Promise<ObjectId> {
-    const result = await blogCollection.insertOne({ ...blog });
+    const result = await this.getCollection().insertOne({ ...blog });
     return result.insertedId;
   }
 
@@ -32,7 +35,7 @@ class BlogRepository {
     id: string,
     blog: Omit<Blog, 'createdAt'>,
   ): Promise<void> {
-    const result = await blogCollection.updateOne(
+    const result = await this.getCollection().updateOne(
       { _id: new ObjectId(id) },
       {
         $set: {
@@ -51,7 +54,9 @@ class BlogRepository {
   }
 
   public async delete(id: string): Promise<void> {
-    const result = await blogCollection.deleteOne({ _id: new ObjectId(id) });
+    const result = await this.getCollection().deleteOne({
+      _id: new ObjectId(id),
+    });
 
     if (result.deletedCount === 0) {
       throw new BlogNotFoundError(`Blog with id ${id} not found`);

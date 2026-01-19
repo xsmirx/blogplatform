@@ -1,6 +1,6 @@
 import { Db, Document, MongoClient } from 'mongodb';
 
-class DatabaseConnection {
+export class DatabaseConnection {
   private client: MongoClient | null = null;
   private db: Db | null = null;
 
