@@ -1,5 +1,4 @@
 import { RequestHandler } from 'express';
-import { blogRepository } from './blog-repository';
 import { BlogInputDTO, BlogListQueryInput, BlogOutputDTO } from './types';
 import { ListResponse } from '../../core/types/list-response';
 import { blogService } from './blog-service';
@@ -34,7 +33,7 @@ export const getBlogHandler: RequestHandler<
   BlogOutputDTO
 > = async (req, res) => {
   const blogId = req.params.id;
-  const blog = await blogRepository.findByIdOrFail(blogId);
+  const blog = await blogService.findByIdOrFail(blogId);
   res.status(200).send({
     id: blog._id.toString(),
     name: blog.name,
@@ -50,25 +49,16 @@ export const createBlogHandler: RequestHandler<
   BlogOutputDTO,
   BlogInputDTO
 > = async (req, res) => {
-  const { name, description, websiteUrl } = req.body;
-
-  const newBlog: Parameters<typeof blogRepository.create>[0] = {
-    name,
-    description,
-    websiteUrl,
-    createdAt: new Date(),
-    isMembership: false,
-  };
-  const newBlogId = await blogRepository.create(newBlog);
+  const { description, name, websiteUrl } = req.body;
+  const newBlog = await blogService.create({ description, name, websiteUrl });
   res.status(201).send({
-    id: newBlogId.toString(),
+    id: newBlog._id.toString(),
     name: newBlog.name,
     description: newBlog.description,
     websiteUrl: newBlog.websiteUrl,
     createdAt: newBlog.createdAt.toISOString(),
     isMembership: newBlog.isMembership,
   });
-  res.status(404).send();
 };
 
 export const updateBlogHandler: RequestHandler<
@@ -79,11 +69,10 @@ export const updateBlogHandler: RequestHandler<
   const blogId = req.params.id;
   const { name, description, websiteUrl } = req.body;
 
-  await blogRepository.update(blogId, {
+  await blogService.update(blogId, {
     name,
     description,
     websiteUrl,
-    isMembership: false,
   });
   res.status(204).send();
 };
@@ -94,6 +83,6 @@ export const deleteBlogHandler: RequestHandler<{ id: string }> = async (
 ) => {
   const blogId = req.params.id;
 
-  await blogRepository.delete(blogId);
+  await blogService.delete(blogId);
   res.status(204).send();
 };
