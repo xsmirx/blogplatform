@@ -1,14 +1,24 @@
 import { RequestHandler } from 'express';
 import { blogRepository } from './blog-repository';
-import { BlogInputDTO, BlogOutputDTO } from './types';
+import { BlogInputDTO, BlogListQueryInput, BlogOutputDTO } from './types';
+import { ListResponse } from '../../core/types/list-response';
+import { blogService } from './blog-service';
+import { matchedData } from 'express-validator';
 
 export const getBlogListHandler: RequestHandler<
-  unknown,
-  BlogOutputDTO[]
+  undefined,
+  ListResponse<BlogOutputDTO>
 > = async (req, res) => {
-  const blogs = await blogRepository.findAll();
-  res.status(200).send(
-    blogs.map((blog) => ({
+  const validationData = matchedData<BlogListQueryInput>(req);
+
+  const blogs = await blogService.findMany(validationData);
+
+  res.status(200).send({
+    page: validationData.pageNumber,
+    pageSize: validationData.pageSize,
+    pagesCount: Math.ceil(blogs.totalCount / validationData.pageSize),
+    totalCount: blogs.totalCount,
+    items: blogs.items.map((blog) => ({
       id: blog._id.toString(),
       name: blog.name,
       description: blog.description,
@@ -16,7 +26,7 @@ export const getBlogListHandler: RequestHandler<
       createdAt: blog.createdAt.toISOString(),
       isMembership: blog.isMembership,
     })),
-  );
+  });
 };
 
 export const getBlogHandler: RequestHandler<

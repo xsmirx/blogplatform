@@ -1,15 +1,38 @@
-import { Collection, ObjectId, WithId } from 'mongodb';
+import { Collection, Filter, ObjectId, WithId } from 'mongodb';
 import { BlogNotFoundError } from './blog-errors';
 import { databaseConnection } from '../../bd';
-import { Blog } from './types';
+import { Blog, BlogListQueryInput } from './types';
 
 class BlogRepository {
   public getCollection(): Collection<Blog> {
     return databaseConnection.getDb().collection<Blog>('blogs');
   }
 
-  public async findAll(): Promise<WithId<Blog>[]> {
-    return this.getCollection().find().toArray();
+  public async findAll(query: BlogListQueryInput): Promise<{
+    items: WithId<Blog>[];
+    totalCount: number;
+  }> {
+    const { pageNumber, pageSize, sortBy, sortDirection, searchNameTerm } =
+      query;
+
+    const skip = (pageNumber - 1) * pageSize;
+
+    const filter: Filter<Blog> = {};
+
+    if (searchNameTerm) {
+      filter.name = { $regex: searchNameTerm, $options: 'i' };
+    }
+
+    const items = await this.getCollection()
+      .find(filter)
+      .sort(sortBy, sortDirection)
+      .skip(skip)
+      .limit(pageSize)
+      .toArray();
+
+    const totalCount = await this.getCollection().countDocuments(filter);
+
+    return { items, totalCount };
   }
 
   public async findById(id: string): Promise<WithId<Blog> | null> {

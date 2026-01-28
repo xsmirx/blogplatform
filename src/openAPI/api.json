@@ -1,35 +1,69 @@
 {
   "openapi": "3.0.1",
   "info": {
-    "title": "h03 API - V1",
-    "description": "Should migrate to <b>MongoDB</b>.\n        </br></br>added some properties:\n        </br>✔ “createdAt” property for Blog and Post.\n        </br>✔ “isMembership“ property for Blog (always false. This will be implemented later).",
-    "version": "h03"
+    "title": "h04 API - V1",
+    "description": "User can use search to find blog/blogs\n\nPagination with sorting by blogs and by posts was added \n\nAdditional endpoints were added:\nPOST - blogs/{id}/posts - create a post for a specific blog\nGET - blogs/{id}/posts - get posts for a specific blog",
+    "version": "h04"
   },
   "paths": {
-    "/hometask_03/api/blogs": {
+    "/hometask_04/api/blogs": {
       "get": {
         "tags": ["Blogs"],
-        "summary": "Returns all blogs",
+        "summary": "Returns blogs with paging",
+        "parameters": [
+          {
+            "name": "searchNameTerm",
+            "in": "query",
+            "description": "Search term for blog Name: Name should contains this term in any position",
+            "schema": { "type": "string", "default": null }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": { "type": "string", "default": "createdAt" }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "description": "Default value: desc",
+            "schema": { "$ref": "#/components/schemas/h04.SortDirections" }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "description": "pageNumber is number of portions that should be returned",
+            "schema": { "type": "integer", "format": "int32", "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "pageSize is portions size that should be returned",
+            "schema": {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/h03.BlogViewModel" }
+                  "$ref": "#/components/schemas/Paginator<h03.BlogViewModel>"
                 }
               },
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/h03.BlogViewModel" }
+                  "$ref": "#/components/schemas/Paginator<h03.BlogViewModel>"
                 }
               },
               "text/json": {
                 "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/h03.BlogViewModel" }
+                  "$ref": "#/components/schemas/Paginator<h03.BlogViewModel>"
                 }
               }
             }
@@ -89,7 +123,140 @@
         ]
       }
     },
-    "/hometask_03/api/blogs/{id}": {
+    "/hometask_04/api/blogs/{blogId}/posts": {
+      "get": {
+        "tags": ["Blogs"],
+        "summary": "Returns all posts for specified blog",
+        "parameters": [
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "description": "pageNumber is number of portions that should be returned",
+            "schema": { "type": "integer", "format": "int32", "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "pageSize is portions size that should be returned",
+            "schema": {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": { "type": "string", "default": "createdAt" }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "description": "Default value: desc",
+            "schema": { "$ref": "#/components/schemas/h04.SortDirections" }
+          },
+          {
+            "name": "blogId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h03.PostViewModel>"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h03.PostViewModel>"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h03.PostViewModel>"
+                }
+              }
+            }
+          },
+          "404": { "description": "If specificied blog is not exists" }
+        }
+      },
+      "post": {
+        "tags": ["Blogs"],
+        "summary": "Create new post for specific blog",
+        "parameters": [
+          {
+            "name": "blogId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "description": "Data for constructing new post entity",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h02.db.BlogPostInputModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h02.db.BlogPostInputModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/h02.db.BlogPostInputModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Returns the newly created post",
+            "content": {
+              "text/plain": {
+                "schema": { "$ref": "#/components/schemas/h03.PostViewModel" }
+              },
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/h03.PostViewModel" }
+              },
+              "text/json": {
+                "schema": { "$ref": "#/components/schemas/h03.PostViewModel" }
+              }
+            }
+          },
+          "400": {
+            "description": "If the inputModel has incorrect values",
+            "content": {
+              "text/plain": {
+                "schema": { "$ref": "#/components/schemas/APIErrorResult" }
+              },
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/APIErrorResult" }
+              },
+              "text/json": {
+                "schema": { "$ref": "#/components/schemas/APIErrorResult" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "If specified blog doesn't exists" }
+        },
+        "security": [
+          { "basic": ["Policy:", "Roles:", "AuthenticationSchemes:basic"] }
+        ]
+      }
+    },
+    "/hometask_04/api/blogs/{id}": {
       "get": {
         "tags": ["Blogs"],
         "summary": "Returns blog by id",
@@ -190,30 +357,58 @@
         ]
       }
     },
-    "/hometask_03/api/posts": {
+    "/hometask_04/api/posts": {
       "get": {
         "tags": ["Posts"],
         "summary": "Returns all posts",
+        "parameters": [
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "description": "pageNumber is number of portions that should be returned",
+            "schema": { "type": "integer", "format": "int32", "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "pageSize is portions size that should be returned",
+            "schema": {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": { "type": "string", "default": "createdAt" }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "description": "Default value: desc",
+            "schema": { "$ref": "#/components/schemas/h04.SortDirections" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/h03.PostViewModel" }
+                  "$ref": "#/components/schemas/Paginator<h03.PostViewModel>"
                 }
               },
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/h03.PostViewModel" }
+                  "$ref": "#/components/schemas/Paginator<h03.PostViewModel>"
                 }
               },
               "text/json": {
                 "schema": {
-                  "type": "array",
-                  "items": { "$ref": "#/components/schemas/h03.PostViewModel" }
+                  "$ref": "#/components/schemas/Paginator<h03.PostViewModel>"
                 }
               }
             }
@@ -273,7 +468,7 @@
         ]
       }
     },
-    "/hometask_03/api/posts/{id}": {
+    "/hometask_04/api/posts/{id}": {
       "get": {
         "tags": ["Posts"],
         "summary": "Return post by id",
@@ -374,7 +569,7 @@
         ]
       }
     },
-    "/hometask_03/api/testing/all-data": {
+    "/hometask_04/api/testing/all-data": {
       "delete": {
         "tags": ["Testing"],
         "summary": "Clear database: delete all data from all tables/collections",
@@ -411,6 +606,36 @@
         },
         "additionalProperties": false
       },
+      "Paginator<h03.BlogViewModel>": {
+        "required": ["items"],
+        "type": "object",
+        "properties": {
+          "pagesCount": { "type": "integer", "format": "int32" },
+          "page": { "type": "integer", "format": "int32" },
+          "pageSize": { "type": "integer", "format": "int32" },
+          "totalCount": { "type": "integer", "format": "int32" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/h03.BlogViewModel" }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Paginator<h03.PostViewModel>": {
+        "required": ["items"],
+        "type": "object",
+        "properties": {
+          "pagesCount": { "type": "integer", "format": "int32" },
+          "page": { "type": "integer", "format": "int32" },
+          "pageSize": { "type": "integer", "format": "int32" },
+          "totalCount": { "type": "integer", "format": "int32" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/h03.PostViewModel" }
+          }
+        },
+        "additionalProperties": false
+      },
       "h02.db.BlogInputModel": {
         "required": ["description", "name", "websiteUrl"],
         "type": "object",
@@ -422,6 +647,16 @@
             "pattern": "^https://([a-zA-Z0-9_-]+\\.)+[a-zA-Z0-9_-]+(\\/[a-zA-Z0-9_-]+)*\\/?$",
             "type": "string"
           }
+        },
+        "additionalProperties": false
+      },
+      "h02.db.BlogPostInputModel": {
+        "required": ["content", "shortDescription", "title"],
+        "type": "object",
+        "properties": {
+          "title": { "maxLength": 30, "type": "string" },
+          "shortDescription": { "maxLength": 100, "type": "string" },
+          "content": { "maxLength": 1000, "type": "string" }
         },
         "additionalProperties": false
       },
@@ -472,7 +707,8 @@
           "createdAt": { "type": "string", "format": "date-time" }
         },
         "additionalProperties": false
-      }
+      },
+      "h04.SortDirections": { "enum": ["asc", "desc"], "type": "string" }
     },
     "securitySchemes": {
       "bearer": {
