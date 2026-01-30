@@ -1,6 +1,6 @@
-import { Collection, ObjectId, WithId } from 'mongodb';
+import { Collection, Filter, ObjectId, WithId } from 'mongodb';
 import { databaseConnection } from '../../bd/mongo.db';
-import { Post } from './types';
+import { Post, PostListQueryInput } from './types';
 import { PostNotFoundError } from './post-errors';
 
 class PostRepository {
@@ -8,8 +8,25 @@ class PostRepository {
     return databaseConnection.getDb().collection<Post>('posts');
   }
 
-  public async findAll(): Promise<WithId<Post>[]> {
-    return this.getCollection().find().toArray();
+  public async findAll(
+    query: PostListQueryInput,
+  ): Promise<{ items: WithId<Post>[]; totalCount: number }> {
+    const { pageNumber, pageSize, sortBy, sortDirection } = query;
+
+    const skip = (pageNumber - 1) * pageSize;
+
+    const filter: Filter<Post> = {};
+
+    const items = await this.getCollection()
+      .find(filter)
+      .sort(sortBy, sortDirection)
+      .skip(skip)
+      .limit(pageSize)
+      .toArray();
+
+    const totalCount = await this.getCollection().countDocuments(filter);
+
+    return { items, totalCount };
   }
 
   public findById(id: string): Promise<WithId<Post> | null> {

@@ -10,14 +10,14 @@ export const getBlogListHandler: RequestHandler<
 > = async (req, res) => {
   const validationData = matchedData<BlogListQueryInput>(req);
 
-  const blogs = await blogService.findMany(validationData);
+  const { items, totalCount } = await blogService.findMany(validationData);
 
   res.status(200).send({
     page: validationData.pageNumber,
     pageSize: validationData.pageSize,
-    pagesCount: Math.ceil(blogs.totalCount / validationData.pageSize),
-    totalCount: blogs.totalCount,
-    items: blogs.items.map((blog) => ({
+    pagesCount: Math.ceil(totalCount / validationData.pageSize),
+    totalCount: totalCount,
+    items: items.map((blog) => ({
       id: blog._id.toString(),
       name: blog.name,
       description: blog.description,

@@ -1,16 +1,23 @@
 import { RequestHandler } from 'express';
-import { postRepository } from './post-repository';
-import { Post, PostInputDTO, PostOutputDTO } from './types';
-import { blogRepository } from '../blog/blog-repository';
-import { BlogNotFoundError } from '../blog/blog-errors';
+import { PostInputDTO, PostListQueryInput, PostOutputDTO } from './types';
+import { ListResponse } from '../../core/types/list-response';
+import { matchedData } from 'express-validator';
+import { postService } from './post-service';
 
 export const getPostListHandler: RequestHandler<
-  unknown,
-  PostOutputDTO[]
+  undefined,
+  ListResponse<PostOutputDTO>
 > = async (req, res) => {
-  const posts = await postRepository.findAll();
-  res.status(200).send(
-    posts.map((post) => ({
+  const validationData = matchedData<PostListQueryInput>(req);
+
+  const { items, totalCount } = await postService.findMany(validationData);
+
+  res.status(200).send({
+    page: validationData.pageNumber,
+    pageSize: validationData.pageSize,
+    pagesCount: Math.ceil(totalCount / validationData.pageSize),
+    totalCount: totalCount,
+    items: items.map((post) => ({
       id: post._id.toString(),
       title: post.title,
       shortDescription: post.shortDescription,
@@ -19,7 +26,7 @@ export const getPostListHandler: RequestHandler<
       blogName: post.blogName,
       createdAt: post.createdAt.toISOString(),
     })),
-  );
+  });
 };
 
 export const getPostHandler: RequestHandler<
@@ -27,7 +34,7 @@ export const getPostHandler: RequestHandler<
   PostOutputDTO
 > = async (req, res) => {
   const postId = req.params.id;
-  const post = await postRepository.findByIdOrFail(postId);
+  const post = await postService.findByIdOrFail(postId);
   res.status(200).send({
     id: post._id.toString(),
     title: post.title,
@@ -46,24 +53,15 @@ export const createPostHandler: RequestHandler<
 > = async (req, res) => {
   const { title, shortDescription, content, blogId } = req.body;
 
-  const blog = await blogRepository.findById(blogId);
-
-  if (!blog) {
-    throw new BlogNotFoundError(`Blog with id ${blogId} not found`);
-  }
-
-  const newPost: Post = {
-    title,
-    shortDescription,
-    content,
+  const newPost = await postService.create({
     blogId,
-    blogName: blog.name,
-    createdAt: new Date(),
-  };
+    content,
+    shortDescription,
+    title,
+  });
 
-  const result = await postRepository.create(newPost);
   res.status(201).send({
-    id: result.toString(),
+    id: newPost._id.toString(),
     title: newPost.title,
     shortDescription: newPost.shortDescription,
     content: newPost.content,
@@ -81,19 +79,13 @@ export const updatePostHandler: RequestHandler<
   const postId = req.params.id;
   const { title, shortDescription, content, blogId } = req.body;
 
-  const blog = await blogRepository.findById(blogId);
-
-  if (!blog) {
-    throw new BlogNotFoundError(`Blog with id ${blogId} not found`);
-  }
-
-  await postRepository.update(postId, {
+  await postService.update(postId, {
     title,
     shortDescription,
     content,
     blogId,
-    blogName: blog.name,
   });
+
   res.status(204).send();
 };
 
@@ -103,6 +95,6 @@ export const deletePostHandler: RequestHandler<{ id: string }> = async (
 ) => {
   const postId = req.params.id;
 
-  await postRepository.delete(postId);
+  await postService.delete(postId);
   res.status(204).send();
 };
