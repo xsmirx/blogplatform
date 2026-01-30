@@ -1,13 +1,16 @@
 import { Router } from 'express';
 import {
   createBlogHandler,
+  createPostHandler,
   deleteBlogHandler,
   getBlogHandler,
   getBlogListHandler,
+  getPostListHandler,
   updateBlogHandler,
 } from './blog-handlers';
 import {
   blogDTOValidation,
+  blogIdValidation,
   idValidation,
   pageNumberValidation,
   pageSizeValidation,
@@ -15,6 +18,15 @@ import {
   sortByValidation,
   sortDirectionValidation,
 } from './blog-validators';
+import {
+  pageNumberValidation as pageNumberValidationPost,
+  pageSizeValidation as pageSizeValidationPost,
+  sortByValidation as sortByValidationPost,
+  sortDirectionValidation as sortDirectionValidationPost,
+  titleValidation,
+  shortDescriptionValidation,
+  contentValidation,
+} from '../post/post-validators';
 import { inputValidationResultMiddleware } from '../../core/middleware/input-validation-result.middleware';
 import { superAdminGuardMiddleware } from '../auth/super-admin-guard.middleware';
 
@@ -31,12 +43,32 @@ blogRouter
     getBlogListHandler,
   )
   .get('/:id', idValidation, inputValidationResultMiddleware, getBlogHandler)
+  .get(
+    '/:blogId/posts',
+    blogIdValidation,
+    inputValidationResultMiddleware,
+    pageNumberValidationPost,
+    pageSizeValidationPost,
+    sortByValidationPost,
+    sortDirectionValidationPost,
+    getPostListHandler,
+  )
   .post(
     '/',
     superAdminGuardMiddleware,
     blogDTOValidation,
     inputValidationResultMiddleware,
     createBlogHandler,
+  )
+  .post(
+    '/:blogId/posts',
+    superAdminGuardMiddleware,
+    blogIdValidation,
+    titleValidation,
+    shortDescriptionValidation,
+    contentValidation,
+    inputValidationResultMiddleware,
+    createPostHandler,
   )
   .put(
     '/:id',

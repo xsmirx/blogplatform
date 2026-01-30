@@ -11,5 +11,7 @@
     ]
   },
   "testMatch": ["**/src/**/*.spec.ts", "**/src/**/*.test.ts"],
-  "verbose": true
+  "verbose": true,
+  "maxWorkers": 1,
+  "maxConcurrency": 1
 }

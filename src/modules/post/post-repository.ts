@@ -9,13 +9,17 @@ class PostRepository {
   }
 
   public async findAll(
-    query: PostListQueryInput,
+    query: PostListQueryInput & { blogId?: string },
   ): Promise<{ items: WithId<Post>[]; totalCount: number }> {
-    const { pageNumber, pageSize, sortBy, sortDirection } = query;
+    const { pageNumber, pageSize, sortBy, sortDirection, blogId } = query;
 
     const skip = (pageNumber - 1) * pageSize;
 
     const filter: Filter<Post> = {};
+
+    if (blogId) {
+      filter.blogId = blogId;
+    }
 
     const items = await this.getCollection()
       .find(filter)

@@ -3,9 +3,14 @@ import { postRepository } from './post-repository';
 import { Post, PostInputDTO, PostListQueryInput } from './types';
 
 class PostService {
-  public async findMany(query: PostListQueryInput) {
+  public async findMany(query: PostListQueryInput & { blogId?: string }) {
+    if (query.blogId) {
+      await blogRepository.findByIdOrFail(query.blogId);
+    }
+
     return postRepository.findAll(query);
   }
+
   public async findByIdOrFail(id: string) {
     return await postRepository.findByIdOrFail(id);
   }

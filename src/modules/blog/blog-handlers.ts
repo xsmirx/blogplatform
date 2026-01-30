@@ -3,6 +3,8 @@ import { BlogInputDTO, BlogListQueryInput, BlogOutputDTO } from './types';
 import { ListResponse } from '../../core/types/list-response';
 import { blogService } from './blog-service';
 import { matchedData } from 'express-validator';
+import { PostInputDTO, PostListQueryInput, PostOutputDTO } from '../post/types';
+import { postService } from '../post/post-service';
 
 export const getBlogListHandler: RequestHandler<
   undefined,
@@ -44,6 +46,37 @@ export const getBlogHandler: RequestHandler<
   });
 };
 
+export const getPostListHandler: RequestHandler<
+  { blogId: string },
+  ListResponse<PostOutputDTO>
+> = async (req, res) => {
+  const blogId = req.params.blogId;
+  const validationData = matchedData<PostListQueryInput>(req);
+
+  
+
+  const { items, totalCount } = await postService.findMany({
+    blogId,
+    ...validationData,
+  });
+
+  res.status(200).send({
+    page: validationData.pageNumber,
+    pageSize: validationData.pageSize,
+    pagesCount: Math.ceil(totalCount / validationData.pageSize),
+    totalCount: totalCount,
+    items: items.map((post) => ({
+      id: post._id.toString(),
+      title: post.title,
+      shortDescription: post.shortDescription,
+      content: post.content,
+      blogId: post.blogId,
+      blogName: post.blogName,
+      createdAt: post.createdAt.toISOString(),
+    })),
+  });
+};
+
 export const createBlogHandler: RequestHandler<
   unknown,
   BlogOutputDTO,
@@ -58,6 +91,33 @@ export const createBlogHandler: RequestHandler<
     websiteUrl: newBlog.websiteUrl,
     createdAt: newBlog.createdAt.toISOString(),
     isMembership: newBlog.isMembership,
+  });
+};
+
+export const createPostHandler: RequestHandler<
+  { blogId: string },
+  unknown,
+  Omit<PostInputDTO, 'blogId'>
+> = async (req, res) => {
+  const blogId = req.params.blogId;
+
+  const { title, shortDescription, content } = req.body;
+
+  const newPost = await postService.create({
+    blogId,
+    title,
+    shortDescription,
+    content,
+  });
+
+  res.status(201).send({
+    id: newPost._id.toString(),
+    title: newPost.title,
+    shortDescription: newPost.shortDescription,
+    content: newPost.content,
+    blogId: newPost.blogId,
+    blogName: newPost.blogName,
+    createdAt: newPost.createdAt.toISOString(),
   });
 };
 

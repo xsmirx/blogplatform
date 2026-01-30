@@ -15,6 +15,17 @@ export const idValidation = param('id')
   .isMongoId()
   .withMessage('ID must be a valid Mongo ID');
 
+export const blogIdValidation = param('blogId')
+  .exists()
+  .withMessage('Blog ID is required')
+  .isString()
+  .trim()
+  .withMessage('Blog ID must be a string')
+  .isLength({ min: 1 })
+  .withMessage('Blog ID must not be empty')
+  .isMongoId()
+  .withMessage('Blog ID must be a valid Mongo ID');
+
 export const searchNameTermValidation = query('searchNameTerm')
   .optional()
   .default(null);
