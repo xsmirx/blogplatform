@@ -11,6 +11,7 @@ export type Blog = {
 export enum BlogSortField {
   createdAt = 'createdAt',
   name = 'name',
+  description = 'description',
 }
 
 export type BlogListQueryInput = PaginationAndSorting<BlogSortField> & {

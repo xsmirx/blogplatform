@@ -57,14 +57,20 @@ describe('Post API', () => {
   });
 
   describe('GET /posts', () => {
-    it('should return 200 and empty array when no posts exist', async () => {
+    it('should return 200 and paginator with empty items when no posts exist', async () => {
       const response = await request(app).get('/posts').expect(200);
 
-      expect(response.body).toEqual([]);
-      expect(Array.isArray(response.body)).toBe(true);
+      // Verify Paginator structure
+      expect(response.body).toEqual({
+        pagesCount: 0,
+        page: 1,
+        pageSize: 10,
+        totalCount: 0,
+        items: [],
+      });
     });
 
-    it('should return 200 and array of posts when posts exist', async () => {
+    it('should return 200 and paginator with posts when posts exist', async () => {
       // Create a post first
       const createResponse = await request(app)
         .post('/posts')
@@ -77,9 +83,18 @@ describe('Post API', () => {
       // Get all posts
       const response = await request(app).get('/posts').expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThan(0);
-      expect(response.body).toEqual(
+      // Verify Paginator structure
+      expect(response.body).toEqual({
+        pagesCount: expect.any(Number),
+        page: expect.any(Number),
+        pageSize: expect.any(Number),
+        totalCount: expect.any(Number),
+        items: expect.any(Array),
+      });
+
+      expect(response.body.totalCount).toBeGreaterThan(0);
+      expect(response.body.items.length).toBeGreaterThan(0);
+      expect(response.body.items).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             id: expect.any(String),
@@ -94,8 +109,217 @@ describe('Post API', () => {
       );
 
       // Verify createdAt is valid ISO date string
-      const post = response.body[0];
+      const post = response.body.items[0];
       expect(new Date(post.createdAt).toISOString()).toBe(post.createdAt);
+    });
+
+    describe('Pagination tests', () => {
+      beforeAll(async () => {
+        await request(app).delete('/testing/all-data').expect(204);
+
+        // Recreate blog
+        const blogResponse = await request(app)
+          .post('/blogs')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send(testBlog)
+          .expect(201);
+
+        blogId = blogResponse.body.id;
+
+        // Create 25 posts for pagination testing
+        for (let i = 1; i <= 25; i++) {
+          await request(app)
+            .post('/posts')
+            .set('authorization', VALID_AUTH_HEADER)
+            .send({
+              title: `Post ${i.toString().padStart(2, '0')}`,
+              shortDescription: `Description for post ${i}`,
+              content: `Content for post ${i}`,
+              blogId: blogId,
+            })
+            .expect(201);
+        }
+      });
+
+      it('should use default pageSize of 10', async () => {
+        const response = await request(app).get('/posts').expect(200);
+
+        expect(response.body.pageSize).toBe(10);
+        expect(response.body.items.length).toBe(10);
+      });
+
+      it('should use default pageNumber of 1', async () => {
+        const response = await request(app).get('/posts').expect(200);
+
+        expect(response.body.page).toBe(1);
+      });
+
+      it('should return correct pageSize when specified', async () => {
+        const response = await request(app)
+          .get('/posts?pageSize=5')
+          .expect(200);
+
+        expect(response.body.pageSize).toBe(5);
+        expect(response.body.items.length).toBe(5);
+      });
+
+      it('should return correct page when pageNumber specified', async () => {
+        const response = await request(app)
+          .get('/posts?pageNumber=2')
+          .expect(200);
+
+        expect(response.body.page).toBe(2);
+        expect(response.body.items.length).toBe(10);
+      });
+
+      it('should correctly calculate pagesCount', async () => {
+        const response = await request(app)
+          .get('/posts?pageSize=10')
+          .expect(200);
+
+        expect(response.body.totalCount).toBe(25);
+        expect(response.body.pagesCount).toBe(3); // 25 / 10 = 3 pages
+      });
+
+      it('should handle pageSize of 1 correctly', async () => {
+        const response = await request(app)
+          .get('/posts?pageSize=1')
+          .expect(200);
+
+        expect(response.body.pageSize).toBe(1);
+        expect(response.body.items.length).toBe(1);
+        expect(response.body.pagesCount).toBe(25);
+      });
+
+      it('should handle pageSize of 20 (maximum) correctly', async () => {
+        const response = await request(app)
+          .get('/posts?pageSize=20')
+          .expect(200);
+
+        expect(response.body.pageSize).toBe(20);
+        expect(response.body.items.length).toBe(20);
+        expect(response.body.pagesCount).toBe(2); // 25 / 20 = 2 pages
+      });
+
+      it('should handle last page with fewer items', async () => {
+        const response = await request(app)
+          .get('/posts?pageNumber=3&pageSize=10')
+          .expect(200);
+
+        expect(response.body.page).toBe(3);
+        expect(response.body.items.length).toBe(5); // Last 5 items
+        expect(response.body.totalCount).toBe(25);
+      });
+
+      it('should return empty items for page beyond available data', async () => {
+        const response = await request(app)
+          .get('/posts?pageNumber=10&pageSize=10')
+          .expect(200);
+
+        expect(response.body.page).toBe(10);
+        expect(response.body.items).toEqual([]);
+        expect(response.body.totalCount).toBe(25);
+      });
+    });
+
+    describe('Sorting tests', () => {
+      beforeAll(async () => {
+        await request(app).delete('/testing/all-data').expect(204);
+
+        // Recreate blog
+        const blogResponse = await request(app)
+          .post('/blogs')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send(testBlog)
+          .expect(201);
+
+        blogId = blogResponse.body.id;
+
+        // Create posts with specific titles and delays to ensure different createdAt
+        await request(app)
+          .post('/posts')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            title: 'Zebra Post',
+            shortDescription: 'Last alphabetically',
+            content: 'Content about zebras',
+            blogId: blogId,
+          })
+          .expect(201);
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        await request(app)
+          .post('/posts')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            title: 'Apple Post',
+            shortDescription: 'First alphabetically',
+            content: 'Content about apples',
+            blogId: blogId,
+          })
+          .expect(201);
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        await request(app)
+          .post('/posts')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send({
+            title: 'Mango Post',
+            shortDescription: 'Middle alphabetically',
+            content: 'Content about mangos',
+            blogId: blogId,
+          })
+          .expect(201);
+      });
+
+      it('should sort by createdAt desc by default', async () => {
+        const response = await request(app).get('/posts').expect(200);
+
+        expect(response.body.items.length).toBe(3);
+        expect(response.body.items[0].title).toBe('Mango Post'); // Last created
+        expect(response.body.items[2].title).toBe('Zebra Post'); // First created
+      });
+
+      it('should sort by createdAt asc when specified', async () => {
+        const response = await request(app)
+          .get('/posts?sortDirection=asc')
+          .expect(200);
+
+        expect(response.body.items[0].title).toBe('Zebra Post'); // First created
+        expect(response.body.items[2].title).toBe('Mango Post'); // Last created
+      });
+
+      it('should sort by title desc', async () => {
+        const response = await request(app)
+          .get('/posts?sortBy=title&sortDirection=desc')
+          .expect(200);
+
+        expect(response.body.items[0].title).toBe('Zebra Post');
+        expect(response.body.items[1].title).toBe('Mango Post');
+        expect(response.body.items[2].title).toBe('Apple Post');
+      });
+
+      it('should sort by title asc', async () => {
+        const response = await request(app)
+          .get('/posts?sortBy=title&sortDirection=asc')
+          .expect(200);
+
+        expect(response.body.items[0].title).toBe('Apple Post');
+        expect(response.body.items[1].title).toBe('Mango Post');
+        expect(response.body.items[2].title).toBe('Zebra Post');
+      });
+
+      it('should combine sorting with pagination', async () => {
+        const response = await request(app)
+          .get('/posts?sortBy=title&sortDirection=asc&pageSize=2')
+          .expect(200);
+
+        expect(response.body.items.length).toBe(2);
+        expect(response.body.items[0].title).toBe('Apple Post');
+        expect(response.body.items[1].title).toBe('Mango Post');
+      });
     });
   });
 
