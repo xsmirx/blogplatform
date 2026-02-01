@@ -234,3 +234,72 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
   return;
 };
 ```
+
+## Project Structure
+
+```
+/home/xsmirx/Projects/learning/blogplatform-new/
+├───.gitignore
+├───.prettierignore
+├───.prettierrc
+├───eslint.config.mts
+├───GEMINI.md
+├───jest.config.json
+├───package.json
+├───pnpm-lock.yaml
+├───tsconfig.app.json
+├───tsconfig.base.json
+├───tsconfig.json
+├───tsconfig.spec.json
+├───vercel.json
+├───.git/...
+├───.vscode/
+│   └───launch.json
+├───dist/...
+├───node_modules/...
+└───src/
+    ├───index.ts
+    ├───setup-app.ts
+    ├───bd/
+    │   ├───index.ts
+    │   └───mongo.db.ts
+    ├───core/
+    │   ├───errors/
+    │   │   └───error.handler.ts
+    │   ├───middleware/
+    │   │   └───input-validation-result.middleware.ts
+    │   ├───settings/
+    │   │   └───settings.ts
+    │   └───types/
+    │       ├───list-response.ts
+    │       ├───pagiation-query-key.ts
+    │       ├───pagination-and-sorting.ts
+    │       ├───sort-deriction.ts
+    │       ├───sort-query-key.ts
+    │       └───validation-error.ts
+    ├───modules/
+    │   ├───auth/
+    │   │   └───super-admin-guard.middleware.ts
+    │   ├───blog/
+    │   │   ├───blog-errors.ts
+    │   │   ├───blog-handlers.ts
+    │   │   ├───blog-repository.ts
+    │   │   ├───blog-router.ts
+    │   │   ├───blog-service.ts
+    │   │   ├───blog-validators.ts
+    │   │   ├───blog.spec.ts
+    │   │   └───types.ts
+    │   ├───post/
+    │   │   ├───post-errors.ts
+    │   │   ├───post-handlers.ts
+    │   │   ├───post-repository.ts
+    │   │   ├───post-router.ts
+    │   │   ├───post-service.ts
+    │   │   ├───post-validators.ts
+    │   │   ├───post.spec.ts
+    │   │   └───types.ts
+    │   └───testing/
+    │       └───testing-router.ts
+    └───openAPI/
+        └───api.json
+```
