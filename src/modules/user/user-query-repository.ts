@@ -25,22 +25,25 @@ class UserQueryRepository {
       sortDirection,
     } = queries;
 
-    const filter: Filter<UserDB> = {};
+    const filter: Filter<UserDB> =
+      searchLoginTerm || searchEmailTerm ? { $or: [] } : {};
 
     if (searchLoginTerm) {
-      filter.login = {
-        $regex: this.escapeRegex(searchLoginTerm),
-        $options: 'i',
-      };
+      filter.$or?.push({
+        login: {
+          $regex: this.escapeRegex(searchLoginTerm),
+          $options: 'i',
+        },
+      });
     }
     if (searchEmailTerm) {
-      filter.email = {
-        $regex: this.escapeRegex(searchEmailTerm),
-        $options: 'i',
-      };
+      filter.$or?.push({
+        email: {
+          $regex: this.escapeRegex(searchEmailTerm),
+          $options: 'i',
+        },
+      });
     }
-
-    console.log(filter);
 
     const users = await this.collection
       .find(filter)
