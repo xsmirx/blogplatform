@@ -1,11 +1,61 @@
-import { ObjectId, WithId } from 'mongodb';
+import { Filter, ObjectId, WithId } from 'mongodb';
 import { databaseConnection } from '../../bd';
-import { UserDB, UserOutputDTO } from './types';
+import { UserDB, UserListPagQueryInput, UserOutputDTO } from './types';
 import { NotFoundError } from '../../core/errors/errors';
+import { ListResponse } from '../../core/types/list-response';
 
 class UserQueryRepository {
+  private escapeRegex(text: string) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   public get collection() {
     return databaseConnection.getDb().collection<UserDB>('users');
+  }
+
+  public async findAll(
+    queries: UserListPagQueryInput,
+  ): Promise<ListResponse<UserOutputDTO>> {
+    const {
+      searchLoginTerm,
+      searchEmailTerm,
+      pageNumber,
+      pageSize,
+      sortBy,
+      sortDirection,
+    } = queries;
+
+    const filter: Filter<UserDB> = {};
+
+    if (searchLoginTerm) {
+      filter.login = {
+        $regex: this.escapeRegex(searchLoginTerm),
+        $options: 'i',
+      };
+    }
+    if (searchEmailTerm) {
+      filter.email = {
+        $regex: this.escapeRegex(searchEmailTerm),
+        $options: 'i',
+      };
+    }
+
+    console.log(filter);
+
+    const users = await this.collection
+      .find(filter)
+      .sort(sortBy, sortDirection)
+      .skip((pageNumber - 1) * pageSize)
+      .limit(pageSize)
+      .toArray();
+
+    const totalCount = await this.collection.countDocuments(filter);
+
+    return this.mapUserListToListResponseViewModel({
+      totalCount: totalCount,
+      items: users,
+      queries,
+    });
   }
 
   public async findUserById(userId: string): Promise<UserOutputDTO> {
@@ -22,6 +72,24 @@ class UserQueryRepository {
       login: user.login,
       email: user.email,
       createdAt: user._id.getTimestamp().toISOString(),
+    };
+  }
+
+  private mapUserListToListResponseViewModel({
+    items,
+    queries,
+    totalCount,
+  }: {
+    items: WithId<UserDB>[];
+    queries: UserListPagQueryInput;
+    totalCount: number;
+  }): ListResponse<UserOutputDTO> {
+    return {
+      page: queries.pageNumber,
+      pageSize: queries.pageSize,
+      pagesCount: Math.ceil(totalCount / queries.pageSize),
+      totalCount: totalCount,
+      items: items.map(this.mapUserToViewModel),
     };
   }
 }

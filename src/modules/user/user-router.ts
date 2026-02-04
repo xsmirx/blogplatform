@@ -9,14 +9,31 @@ import {
   emailValidation,
   idValidation,
   loginValidation,
+  pageNumberValidation,
+  pageSizeValidation,
   passwordValidation,
+  searchEmailTermValidation,
+  searchLoginTermValidation,
+  sortByValidation,
+  sortDirectionValidation,
 } from './user-validators';
 import { inputValidationResultMiddleware } from '../../core/middleware/input-validation-result.middleware';
 
 export const userRouter: Router = Router();
 
 userRouter
-  .get('/', superAdminGuardMiddleware, getUserListHandler)
+  .get(
+    '/',
+    superAdminGuardMiddleware,
+    searchLoginTermValidation,
+    searchEmailTermValidation,
+    pageNumberValidation,
+    pageSizeValidation,
+    sortByValidation,
+    sortDirectionValidation,
+    inputValidationResultMiddleware,
+    getUserListHandler,
+  )
   .post(
     '/',
     superAdminGuardMiddleware,

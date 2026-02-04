@@ -1,9 +1,21 @@
 import { RequestHandler } from 'express';
-import { UserInputDTO, UserOutputDTO } from './types';
+import { UserInputDTO, UserListPagQueryInput, UserOutputDTO } from './types';
 import { userService } from './user-service';
 import { userQueryRepository } from './user-query-repository';
+import { ListResponse } from '../../core/types/list-response';
+import { matchedData } from 'express-validator';
 
-export const getUserListHandler: RequestHandler = (req, res) => {};
+export const getUserListHandler: RequestHandler<
+  object,
+  ListResponse<UserOutputDTO>
+> = async (req, res) => {
+  const queries = matchedData<UserListPagQueryInput>(req, {
+    includeOptionals: true,
+  });
+
+  const users = await userQueryRepository.findAll(queries);
+  res.status(200).send(users);
+};
 
 export const createUserHandler: RequestHandler<
   unknown,
