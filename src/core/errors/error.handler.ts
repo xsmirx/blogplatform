@@ -1,14 +1,35 @@
 import { ErrorRequestHandler } from 'express';
-import { BlogNotFoundError } from '../../modules/blog/blog-errors';
-import { PostNotFoundError } from '../../modules/post/post-errors';
+import {
+  EmailNotUniqueError,
+  LoginNotUniqueError,
+} from '../../modules/user/user-errors';
+import { createErrorsMessages } from '../middleware/input-validation-result.middleware';
+import { NotFoundError } from './errors';
 
 export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
-  if (error instanceof BlogNotFoundError) {
+  if (error instanceof NotFoundError) {
     res.status(404).send();
     return;
   }
-  if (error instanceof PostNotFoundError) {
-    res.status(404).send();
+
+  if (error instanceof EmailNotUniqueError) {
+    res
+      .status(400)
+      .send(
+        createErrorsMessages([
+          { field: 'email', message: 'email should be unique' },
+        ]),
+      );
+    return;
+  }
+  if (error instanceof LoginNotUniqueError) {
+    res
+      .status(400)
+      .send(
+        createErrorsMessages([
+          { field: 'login', message: 'login should be unique' },
+        ]),
+      );
     return;
   }
 

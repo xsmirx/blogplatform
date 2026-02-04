@@ -1,7 +1,7 @@
 import { Collection, Filter, ObjectId, WithId } from 'mongodb';
-import { BlogNotFoundError } from './blog-errors';
 import { databaseConnection } from '../../bd';
 import { Blog, BlogListQueryInput } from './types';
+import { NotFoundError } from '../../core/errors/errors';
 
 class BlogRepository {
   public getCollection(): Collection<Blog> {
@@ -44,7 +44,7 @@ class BlogRepository {
       _id: new ObjectId(id),
     });
     if (!result) {
-      throw new BlogNotFoundError(`Blog with id ${id} not found`);
+      throw new NotFoundError(`Blog with id ${id} not found`);
     }
     return result;
   }
@@ -70,7 +70,7 @@ class BlogRepository {
     );
 
     if (result.matchedCount === 0) {
-      throw new BlogNotFoundError(`Blog with id ${id} not found`);
+      throw new NotFoundError(`Blog with id ${id} not found`);
     }
 
     return;
@@ -82,7 +82,7 @@ class BlogRepository {
     });
 
     if (result.deletedCount === 0) {
-      throw new BlogNotFoundError(`Blog with id ${id} not found`);
+      throw new NotFoundError(`Blog with id ${id} not found`);
     }
 
     return;

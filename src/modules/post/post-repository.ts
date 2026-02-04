@@ -1,7 +1,7 @@
 import { Collection, Filter, ObjectId, WithId } from 'mongodb';
 import { databaseConnection } from '../../bd/mongo.db';
 import { Post, PostListQueryInput } from './types';
-import { PostNotFoundError } from './post-errors';
+import { NotFoundError } from '../../core/errors/errors';
 
 class PostRepository {
   public getCollection(): Collection<Post> {
@@ -42,7 +42,7 @@ class PostRepository {
       _id: new ObjectId(id),
     });
     if (!result) {
-      throw new PostNotFoundError(`Post with id ${id} not found`);
+      throw new NotFoundError(`Post with id ${id} not found`);
     }
     return result;
   }
@@ -70,7 +70,7 @@ class PostRepository {
     );
 
     if (result.matchedCount === 0) {
-      throw new PostNotFoundError(`Post with id ${id} not found`);
+      throw new NotFoundError(`Post with id ${id} not found`);
     }
 
     return;
@@ -82,7 +82,7 @@ class PostRepository {
     });
 
     if (result.deletedCount === 0) {
-      throw new PostNotFoundError(`Post with id ${id} not found`);
+      throw new NotFoundError(`Post with id ${id} not found`);
     }
 
     return;
