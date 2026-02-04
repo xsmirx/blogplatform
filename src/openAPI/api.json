@@ -1,12 +1,55 @@
 {
   "openapi": "3.0.1",
   "info": {
-    "title": "h04 API - V1",
-    "description": "User can use search to find blog/blogs\n\nPagination with sorting by blogs and by posts was added \n\nAdditional endpoints were added:\nPOST - blogs/{id}/posts - create a post for a specific blog\nGET - blogs/{id}/posts - get posts for a specific blog",
-    "version": "h04"
+    "title": "h05 API - V1",
+    "description": "✔ Super Admin can view, create and delete users (CRUD operations)\n\n✔ Super Admin can use sort, search and pagination for list of users\n\n✔ Flow to generate password hash",
+    "version": "h05"
   },
   "paths": {
-    "/hometask_04/api/blogs": {
+    "/hometask_05/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Try login user to the system",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h05.db.LoginInputModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/h05.db.LoginInputModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/h05.db.LoginInputModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "If Login and Password are correct" },
+          "400": {
+            "description": "If the inputModel has incorrect values",
+            "content": {
+              "text/plain": {
+                "schema": { "$ref": "#/components/schemas/APIErrorResult" }
+              },
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/APIErrorResult" }
+              },
+              "text/json": {
+                "schema": { "$ref": "#/components/schemas/APIErrorResult" }
+              }
+            }
+          },
+          "401": { "description": "If the password or login is wrong" }
+        }
+      }
+    },
+    "/hometask_05/api/blogs": {
       "get": {
         "tags": ["Blogs"],
         "summary": "Returns blogs with paging",
@@ -123,7 +166,7 @@
         ]
       }
     },
-    "/hometask_04/api/blogs/{blogId}/posts": {
+    "/hometask_05/api/blogs/{blogId}/posts": {
       "get": {
         "tags": ["Blogs"],
         "summary": "Returns all posts for specified blog",
@@ -256,7 +299,7 @@
         ]
       }
     },
-    "/hometask_04/api/blogs/{id}": {
+    "/hometask_05/api/blogs/{id}": {
       "get": {
         "tags": ["Blogs"],
         "summary": "Returns blog by id",
@@ -357,7 +400,7 @@
         ]
       }
     },
-    "/hometask_04/api/posts": {
+    "/hometask_05/api/posts": {
       "get": {
         "tags": ["Posts"],
         "summary": "Returns all posts",
@@ -468,7 +511,7 @@
         ]
       }
     },
-    "/hometask_04/api/posts/{id}": {
+    "/hometask_05/api/posts/{id}": {
       "get": {
         "tags": ["Posts"],
         "summary": "Return post by id",
@@ -569,11 +612,167 @@
         ]
       }
     },
-    "/hometask_04/api/testing/all-data": {
+    "/hometask_05/api/testing/all-data": {
       "delete": {
         "tags": ["Testing"],
         "summary": "Clear database: delete all data from all tables/collections",
         "responses": { "204": { "description": "All data is deleted" } }
+      }
+    },
+    "/hometask_05/api/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Returns all users",
+        "parameters": [
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": { "type": "string", "default": "createdAt" }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "description": "Default value: desc",
+            "schema": { "$ref": "#/components/schemas/h04.SortDirections" }
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "description": "pageNumber is number of portions that should be returned",
+            "schema": { "type": "integer", "format": "int32", "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "pageSize is portions size that should be returned",
+            "schema": {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "searchLoginTerm",
+            "in": "query",
+            "description": "Search term for user Login: Login should contains this term in any position",
+            "schema": { "type": "string", "default": null }
+          },
+          {
+            "name": "searchEmailTerm",
+            "in": "query",
+            "description": "Search term for user Email: Email should contains this term in any position",
+            "schema": { "type": "string", "default": null }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h05.db.UserViewModel>"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h05.db.UserViewModel>"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paginator<h05.db.UserViewModel>"
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        },
+        "security": [
+          { "basic": ["Policy:", "Roles:", "AuthenticationSchemes:basic"] }
+        ]
+      },
+      "post": {
+        "tags": ["Users"],
+        "summary": "Add new user to the system",
+        "requestBody": {
+          "description": "Data for constructing new user",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/h05.db.UserInputModel" }
+            },
+            "text/json": {
+              "schema": { "$ref": "#/components/schemas/h05.db.UserInputModel" }
+            },
+            "application/*+json": {
+              "schema": { "$ref": "#/components/schemas/h05.db.UserInputModel" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Returns the newly created user",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/h05.db.UserViewModel"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h05.db.UserViewModel"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/h05.db.UserViewModel"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "If the inputModel has incorrect values. \r\n            <br /><br /><i>Note: If the error should be in the BLL, for example, \"the email address is not unique\", \r\n            do not try to mix this error with input validation errors in the middleware, \r\n            just return one element in the errors array</i>",
+            "content": {
+              "text/plain": {
+                "schema": { "$ref": "#/components/schemas/APIErrorResult" }
+              },
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/APIErrorResult" }
+              },
+              "text/json": {
+                "schema": { "$ref": "#/components/schemas/APIErrorResult" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        },
+        "security": [
+          { "basic": ["Policy:", "Roles:", "AuthenticationSchemes:basic"] }
+        ]
+      }
+    },
+    "/hometask_05/api/users/{id}": {
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Delete user specified by id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "No Content" },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "If specified user is not exists" }
+        },
+        "security": [
+          { "basic": ["Policy:", "Roles:", "AuthenticationSchemes:basic"] }
+        ]
       }
     }
   },
@@ -632,6 +831,21 @@
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/h03.PostViewModel" }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Paginator<h05.db.UserViewModel>": {
+        "required": ["items"],
+        "type": "object",
+        "properties": {
+          "pagesCount": { "type": "integer", "format": "int32" },
+          "page": { "type": "integer", "format": "int32" },
+          "pageSize": { "type": "integer", "format": "int32" },
+          "totalCount": { "type": "integer", "format": "int32" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/h05.db.UserViewModel" }
           }
         },
         "additionalProperties": false
@@ -708,7 +922,48 @@
         },
         "additionalProperties": false
       },
-      "h04.SortDirections": { "enum": ["asc", "desc"], "type": "string" }
+      "h04.SortDirections": { "enum": ["asc", "desc"], "type": "string" },
+      "h05.db.LoginInputModel": {
+        "required": ["loginOrEmail", "password"],
+        "type": "object",
+        "properties": {
+          "loginOrEmail": { "type": "string" },
+          "password": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "h05.db.UserInputModel": {
+        "required": ["email", "login", "password"],
+        "type": "object",
+        "properties": {
+          "login": {
+            "maxLength": 10,
+            "minLength": 3,
+            "pattern": "^[a-zA-Z0-9_-]*$",
+            "type": "string",
+            "description": "must be unique"
+          },
+          "password": { "maxLength": 20, "minLength": 6, "type": "string" },
+          "email": {
+            "pattern": "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
+            "type": "string",
+            "description": "must be unique",
+            "example": "example@example.dev"
+          }
+        },
+        "additionalProperties": false
+      },
+      "h05.db.UserViewModel": {
+        "required": ["createdAt", "email", "id", "login"],
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "login": { "type": "string" },
+          "email": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": false
+      }
     },
     "securitySchemes": {
       "bearer": {
