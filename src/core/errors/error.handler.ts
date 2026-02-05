@@ -4,9 +4,13 @@ import {
   LoginNotUniqueError,
 } from '../../modules/user/user-errors';
 import { createErrorsMessages } from '../middleware/input-validation-result.middleware';
-import { NotFoundError } from './errors';
+import { NotFoundError, WrongCredentialsError } from './errors';
 
 export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
+  if (error instanceof WrongCredentialsError) {
+    res.status(401).send();
+    return;
+  }
   if (error instanceof NotFoundError) {
     res.status(404).send();
     return;

@@ -4,3 +4,10 @@ export class NotFoundError extends Error {
     this.name = 'NotFoundError';
   }
 }
+
+export class WrongCredentialsError extends Error {
+  constructor() {
+    super('Wrong credentials provided');
+    this.name = 'WrongCredentialsError';
+  }
+}
