@@ -1,17 +1,17 @@
 import { RequestHandler } from 'express';
-import { LoginInputDTO } from './types';
+import { LoginInputDTO, LoginOutputDTO } from './types';
 import { matchedData } from 'express-validator';
 import { authService } from './auth-service';
 
 export const loginUserHandler: RequestHandler<
   object,
-  object,
+  LoginOutputDTO,
   LoginInputDTO
 > = async (req, res) => {
   const body = matchedData<LoginInputDTO>(req);
-  await authService.login({
+  const accessToken = await authService.login({
     loginOrEmail: body.loginOrEmail,
     password: body.password,
   });
-  res.status(204).send();
+  res.status(200).send({ accessToken });
 };

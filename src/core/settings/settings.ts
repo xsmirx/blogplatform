@@ -16,9 +16,21 @@ if (!MONGO_DB_NAME) {
   throw new Error('MONGO_DB_NAME not found');
 }
 
+const AC_TOKEN_SECRET = process.env.AC_TOKEN_SECRET;
+if (!AC_TOKEN_SECRET) {
+  throw new Error('AC_TOKEN_SECRET not found');
+}
+
+const AC_TOKEN_TIME = Number(process.env.AC_TOKEN_TIME);
+if (isNaN(AC_TOKEN_TIME)) {
+  throw new Error('AC_TOKEN_TIME not found');
+}
+
 export const settings = {
   HOST,
   PORT: Number(PORT),
   MONGO_URL,
   MONGO_DB_NAME,
+  AC_TOKEN_SECRET,
+  AC_TOKEN_TIME,
 };
