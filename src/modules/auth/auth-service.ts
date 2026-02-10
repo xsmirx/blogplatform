@@ -1,7 +1,7 @@
+import { bcryptService } from '../../core/adapters/bcript-service';
 import { WrongCredentialsError } from '../../core/errors/errors';
+import { User } from '../user/types';
 import { userRepository } from '../user/user-repository';
-
-import bcrypt from 'bcrypt';
 
 class AuthService {
   public async login({
@@ -29,11 +29,18 @@ class AuthService {
   }: {
     loginOrEmail: string;
     password: string;
-  }): Promise<boolean> {
+  }): Promise<User | boolean> {
     const user = await userRepository.findByLoginOrEmail(loginOrEmail);
     if (!user) return false;
 
-    return await bcrypt.compare(password, user.saltedHash);
+    return (await bcryptService.checkPassword(password, user.saltedHash))
+      ? {
+          id: user.id,
+          login: user.login,
+          email: user.email,
+          createdAt: user.createdAt,
+        }
+      : false;
   }
 }
 

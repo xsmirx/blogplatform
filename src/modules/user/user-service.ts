@@ -1,5 +1,5 @@
+import { bcryptService } from '../../core/adapters/bcript-service';
 import { userRepository } from './user-repository';
-import bcrypt from 'bcrypt';
 
 class UserService {
   public async createUser(user: {
@@ -12,7 +12,7 @@ class UserService {
       login: user.login,
     });
 
-    const saltedHash = await bcrypt.hash(user.password, 10);
+    const saltedHash = await bcryptService.generateHash(user.password);
 
     return await userRepository.create({
       login: user.login,
