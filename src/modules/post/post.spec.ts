@@ -1249,4 +1249,369 @@ describe('Post API', () => {
       });
     });
   });
+
+  describe('GET /posts/{postId}/comments', () => {
+    let testPostId: string;
+    let accessToken: string;
+
+    const testUser = {
+      login: 'commenter',
+      password: 'password123',
+      email: 'commenter@example.dev',
+    };
+
+    const getAccessToken = async (): Promise<string> => {
+      const response = await request(app)
+        .post('/auth/login')
+        .send({ loginOrEmail: testUser.login, password: testUser.password })
+        .expect(200);
+      return response.body.accessToken;
+    };
+
+    beforeEach(async () => {
+      await request(app).delete('/testing/all-data').expect(204);
+
+      // Create blog
+      const blogResponse = await request(app)
+        .post('/blogs')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testBlog)
+        .expect(201);
+
+      const newBlogId = blogResponse.body.id;
+
+      // Create post
+      const postResponse = await request(app)
+        .post('/posts')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send({ ...testPost, blogId: newBlogId })
+        .expect(201);
+
+      testPostId = postResponse.body.id;
+
+      // Create user and get token
+      await request(app)
+        .post('/users')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testUser)
+        .expect(201);
+
+      accessToken = await getAccessToken();
+    });
+
+    it('should return 404 when post does not exist', async () => {
+      await request(app)
+        .get('/posts/507f1f77bcf86cd799439011/comments')
+        .expect(404);
+    });
+
+    it('should return 200 and empty paginator when post has no comments', async () => {
+      const response = await request(app)
+        .get(`/posts/${testPostId}/comments`)
+        .expect(200);
+
+      expect(response.body).toEqual({
+        pagesCount: 0,
+        page: 1,
+        pageSize: 10,
+        totalCount: 0,
+        items: [],
+      });
+    });
+
+    it('should return 200 and paginator with comments when post has comments', async () => {
+      // Create a comment
+      await request(app)
+        .post(`/posts/${testPostId}/comments`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ content: 'This is a test comment with enough characters' })
+        .expect(201);
+
+      const response = await request(app)
+        .get(`/posts/${testPostId}/comments`)
+        .expect(200);
+
+      expect(response.body).toEqual({
+        pagesCount: expect.any(Number),
+        page: expect.any(Number),
+        pageSize: expect.any(Number),
+        totalCount: expect.any(Number),
+        items: expect.any(Array),
+      });
+
+      expect(response.body.totalCount).toBe(1);
+      expect(response.body.items.length).toBe(1);
+      expect(response.body.items[0]).toEqual({
+        id: expect.any(String),
+        content: expect.any(String),
+        commentatorInfo: {
+          userId: expect.any(String),
+          userLogin: expect.any(String),
+        },
+        createdAt: expect.any(String),
+      });
+    });
+
+    it('should support pagination parameters', async () => {
+      // Create multiple comments
+      for (let i = 1; i <= 5; i++) {
+        await request(app)
+          .post(`/posts/${testPostId}/comments`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ content: `Comment ${i} with enough characters here` })
+          .expect(201);
+      }
+
+      const response = await request(app)
+        .get(`/posts/${testPostId}/comments`)
+        .query({ pageSize: 2, pageNumber: 2 })
+        .expect(200);
+
+      expect(response.body.page).toBe(2);
+      expect(response.body.pageSize).toBe(2);
+      expect(response.body.totalCount).toBe(5);
+      expect(response.body.items.length).toBe(2);
+    });
+
+    it('should support sorting parameters', async () => {
+      // Create comments with delays
+      await request(app)
+        .post(`/posts/${testPostId}/comments`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ content: 'First comment with enough characters' })
+        .expect(201);
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      await request(app)
+        .post(`/posts/${testPostId}/comments`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ content: 'Second comment with enough characters' })
+        .expect(201);
+
+      // Test desc sorting (default)
+      const descResponse = await request(app)
+        .get(`/posts/${testPostId}/comments`)
+        .query({ sortDirection: 'desc' })
+        .expect(200);
+
+      expect(descResponse.body.items.length).toBe(2);
+
+      // Test asc sorting
+      const ascResponse = await request(app)
+        .get(`/posts/${testPostId}/comments`)
+        .query({ sortDirection: 'asc' })
+        .expect(200);
+
+      expect(ascResponse.body.items.length).toBe(2);
+    });
+  });
+
+  describe('POST /posts/{postId}/comments', () => {
+    let testPostId: string;
+    let accessToken: string;
+
+    const testUser = {
+      login: 'commenter',
+      password: 'password123',
+      email: 'commenter@example.dev',
+    };
+
+    const getAccessToken = async (): Promise<string> => {
+      const response = await request(app)
+        .post('/auth/login')
+        .send({ loginOrEmail: testUser.login, password: testUser.password })
+        .expect(200);
+      return response.body.accessToken;
+    };
+
+    beforeEach(async () => {
+      await request(app).delete('/testing/all-data').expect(204);
+
+      // Create blog
+      const blogResponse = await request(app)
+        .post('/blogs')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testBlog)
+        .expect(201);
+
+      const newBlogId = blogResponse.body.id;
+
+      // Create post
+      const postResponse = await request(app)
+        .post('/posts')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send({ ...testPost, blogId: newBlogId })
+        .expect(201);
+
+      testPostId = postResponse.body.id;
+
+      // Create user and get token
+      await request(app)
+        .post('/users')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testUser)
+        .expect(201);
+
+      accessToken = await getAccessToken();
+    });
+
+    it('should return 401 when not authorized', async () => {
+      await request(app)
+        .post(`/posts/${testPostId}/comments`)
+        .send({ content: 'This is a comment with enough characters' })
+        .expect(401);
+    });
+
+    it('should return 404 when post does not exist', async () => {
+      await request(app)
+        .post('/posts/507f1f77bcf86cd799439011/comments')
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ content: 'This is a comment with enough characters' })
+        .expect(404);
+    });
+
+    it('should return 201 and created comment when valid data provided', async () => {
+      const commentContent =
+        'This is a valid test comment with enough characters';
+
+      const response = await request(app)
+        .post(`/posts/${testPostId}/comments`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ content: commentContent })
+        .expect(201);
+
+      expect(response.body).toEqual({
+        id: expect.any(String),
+        content: commentContent,
+        commentatorInfo: {
+          userId: expect.any(String),
+          userLogin: testUser.login,
+        },
+        createdAt: expect.any(String),
+      });
+
+      // Verify createdAt is valid ISO date
+      expect(new Date(response.body.createdAt).toISOString()).toBe(
+        response.body.createdAt,
+      );
+    });
+
+    describe('Validation tests', () => {
+      it('should return 400 when content is missing', async () => {
+        const response = await request(app)
+          .post(`/posts/${testPostId}/comments`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({})
+          .expect(400);
+
+        expect(response.body).toEqual({
+          errorsMessages: expect.arrayContaining([
+            expect.objectContaining({
+              message: expect.any(String),
+              field: 'content',
+            }),
+          ]),
+        });
+      });
+
+      it('should return 400 when content is too short (< 20 chars)', async () => {
+        const response = await request(app)
+          .post(`/posts/${testPostId}/comments`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ content: 'Too short' })
+          .expect(400);
+
+        expect(response.body).toEqual({
+          errorsMessages: expect.arrayContaining([
+            expect.objectContaining({
+              message: expect.any(String),
+              field: 'content',
+            }),
+          ]),
+        });
+      });
+
+      it('should return 400 when content is too long (> 300 chars)', async () => {
+        const longContent = 'a'.repeat(301);
+        const response = await request(app)
+          .post(`/posts/${testPostId}/comments`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ content: longContent })
+          .expect(400);
+
+        expect(response.body).toEqual({
+          errorsMessages: expect.arrayContaining([
+            expect.objectContaining({
+              message: expect.any(String),
+              field: 'content',
+            }),
+          ]),
+        });
+      });
+
+      it('should return 400 when content is empty string', async () => {
+        const response = await request(app)
+          .post(`/posts/${testPostId}/comments`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ content: '' })
+          .expect(400);
+
+        expect(response.body).toEqual({
+          errorsMessages: expect.arrayContaining([
+            expect.objectContaining({
+              message: expect.any(String),
+              field: 'content',
+            }),
+          ]),
+        });
+      });
+
+      it('should accept content with exactly 20 characters', async () => {
+        const response = await request(app)
+          .post(`/posts/${testPostId}/comments`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ content: '12345678901234567890' })
+          .expect(201);
+
+        expect(response.body.content).toBe('12345678901234567890');
+      });
+
+      it('should accept content with exactly 300 characters', async () => {
+        const content = 'a'.repeat(300);
+        const response = await request(app)
+          .post(`/posts/${testPostId}/comments`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ content })
+          .expect(201);
+
+        expect(response.body.content).toBe(content);
+        expect(response.body.content.length).toBe(300);
+      });
+    });
+
+    it('should allow creating multiple comments for same post', async () => {
+      const comment1 = await request(app)
+        .post(`/posts/${testPostId}/comments`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ content: 'First comment with enough characters' })
+        .expect(201);
+
+      const comment2 = await request(app)
+        .post(`/posts/${testPostId}/comments`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ content: 'Second comment with enough characters' })
+        .expect(201);
+
+      expect(comment1.body.id).not.toBe(comment2.body.id);
+
+      // Verify both comments exist for the post
+      const commentsResponse = await request(app)
+        .get(`/posts/${testPostId}/comments`)
+        .expect(200);
+
+      expect(commentsResponse.body.totalCount).toBe(2);
+      expect(commentsResponse.body.items.length).toBe(2);
+    });
+  });
 });

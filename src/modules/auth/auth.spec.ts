@@ -42,24 +42,36 @@ describe('Auth API', () => {
         .expect(201);
     });
 
-    it('should return 204 when login and password are correct', async () => {
-      await request(app)
+    it('should return 200 and accessToken when login and password are correct', async () => {
+      const response = await request(app)
         .post('/auth/login')
         .send({
           loginOrEmail: testUser.login,
           password: testUser.password,
         })
-        .expect(204);
+        .expect(200);
+
+      expect(response.body).toEqual({
+        accessToken: expect.any(String),
+      });
+      expect(response.body.accessToken).toBeTruthy();
+      expect(response.body.accessToken.length).toBeGreaterThan(0);
     });
 
-    it('should return 204 when email and password are correct', async () => {
-      await request(app)
+    it('should return 200 and accessToken when email and password are correct', async () => {
+      const response = await request(app)
         .post('/auth/login')
         .send({
           loginOrEmail: testUser.email,
           password: testUser.password,
         })
-        .expect(204);
+        .expect(200);
+
+      expect(response.body).toEqual({
+        accessToken: expect.any(String),
+      });
+      expect(response.body.accessToken).toBeTruthy();
+      expect(response.body.accessToken.length).toBeGreaterThan(0);
     });
 
     it('should return 401 when password is wrong', async () => {
@@ -244,13 +256,17 @@ describe('Auth API', () => {
 
       it('should be case-insensitive for email', async () => {
         // Most email systems are case-insensitive
-        await request(app)
+        const response = await request(app)
           .post('/auth/login')
           .send({
             loginOrEmail: testUser.email.toUpperCase(),
             password: testUser.password,
           })
-          .expect(204);
+          .expect(200);
+
+        expect(response.body).toEqual({
+          accessToken: expect.any(String),
+        });
       });
     });
 
@@ -273,23 +289,27 @@ describe('Auth API', () => {
       });
 
       it('should authenticate first user correctly', async () => {
-        await request(app)
+        const response = await request(app)
           .post('/auth/login')
           .send({
             loginOrEmail: testUser.login,
             password: testUser.password,
           })
-          .expect(204);
+          .expect(200);
+
+        expect(response.body.accessToken).toBeTruthy();
       });
 
       it('should authenticate second user correctly', async () => {
-        await request(app)
+        const response = await request(app)
           .post('/auth/login')
           .send({
             loginOrEmail: testUser2.login,
             password: testUser2.password,
           })
-          .expect(204);
+          .expect(200);
+
+        expect(response.body.accessToken).toBeTruthy();
       });
 
       it('should not authenticate first user with second users password', async () => {
@@ -313,23 +333,27 @@ describe('Auth API', () => {
       });
 
       it('should authenticate user by email', async () => {
-        await request(app)
+        const response = await request(app)
           .post('/auth/login')
           .send({
             loginOrEmail: testUser.email,
             password: testUser.password,
           })
-          .expect(204);
+          .expect(200);
+
+        expect(response.body.accessToken).toBeTruthy();
       });
 
       it('should authenticate user by login', async () => {
-        await request(app)
+        const response = await request(app)
           .post('/auth/login')
           .send({
             loginOrEmail: testUser.login,
             password: testUser.password,
           })
-          .expect(204);
+          .expect(200);
+
+        expect(response.body.accessToken).toBeTruthy();
       });
     });
 
@@ -350,13 +374,15 @@ describe('Auth API', () => {
       });
 
       it('should authenticate with minimum length password', async () => {
-        await request(app)
+        const response = await request(app)
           .post('/auth/login')
           .send({
             loginOrEmail: 'minuser',
             password: '123456',
           })
-          .expect(204);
+          .expect(200);
+
+        expect(response.body.accessToken).toBeTruthy();
       });
 
       it('should not authenticate with password missing one character', async () => {
@@ -397,13 +423,15 @@ describe('Auth API', () => {
       });
 
       it('should authenticate with special characters in password', async () => {
-        await request(app)
+        const response = await request(app)
           .post('/auth/login')
           .send({
             loginOrEmail: 'special',
             password: 'P@ssw0rd!',
           })
-          .expect(204);
+          .expect(200);
+
+        expect(response.body.accessToken).toBeTruthy();
       });
 
       it('should not authenticate if special character is missing', async () => {
@@ -472,16 +500,20 @@ describe('Auth API', () => {
     });
 
     describe('Response body tests', () => {
-      it('should return empty body on successful login', async () => {
+      it('should return accessToken on successful login', async () => {
         const response = await request(app)
           .post('/auth/login')
           .send({
             loginOrEmail: testUser.login,
             password: testUser.password,
           })
-          .expect(204);
+          .expect(200);
 
-        expect(response.body).toEqual({});
+        expect(response.body).toEqual({
+          accessToken: expect.any(String),
+        });
+        expect(typeof response.body.accessToken).toBe('string');
+        expect(response.body.accessToken.split('.').length).toBe(3); // JWT has 3 parts
       });
 
       it('should not return any sensitive information on failed login', async () => {
@@ -514,7 +546,8 @@ describe('Auth API', () => {
 
         const responses = await Promise.all(promises);
         responses.forEach((response) => {
-          expect(response.status).toBe(204);
+          expect(response.status).toBe(200);
+          expect(response.body.accessToken).toBeTruthy();
         });
       });
 
@@ -535,9 +568,199 @@ describe('Auth API', () => {
         ];
 
         const responses = await Promise.all(promises);
-        expect(responses[0].status).toBe(204);
+        expect(responses[0].status).toBe(200);
+        expect(responses[0].body.accessToken).toBeTruthy();
         expect(responses[1].status).toBe(401);
-        expect(responses[2].status).toBe(204);
+        expect(responses[2].status).toBe(200);
+        expect(responses[2].body.accessToken).toBeTruthy();
+      });
+    });
+  });
+
+  describe('GET /auth/me', () => {
+    let accessToken: string;
+
+    beforeEach(async () => {
+      await request(app).delete('/testing/all-data').expect(204);
+
+      // Create a test user
+      await request(app)
+        .post('/users')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testUser)
+        .expect(201);
+
+      // Login to get access token
+      const loginResponse = await request(app)
+        .post('/auth/login')
+        .send({
+          loginOrEmail: testUser.login,
+          password: testUser.password,
+        })
+        .expect(200);
+
+      accessToken = loginResponse.body.accessToken;
+    });
+
+    it('should return 401 when no authorization header provided', async () => {
+      await request(app).get('/auth/me').expect(401);
+    });
+
+    it('should return 401 when authorization header is empty', async () => {
+      await request(app).get('/auth/me').set('authorization', '').expect(401);
+    });
+
+    it('should return 401 when invalid token provided', async () => {
+      await request(app)
+        .get('/auth/me')
+        .set('authorization', 'Bearer invalidtoken')
+        .expect(401);
+    });
+
+    it('should return 401 when malformed token provided', async () => {
+      await request(app)
+        .get('/auth/me')
+        .set('authorization', 'Bearer not.a.jwt')
+        .expect(401);
+    });
+
+    it('should return 401 when token without Bearer prefix', async () => {
+      await request(app)
+        .get('/auth/me')
+        .set('authorization', accessToken)
+        .expect(401);
+    });
+
+    it('should return 200 and user info when valid token provided', async () => {
+      const response = await request(app)
+        .get('/auth/me')
+        .set('authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      expect(response.body).toEqual({
+        email: expect.any(String),
+        login: expect.any(String),
+        userId: expect.any(String),
+      });
+    });
+
+    it('should return correct user information', async () => {
+      const response = await request(app)
+        .get('/auth/me')
+        .set('authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      expect(response.body.email).toBe(testUser.email);
+      expect(response.body.login).toBe(testUser.login);
+      expect(response.body.userId).toBeTruthy();
+      expect(typeof response.body.userId).toBe('string');
+    });
+
+    it('should return different info for different users', async () => {
+      // Create second user
+      await request(app)
+        .post('/users')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testUser2)
+        .expect(201);
+
+      // Login as second user
+      const loginResponse2 = await request(app)
+        .post('/auth/login')
+        .send({
+          loginOrEmail: testUser2.login,
+          password: testUser2.password,
+        })
+        .expect(200);
+
+      const accessToken2 = loginResponse2.body.accessToken;
+
+      // Get info for first user
+      const response1 = await request(app)
+        .get('/auth/me')
+        .set('authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      // Get info for second user
+      const response2 = await request(app)
+        .get('/auth/me')
+        .set('authorization', `Bearer ${accessToken2}`)
+        .expect(200);
+
+      // Should be different users
+      expect(response1.body.userId).not.toBe(response2.body.userId);
+      expect(response1.body.login).toBe(testUser.login);
+      expect(response2.body.login).toBe(testUser2.login);
+      expect(response1.body.email).toBe(testUser.email);
+      expect(response2.body.email).toBe(testUser2.email);
+    });
+
+    it('should work with token from recent login', async () => {
+      // Login again
+      const newLoginResponse = await request(app)
+        .post('/auth/login')
+        .send({
+          loginOrEmail: testUser.login,
+          password: testUser.password,
+        })
+        .expect(200);
+
+      const newAccessToken = newLoginResponse.body.accessToken;
+
+      // Both tokens should work
+      await request(app)
+        .get('/auth/me')
+        .set('authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      await request(app)
+        .get('/auth/me')
+        .set('authorization', `Bearer ${newAccessToken}`)
+        .expect(200);
+    });
+
+    it('should validate JWT structure of token', async () => {
+      expect(accessToken).toBeTruthy();
+      expect(typeof accessToken).toBe('string');
+
+      // JWT should have 3 parts separated by dots
+      const parts = accessToken.split('.');
+      expect(parts.length).toBe(3);
+
+      // Each part should be base64 encoded
+      parts.forEach((part) => {
+        expect(part.length).toBeGreaterThan(0);
+      });
+    });
+
+    describe('Edge cases', () => {
+      it('should return 401 with Bearer prefix but no token', async () => {
+        await request(app)
+          .get('/auth/me')
+          .set('authorization', 'Bearer ')
+          .expect(401);
+      });
+
+      it('should return 401 with extra spaces in Bearer token', async () => {
+        await request(app)
+          .get('/auth/me')
+          .set('authorization', `Bearer  ${accessToken}`)
+          .expect(401);
+      });
+
+      it('should return 401 with lowercase bearer', async () => {
+        await request(app)
+          .get('/auth/me')
+          .set('authorization', `bearer ${accessToken}`)
+          .expect(401);
+      });
+
+      it('should not expose user info without proper authentication', async () => {
+        const response = await request(app).get('/auth/me').expect(401);
+
+        expect(response.body).not.toHaveProperty('email');
+        expect(response.body).not.toHaveProperty('login');
+        expect(response.body).not.toHaveProperty('userId');
       });
     });
   });
