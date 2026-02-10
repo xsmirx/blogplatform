@@ -28,7 +28,7 @@ import {
   contentValidation,
 } from '../post/post-validators';
 import { inputValidationResultMiddleware } from '../../core/middleware/input-validation-result.middleware';
-import { superAdminGuardMiddleware } from '../auth/super-admin-guard.middleware';
+import { superAdminGuard } from '../auth/super-admin-guard';
 
 export const blogRouter: Router = Router();
 
@@ -55,14 +55,14 @@ blogRouter
   )
   .post(
     '/',
-    superAdminGuardMiddleware,
+    superAdminGuard,
     blogDTOValidation,
     inputValidationResultMiddleware,
     createBlogHandler,
   )
   .post(
     '/:blogId/posts',
-    superAdminGuardMiddleware,
+    superAdminGuard,
     blogIdValidation,
     titleValidation,
     shortDescriptionValidation,
@@ -72,7 +72,7 @@ blogRouter
   )
   .put(
     '/:id',
-    superAdminGuardMiddleware,
+    superAdminGuard,
     idValidation,
     blogDTOValidation,
     inputValidationResultMiddleware,
@@ -80,7 +80,7 @@ blogRouter
   )
   .delete(
     '/:id',
-    superAdminGuardMiddleware,
+    superAdminGuard,
     idValidation,
     inputValidationResultMiddleware,
     deleteBlogHandler,

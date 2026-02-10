@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 export const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'qwerty';
 
-export const superAdminGuardMiddleware = (
+export const superAdminGuard = (
   req: Request,
   res: Response,
   next: NextFunction,

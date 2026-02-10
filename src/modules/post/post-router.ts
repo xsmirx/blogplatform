@@ -15,7 +15,7 @@ import {
   sortDirectionValidation,
 } from './post-validators';
 import { inputValidationResultMiddleware } from '../../core/middleware/input-validation-result.middleware';
-import { superAdminGuardMiddleware } from '../auth/super-admin-guard.middleware';
+import { superAdminGuard } from '../auth/super-admin-guard';
 
 export const postRouter: Router = Router();
 
@@ -31,14 +31,14 @@ postRouter
   .get('/:id', idValidation, inputValidationResultMiddleware, getPostHandler)
   .post(
     '/',
-    superAdminGuardMiddleware,
+    superAdminGuard,
     postDTOValidation,
     inputValidationResultMiddleware,
     createPostHandler,
   )
   .put(
     '/:id',
-    superAdminGuardMiddleware,
+    superAdminGuard,
     idValidation,
     postDTOValidation,
     inputValidationResultMiddleware,
@@ -46,7 +46,7 @@ postRouter
   )
   .delete(
     '/:id',
-    superAdminGuardMiddleware,
+    superAdminGuard,
     idValidation,
     inputValidationResultMiddleware,
     deletePostHandler,

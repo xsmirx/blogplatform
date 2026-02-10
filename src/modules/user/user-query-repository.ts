@@ -3,6 +3,7 @@ import { databaseConnection } from '../../bd';
 import { UserDB, UserListPagQueryInput, UserOutputDTO } from './types';
 import { NotFoundError } from '../../core/errors/errors';
 import { ListResponse } from '../../core/types/list-response';
+import { MeOutputDTO } from '../auth/types';
 
 class UserQueryRepository {
   private escapeRegex(text: string) {
@@ -67,6 +68,18 @@ class UserQueryRepository {
       throw new NotFoundError('User not found');
     }
     return this.mapUserToViewModel(user);
+  }
+
+  public async findMeById(userId: string): Promise<MeOutputDTO> {
+    const me = await this.collection.findOne({ _id: new ObjectId(userId) });
+    if (!me) {
+      throw new NotFoundError('User not found');
+    }
+    return {
+      userId: me._id.toString(),
+      login: me.login,
+      email: me.email,
+    };
   }
 
   private mapUserToViewModel(user: WithId<UserDB>): UserOutputDTO {

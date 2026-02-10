@@ -4,7 +4,7 @@ import {
   deleteUserHandler,
   getUserListHandler,
 } from './user-handlers';
-import { superAdminGuardMiddleware } from '../auth/super-admin-guard.middleware';
+import { superAdminGuard } from '../auth/super-admin-guard';
 import {
   emailValidation,
   idValidation,
@@ -24,7 +24,7 @@ export const userRouter: Router = Router();
 userRouter
   .get(
     '/',
-    superAdminGuardMiddleware,
+    superAdminGuard,
     searchLoginTermValidation,
     searchEmailTermValidation,
     pageNumberValidation,
@@ -36,7 +36,7 @@ userRouter
   )
   .post(
     '/',
-    superAdminGuardMiddleware,
+    superAdminGuard,
     loginValidation,
     passwordValidation,
     emailValidation,
@@ -45,7 +45,7 @@ userRouter
   )
   .delete(
     '/:id',
-    superAdminGuardMiddleware,
+    superAdminGuard,
     idValidation,
     inputValidationResultMiddleware,
     deleteUserHandler,

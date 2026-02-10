@@ -6,3 +6,9 @@ export type LoginInputDTO = {
 export type LoginOutputDTO = {
   accessToken: string;
 };
+
+export type MeOutputDTO = {
+  userId: string;
+  login: string;
+  email: string;
+};
