@@ -12,7 +12,6 @@ class JwtService {
     try {
       return jwt.verify(token, settings.AC_TOKEN_SECRET) as { userId: string };
     } catch {
-      console.error('Token verify some error');
       return null;
     }
   }
