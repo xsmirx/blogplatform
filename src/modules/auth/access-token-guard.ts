@@ -3,19 +3,19 @@ import { jwtService } from '../../core/adapters/jwt-service';
 
 export const accessTokenGuard: RequestHandler = async (req, res, next) => {
   if (!req.headers.authorization) {
-    return res.sendStatus(401);
+    return res.status(401).send();
   }
 
   const [authType, token] = req.headers.authorization.split(' ');
 
   if (authType !== 'Bearer') {
-    return res.sendStatus(401);
+    return res.status(401).send();
   }
 
   const payload = await jwtService.verifyToken(token);
 
   if (!payload) {
-    return res.sendStatus(401);
+    return res.status(401).send();
   }
 
   const { userId } = payload;

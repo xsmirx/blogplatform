@@ -18,13 +18,12 @@ import {
 } from './post-validators';
 import { inputValidationResultMiddleware } from '../../core/middleware/input-validation-result.middleware';
 import { superAdminGuard } from '../auth/super-admin-guard';
-import { accessTokenGuard } from '../auth/access-token-guard';
 import {
   commentContentValidation,
-  commentIdValidation,
   sortByValidation as commentSortByValidation,
   sortDirectionValidation as commentSortDirectionValidation,
 } from '../comment/comment-validators';
+import { accessTokenGuard } from '../auth/access-token-guard';
 
 export const postRouter: Router = Router();
 
@@ -75,7 +74,7 @@ postRouter
   .post(
     '/:id/comments',
     accessTokenGuard,
-    commentIdValidation,
+    idValidation,
     commentContentValidation,
     inputValidationResultMiddleware,
     createCommentHandler,
