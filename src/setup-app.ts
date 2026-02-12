@@ -12,7 +12,7 @@ export const setupApp = (app: Express) => {
 
   // основной роут
   app.get('/', (req, res) => {
-    res.status(200).send('Hello world!');
+    res.status(200).send('Hello world! h06');
   });
 
   app.use('/auth', authRouter);
