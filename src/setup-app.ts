@@ -5,6 +5,7 @@ import { testingRouter } from './modules/testing/testing-router';
 import { errorHandler } from './core/errors/error.handler';
 import { userRouter } from './modules/user/user-router';
 import { authRouter } from './modules/auth/auth-router';
+import { commentRouter } from './modules/comment/comment-router';
 
 export const setupApp = (app: Express) => {
   app.use(express.json()); // middleware для парсинга JSON в теле запроса
@@ -18,6 +19,7 @@ export const setupApp = (app: Express) => {
   app.use('/users', userRouter);
   app.use('/blogs', blogRouter);
   app.use('/posts', postRouter);
+  app.use('/comments', commentRouter);
 
   app.use('/testing/all-data', testingRouter);
 

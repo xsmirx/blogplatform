@@ -3,6 +3,8 @@ import { PostInputDTO, PostListQueryInput, PostOutputDTO } from './types';
 import { ListResponse } from '../../core/types/list-response';
 import { matchedData } from 'express-validator';
 import { postService } from './post-service';
+import { CommentInputDTO, CommentOutputDTO } from '../comment/types';
+import { commentService } from '../comment/comment-service';
 
 export const getPostListHandler: RequestHandler<
   undefined,
@@ -97,4 +99,14 @@ export const deletePostHandler: RequestHandler<{ id: string }> = async (
 
   await postService.delete(postId);
   res.status(204).send();
+};
+
+export const createCommentHandler: RequestHandler<
+  { id: string },
+  CommentOutputDTO,
+  CommentInputDTO
+> = async (req, res) => {
+  const userId = req.appContext!.user!.userId;
+  const { id, content } = matchedData<{ id: string } & CommentInputDTO>(req);
+  const coomentId = await commentService.createComment();
 };

@@ -9,6 +9,19 @@ class UserRepository {
     return databaseConnection.getDb().collection<UserDB>('users');
   }
 
+  public async findById(userId: string): Promise<User> {
+    const user = await this.collection.findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+    return {
+      id: user._id.toString(),
+      login: user.login,
+      email: user.email,
+      createdAt: user.createdAt.toISOString(),
+    };
+  }
+
   public async findByLoginOrEmail(
     loginOrEmail: string,
   ): Promise<(User & { saltedHash: string }) | null> {

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  createCommentHandler,
   createPostHandler,
   deletePostHandler,
   getPostHandler,
@@ -16,6 +17,11 @@ import {
 } from './post-validators';
 import { inputValidationResultMiddleware } from '../../core/middleware/input-validation-result.middleware';
 import { superAdminGuard } from '../auth/super-admin-guard';
+import { accessTokenGuard } from '../auth/access-token-guard';
+import {
+  commentContentValidation,
+  commentIdValidation,
+} from '../comment/comment-validators';
 
 export const postRouter: Router = Router();
 
@@ -50,4 +56,15 @@ postRouter
     idValidation,
     inputValidationResultMiddleware,
     deletePostHandler,
+  );
+
+postRouter
+  .get('/:id/comments')
+  .post(
+    '/:id/comments',
+    accessTokenGuard,
+    commentIdValidation,
+    commentContentValidation,
+    inputValidationResultMiddleware,
+    createCommentHandler,
   );
