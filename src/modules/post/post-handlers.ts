@@ -12,7 +12,7 @@ import { commentService } from '../comment/comment-service';
 import { commentQueryRepository } from '../comment/comment-query-repository';
 
 export const getPostListHandler: RequestHandler<
-  undefined,
+  object,
   ListResponse<PostOutputDTO>
 > = async (req, res) => {
   const validationData = matchedData<PostListQueryInput>(req);

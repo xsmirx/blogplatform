@@ -34,6 +34,7 @@ postRouter
     pageSizeValidation,
     sortByValidation,
     sortDirectionValidation,
+    inputValidationResultMiddleware,
     getPostListHandler,
   )
   .get('/:id', idValidation, inputValidationResultMiddleware, getPostHandler)

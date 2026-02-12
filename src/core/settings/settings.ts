@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 
-dotenv.config({ path: './.env.production' });
+dotenv.config();
+// dotenv.config({ path: './.env.production' });
 
 const HOST = process.env.HOST || '0.0.0.0';
 
