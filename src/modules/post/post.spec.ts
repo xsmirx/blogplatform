@@ -1,10 +1,10 @@
 import express from 'express';
 import request from 'supertest';
 import { setupApp } from '../../setup-app';
-import { PostDTO } from './types';
 import { BlogInputDTO } from '../blog/types';
 import { ValidationError } from '../../core/types/validation-error';
 import { databaseConnection } from '../../bd';
+import { PostInputDTO } from './types';
 
 describe('Post API', () => {
   const app = express();
@@ -19,14 +19,14 @@ describe('Post API', () => {
     websiteUrl: 'https://testblog.com',
   };
 
-  const testPost: PostDTO = {
+  const testPost: PostInputDTO = {
     title: 'Test Post',
     shortDescription: 'This is a test post',
     content: 'This is the content of the test post',
     blogId: '',
   };
 
-  const updatedTestPost: PostDTO = {
+  const updatedTestPost: PostInputDTO = {
     title: 'Updated Post',
     shortDescription: 'This is an updated test post',
     content: 'This is the updated content of the test post',

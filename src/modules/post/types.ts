@@ -12,6 +12,7 @@ export type Post = {
 export enum PostSortField {
   createdAt = 'createdAt',
   title = 'title',
+  blogName = 'blogName',
   shortDescription = 'shortDescription',
 }
 
