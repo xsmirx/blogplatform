@@ -26,9 +26,13 @@ export const pageNumberValidation = query(PaginationQueryKey.pageNumber)
 
 export const pageSizeValidation = query(PaginationQueryKey.pageSize)
   .default(10)
-  .isInt({ min: 1, max: 100 })
-  .withMessage('Page size must be between 1 and 100')
-  .toInt();
+  .toInt()
+  .customSanitizer((value) => {
+    if (value > 20) {
+      return 20;
+    }
+    return value;
+  });
 
 const allowedSortFields = Object.values(UserSortField);
 export const sortByValidation = query(SortQueryKey.sortBy)

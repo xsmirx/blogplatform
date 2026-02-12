@@ -114,6 +114,8 @@ export const getCommentListHandler: RequestHandler<
     { id: string } & CommentListQueryInput
   >(req);
 
+  console.log('pageSize', pageSize);
+
   await postService.findByIdOrFail(id);
 
   const result = await commentQueryRepository.findAllByPostId({
@@ -133,6 +135,9 @@ export const createCommentHandler: RequestHandler<
 > = async (req, res) => {
   const userId = req.appContext!.user!.userId;
   const { id, content } = matchedData<{ id: string } & CommentInputDTO>(req);
+
+  await postService.findByIdOrFail(id);
+
   const commentId = await commentService.createComment({
     postId: id,
     userId,
