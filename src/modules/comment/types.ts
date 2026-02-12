@@ -1,3 +1,9 @@
+import { PaginationAndSorting } from '../../core/types/pagination-and-sorting';
+
+export enum CommentSortField {
+  createdAt = 'createdAt',
+}
+
 export type Comment = {
   id: string;
   content: string;
@@ -39,6 +45,12 @@ export type UpdateCommentInput = {
 export type DeleteCommentInput = {
   id: string;
   userId: string;
+};
+
+// === Query Repository Layer ===
+
+export type CommentListQueryInput = PaginationAndSorting<CommentSortField> & {
+  postId: string;
 };
 
 // === Repository Layer ===

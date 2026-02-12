@@ -3,6 +3,7 @@ import {
   createCommentHandler,
   createPostHandler,
   deletePostHandler,
+  getCommentListHandler,
   getPostHandler,
   getPostListHandler,
   updatePostHandler,
@@ -21,6 +22,8 @@ import { accessTokenGuard } from '../auth/access-token-guard';
 import {
   commentContentValidation,
   commentIdValidation,
+  sortByValidation as commentSortByValidation,
+  sortDirectionValidation as commentSortDirectionValidation,
 } from '../comment/comment-validators';
 
 export const postRouter: Router = Router();
@@ -59,7 +62,16 @@ postRouter
   );
 
 postRouter
-  .get('/:id/comments')
+  .get(
+    '/:id/comments',
+    idValidation,
+    pageNumberValidation,
+    pageSizeValidation,
+    commentSortByValidation,
+    commentSortDirectionValidation,
+    inputValidationResultMiddleware,
+    getCommentListHandler,
+  )
   .post(
     '/:id/comments',
     accessTokenGuard,

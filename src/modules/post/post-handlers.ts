@@ -3,8 +3,13 @@ import { PostInputDTO, PostListQueryInput, PostOutputDTO } from './types';
 import { ListResponse } from '../../core/types/list-response';
 import { matchedData } from 'express-validator';
 import { postService } from './post-service';
-import { CommentInputDTO, CommentOutputDTO } from '../comment/types';
+import {
+  CommentInputDTO,
+  CommentListQueryInput,
+  CommentOutputDTO,
+} from '../comment/types';
 import { commentService } from '../comment/comment-service';
+import { commentQueryRepository } from '../comment/comment-query-repository';
 
 export const getPostListHandler: RequestHandler<
   undefined,
@@ -101,6 +106,26 @@ export const deletePostHandler: RequestHandler<{ id: string }> = async (
   res.status(204).send();
 };
 
+export const getCommentListHandler: RequestHandler<
+  { id: string },
+  ListResponse<CommentOutputDTO>
+> = async (req, res) => {
+  const { id, pageNumber, pageSize, sortBy, sortDirection } = matchedData<
+    { id: string } & CommentListQueryInput
+  >(req);
+
+  await postService.findByIdOrFail(id);
+
+  const result = await commentQueryRepository.findAllByPostId({
+    postId: id,
+    pageNumber,
+    pageSize,
+    sortBy,
+    sortDirection,
+  });
+  res.status(200).send(result);
+};
+
 export const createCommentHandler: RequestHandler<
   { id: string },
   CommentOutputDTO,
@@ -108,5 +133,11 @@ export const createCommentHandler: RequestHandler<
 > = async (req, res) => {
   const userId = req.appContext!.user!.userId;
   const { id, content } = matchedData<{ id: string } & CommentInputDTO>(req);
-  const coomentId = await commentService.createComment();
+  const commentId = await commentService.createComment({
+    postId: id,
+    userId,
+    content,
+  });
+  const comment = await commentQueryRepository.findById(commentId);
+  res.status(201).send(comment);
 };

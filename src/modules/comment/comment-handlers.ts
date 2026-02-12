@@ -9,7 +9,7 @@ export const getCommentHandler: RequestHandler<
   CommentOutputDTO
 > = async (req, res) => {
   const { id } = matchedData<{ id: string }>(req);
-  const comment = await commentQueryRepository.findCommentById(id);
+  const comment = await commentQueryRepository.findById(id);
   res.status(200).send(comment);
 };
 
