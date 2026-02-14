@@ -1,13 +1,30 @@
 import { Router } from 'express';
-import { blogRepository } from '../blog/blog-repository';
-import { postRepository } from '../post/post-repository';
-import { userRepository } from '../user/user-repository';
+import { databaseConnection } from '../../bd/mongo.db';
+import {
+  BLOGS_COLLECTION_NAME,
+  COMMENTS_COLLECTION_NAME,
+  POSTS_COLLECTION_NAME,
+  USERS_COLLECTION_NAME,
+} from '../../core/repositories/collections';
 
 export const testingRouter: Router = Router();
 
 testingRouter.delete('/', async (req, res) => {
-  await userRepository.collection.deleteMany();
-  await blogRepository.getCollection().deleteMany();
-  await postRepository.getCollection().deleteMany();
+  await databaseConnection
+    .getDb()
+    .collection(USERS_COLLECTION_NAME)
+    .deleteMany({});
+  await databaseConnection
+    .getDb()
+    .collection(BLOGS_COLLECTION_NAME)
+    .deleteMany({});
+  await databaseConnection
+    .getDb()
+    .collection(POSTS_COLLECTION_NAME)
+    .deleteMany({});
+  await databaseConnection
+    .getDb()
+    .collection(COMMENTS_COLLECTION_NAME)
+    .deleteMany({});
   res.sendStatus(204);
 });

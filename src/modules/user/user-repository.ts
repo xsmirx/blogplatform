@@ -1,14 +1,12 @@
 import { ObjectId } from 'mongodb';
-import { databaseConnection } from '../../bd';
 import { User, UserDB } from './types';
 import { EmailNotUniqueError, LoginNotUniqueError } from './user-errors';
 import { NotFoundError } from '../../core/errors/errors';
+import { BaseRepository } from '../../core/repositories/base-repository';
+import { databaseConnection } from '../../bd/mongo.db';
+import { USERS_COLLECTION_NAME } from '../../core/repositories/collections';
 
-class UserRepository {
-  public get collection() {
-    return databaseConnection.getDb().collection<UserDB>('users');
-  }
-
+export class UserRepository extends BaseRepository<UserDB> {
   public async findById(userId: string): Promise<User> {
     const user = await this.collection.findOne({ _id: new ObjectId(userId) });
     if (!user) {
@@ -88,4 +86,6 @@ class UserRepository {
   }
 }
 
-export const userRepository = new UserRepository();
+export const userRepository = new UserRepository(USERS_COLLECTION_NAME, {
+  databaseConnection: databaseConnection,
+});

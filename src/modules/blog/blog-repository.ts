@@ -1,13 +1,11 @@
-import { Collection, Filter, ObjectId, WithId } from 'mongodb';
-import { databaseConnection } from '../../bd';
+import { Filter, ObjectId, WithId } from 'mongodb';
 import { Blog, BlogListQueryInput } from './types';
 import { NotFoundError } from '../../core/errors/errors';
+import { databaseConnection } from '../../bd/mongo.db';
+import { BaseRepository } from '../../core/repositories/base-repository';
+import { BLOGS_COLLECTION_NAME } from '../../core/repositories/collections';
 
-class BlogRepository {
-  public getCollection(): Collection<Blog> {
-    return databaseConnection.getDb().collection<Blog>('blogs');
-  }
-
+class BlogRepository extends BaseRepository<Blog> {
   public async findAll(query: BlogListQueryInput): Promise<{
     items: WithId<Blog>[];
     totalCount: number;
@@ -23,24 +21,24 @@ class BlogRepository {
       filter.name = { $regex: searchNameTerm, $options: 'i' };
     }
 
-    const items = await this.getCollection()
+    const items = await this.collection
       .find(filter)
       .sort(sortBy, sortDirection)
       .skip(skip)
       .limit(pageSize)
       .toArray();
 
-    const totalCount = await this.getCollection().countDocuments(filter);
+    const totalCount = await this.collection.countDocuments(filter);
 
     return { items, totalCount };
   }
 
   public async findById(id: string): Promise<WithId<Blog> | null> {
-    return this.getCollection().findOne({ _id: new ObjectId(id) });
+    return this.collection.findOne({ _id: new ObjectId(id) });
   }
 
   async findByIdOrFail(id: string): Promise<WithId<Blog>> {
-    const result = await this.getCollection().findOne({
+    const result = await this.collection.findOne({
       _id: new ObjectId(id),
     });
     if (!result) {
@@ -50,7 +48,7 @@ class BlogRepository {
   }
 
   public async create(blog: Blog): Promise<ObjectId> {
-    const result = await this.getCollection().insertOne({ ...blog });
+    const result = await this.collection.insertOne({ ...blog });
     return result.insertedId;
   }
 
@@ -58,7 +56,7 @@ class BlogRepository {
     id: string,
     blog: Omit<Blog, 'createdAt'>,
   ): Promise<void> {
-    const result = await this.getCollection().updateOne(
+    const result = await this.collection.updateOne(
       { _id: new ObjectId(id) },
       {
         $set: {
@@ -77,7 +75,7 @@ class BlogRepository {
   }
 
   public async delete(id: string): Promise<void> {
-    const result = await this.getCollection().deleteOne({
+    const result = await this.collection.deleteOne({
       _id: new ObjectId(id),
     });
 
@@ -89,4 +87,6 @@ class BlogRepository {
   }
 }
 
-export const blogRepository = new BlogRepository();
+export const blogRepository = new BlogRepository(BLOGS_COLLECTION_NAME, {
+  databaseConnection: databaseConnection,
+});

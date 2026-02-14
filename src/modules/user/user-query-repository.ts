@@ -1,17 +1,15 @@
 import { Filter, ObjectId, WithId } from 'mongodb';
-import { databaseConnection } from '../../bd';
 import { UserDB, UserListPagQueryInput, UserOutputDTO } from './types';
 import { NotFoundError } from '../../core/errors/errors';
 import { ListResponse } from '../../core/types/list-response';
 import { MeOutputDTO } from '../auth/types';
+import { BaseRepository } from '../../core/repositories/base-repository';
+import { databaseConnection } from '../../bd/mongo.db';
+import { USERS_COLLECTION_NAME } from '../../core/repositories/collections';
 
-class UserQueryRepository {
+class UserQueryRepository extends BaseRepository<UserDB> {
   private escapeRegex(text: string) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
-
-  public get collection() {
-    return databaseConnection.getDb().collection<UserDB>('users');
   }
 
   public async findAll(
@@ -110,4 +108,9 @@ class UserQueryRepository {
   }
 }
 
-export const userQueryRepository = new UserQueryRepository();
+export const userQueryRepository = new UserQueryRepository(
+  USERS_COLLECTION_NAME,
+  {
+    databaseConnection: databaseConnection,
+  },
+);

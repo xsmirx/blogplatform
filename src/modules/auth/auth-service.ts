@@ -2,9 +2,11 @@ import { bcryptService } from '../../core/adapters/bcript-service';
 import { jwtService } from '../../core/adapters/jwt-service';
 import { WrongCredentialsError } from '../../core/errors/errors';
 import { User } from '../user/types';
-import { userRepository } from '../user/user-repository';
+import { UserRepository, userRepository } from '../user/user-repository';
 
-class AuthService {
+export class AuthService {
+  constructor(private readonly deps: { userRepository: UserRepository }) {}
+
   public async login({
     loginOrEmail,
     password,
@@ -31,7 +33,8 @@ class AuthService {
     loginOrEmail: string;
     password: string;
   }): Promise<User | null> {
-    const user = await userRepository.findByLoginOrEmail(loginOrEmail);
+    const user =
+      await this.deps.userRepository.findByLoginOrEmail(loginOrEmail);
     if (!user) return null;
 
     return (await bcryptService.checkPassword(password, user.saltedHash))
@@ -45,4 +48,4 @@ class AuthService {
   }
 }
 
-export const authService = new AuthService();
+export const authService = new AuthService({ userRepository: userRepository });
