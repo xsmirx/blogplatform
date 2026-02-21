@@ -1,5 +1,5 @@
-import { bcryptService } from '../../core/adapters/bcript-service';
-import { userRepository } from './user-repository';
+import { bcryptService } from '../../../core/adapters/bcript-service';
+import { userRepository } from '../infrastructure/user-repository';
 
 class UserService {
   public async createUser(user: {

@@ -1,5 +1,5 @@
 import { ForbiddenError } from '../../core/errors/errors';
-import { userRepository } from '../user/user-repository';
+import { userRepository } from '../user/infrastructure/user-repository';
 import { commentRepository } from './comment-repository';
 import {
   CreateCommentInput,

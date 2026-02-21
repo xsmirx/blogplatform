@@ -3,8 +3,8 @@ import {
   createUserHandler,
   deleteUserHandler,
   getUserListHandler,
-} from './user-handlers';
-import { superAdminGuard } from '../auth/super-admin-guard';
+} from '../user-handlers';
+import { superAdminGuard } from '../../auth/super-admin-guard';
 import {
   emailValidation,
   idValidation,
@@ -16,8 +16,8 @@ import {
   searchLoginTermValidation,
   sortByValidation,
   sortDirectionValidation,
-} from './user-validators';
-import { inputValidationResultMiddleware } from '../../core/middleware/input-validation-result.middleware';
+} from '../user-validators';
+import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
 
 export const userRouter: Router = Router();
 

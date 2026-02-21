@@ -1,10 +1,10 @@
 import { ObjectId } from 'mongodb';
-import { User, UserDB } from './types';
-import { EmailNotUniqueError, LoginNotUniqueError } from './user-errors';
-import { NotFoundError } from '../../core/errors/errors';
-import { BaseRepository } from '../../core/repositories/base-repository';
-import { databaseConnection } from '../../bd/mongo.db';
-import { USERS_COLLECTION_NAME } from '../../core/repositories/collections';
+import { User, UserDB } from '../types/types';
+import { EmailNotUniqueError, LoginNotUniqueError } from '../user-errors';
+import { NotFoundError } from '../../../core/errors/errors';
+import { BaseRepository } from '../../../core/repositories/base-repository';
+import { databaseConnection } from '../../../bd/mongo.db';
+import { USERS_COLLECTION_NAME } from '../../../core/repositories/collections';
 
 export class UserRepository extends BaseRepository<UserDB> {
   public async findById(userId: string): Promise<User> {

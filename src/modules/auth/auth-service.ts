@@ -1,8 +1,11 @@
 import { bcryptService } from '../../core/adapters/bcript-service';
 import { jwtService } from '../../core/adapters/jwt-service';
 import { WrongCredentialsError } from '../../core/errors/errors';
-import { User } from '../user/types';
-import { UserRepository, userRepository } from '../user/user-repository';
+import { User } from '../user/types/types';
+import {
+  UserRepository,
+  userRepository,
+} from '../user/infrastructure/user-repository';
 
 export class AuthService {
   constructor(private readonly deps: { userRepository: UserRepository }) {}

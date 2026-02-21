@@ -1,11 +1,12 @@
-import { PaginationAndSorting } from '../../core/types/pagination-and-sorting';
+import { PaginationAndSorting } from '../../../core/types/pagination-and-sorting';
+import { User } from '../domain/user-entity';
 
-export type User = {
-  id: string;
-  login: string;
-  email: string;
-  createdAt: string;
-};
+// export type User = {
+//   id: string;
+//   login: string;
+//   email: string;
+//   createdAt: string;
+// };
 
 export enum UserSortField {
   createdAt = 'createdAt',
@@ -31,9 +32,4 @@ export type UserOutputDTO = {
   createdAt: string;
 };
 
-export type UserDB = {
-  login: string;
-  email: string;
-  saltedHash: string;
-  createdAt: Date;
-};
+export type UserDB = User;

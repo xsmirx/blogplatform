@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import { loginUserHandler, meHandler } from './auth-handlers';
-import { loginOrEmailValidation, passwordValidation } from './auth-validators';
+import {
+  codeValidation,
+  emailValidation,
+  loginOrEmailValidation,
+  loginValidation,
+  passwordValidation,
+} from './auth-validators';
 import { inputValidationResultMiddleware } from '../../core/middleware/input-validation-result.middleware';
 import { accessTokenGuard } from './access-token-guard';
 
@@ -14,4 +20,21 @@ authRouter
     inputValidationResultMiddleware,
     loginUserHandler,
   )
-  .get('/me', accessTokenGuard, meHandler);
+  .get('/me', accessTokenGuard, meHandler)
+  .post(
+    '/registration-confirmation',
+    codeValidation,
+    inputValidationResultMiddleware,
+  )
+  .post(
+    '/registration',
+    loginValidation,
+    emailValidation,
+    passwordValidation,
+    inputValidationResultMiddleware,
+  )
+  .post(
+    '/registration-email-resending',
+    emailValidation,
+    inputValidationResultMiddleware,
+  );

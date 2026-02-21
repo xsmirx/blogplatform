@@ -1,7 +1,7 @@
 import express from 'express';
 import request from 'supertest';
 import { setupApp } from '../../setup-app';
-import { databaseConnection } from '../../bd';
+import { databaseConnection } from '../../bd/mongo.db';
 
 describe('User API', () => {
   const app = express();

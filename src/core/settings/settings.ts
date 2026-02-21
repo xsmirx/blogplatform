@@ -27,6 +27,16 @@ if (isNaN(AC_TOKEN_TIME)) {
   throw new Error('AC_TOKEN_TIME not found');
 }
 
+const EMAIL_ADDRESS = process.env.EMAIL_ADDRESS;
+if (!EMAIL_ADDRESS) {
+  throw new Error('EMAIL_ADDRESS not found');
+}
+
+const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
+if (!EMAIL_PASSWORD) {
+  throw new Error('EMAIL_PASSWORD not found');
+}
+
 export const settings = {
   HOST,
   PORT: Number(PORT),
@@ -34,4 +44,6 @@ export const settings = {
   MONGO_DB_NAME,
   AC_TOKEN_SECRET,
   AC_TOKEN_TIME,
+  EMAIL_ADDRESS,
+  EMAIL_PASSWORD,
 };
