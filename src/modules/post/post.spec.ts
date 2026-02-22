@@ -3,7 +3,7 @@ import request from 'supertest';
 import { setupApp } from '../../setup-app';
 import { BlogInputDTO } from '../blog/types';
 import { ValidationError } from '../../core/types/validation-error';
-import { databaseConnection } from '../../bd';
+import { databaseConnection } from '../../bd/mongo.db';
 import { PostInputDTO } from './types';
 
 describe('Post API', () => {

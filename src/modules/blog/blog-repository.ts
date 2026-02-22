@@ -1,11 +1,15 @@
 import { Filter, ObjectId, WithId } from 'mongodb';
 import { Blog, BlogListQueryInput } from './types';
 import { NotFoundError } from '../../core/errors/errors';
-import { databaseConnection } from '../../bd/mongo.db';
-import { BaseRepository } from '../../core/repositories/base-repository';
-import { BLOGS_COLLECTION_NAME } from '../../bd/collections';
+import { DatabaseConnection, databaseConnection } from '../../bd/mongo.db';
 
-class BlogRepository extends BaseRepository<Blog> {
+class BlogRepository {
+  constructor(protected readonly databaseConnection: DatabaseConnection) {}
+
+  private get collection() {
+    return databaseConnection.getCollections().blogCollection;
+  }
+
   public async findAll(query: BlogListQueryInput): Promise<{
     items: WithId<Blog>[];
     totalCount: number;
@@ -87,6 +91,4 @@ class BlogRepository extends BaseRepository<Blog> {
   }
 }
 
-export const blogRepository = new BlogRepository(BLOGS_COLLECTION_NAME, {
-  databaseConnection: databaseConnection,
-});
+export const blogRepository = new BlogRepository(databaseConnection);

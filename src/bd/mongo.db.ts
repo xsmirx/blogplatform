@@ -1,4 +1,4 @@
-import { Db, Document, MongoClient } from 'mongodb';
+import { Db, MongoClient } from 'mongodb';
 import {
   BLOGS_COLLECTION_NAME,
   COMMENTS_COLLECTION_NAME,
@@ -47,15 +47,6 @@ export class DatabaseConnection {
     return this.client;
   }
 
-  public async getCollection<TSchema extends Document = Document>(
-    name: string,
-  ) {
-    if (!this.db) {
-      throw new Error('Database not connected');
-    }
-    return this.db?.collection<TSchema>(name);
-  }
-
   public getCollections() {
     return {
       usersCollection: this.getDb().collection<UserDB>(USERS_COLLECTION_NAME),
@@ -65,6 +56,13 @@ export class DatabaseConnection {
         COMMENTS_COLLECTION_NAME,
       ),
     };
+  }
+
+  public async drop() {
+    const collections = this.getCollections();
+    for (const collection of Object.values(collections)) {
+      await collection.drop();
+    }
   }
 }
 

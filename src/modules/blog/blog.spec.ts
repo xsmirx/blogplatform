@@ -2,7 +2,7 @@ import express from 'express';
 import request from 'supertest';
 import { BlogInputDTO } from './types';
 import { ValidationError } from '../../core/types/validation-error';
-import { databaseConnection } from '../../bd';
+import { databaseConnection } from '../../bd/mongo.db';
 import { setupApp } from '../../setup-app';
 
 describe('Blog API', () => {

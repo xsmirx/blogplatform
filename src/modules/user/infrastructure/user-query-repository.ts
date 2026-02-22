@@ -7,10 +7,10 @@ import { MeOutputDTO } from '../../auth/types';
 import { UserOutputDTO } from '../api/types';
 
 class UserQueryRepository {
-  private readonly collection;
+  constructor(protected readonly databaseConnection: DatabaseConnection) {}
 
-  constructor(protected readonly databaseConnection: DatabaseConnection) {
-    this.collection = this.databaseConnection.getCollections().usersCollection;
+  private get collection() {
+    return databaseConnection.getCollections().usersCollection;
   }
 
   private escapeRegex(text: string) {

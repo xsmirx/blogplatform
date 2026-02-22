@@ -1,11 +1,15 @@
 import { Filter, ObjectId, WithId } from 'mongodb';
 import { Post, PostListQueryInput } from './types';
 import { NotFoundError } from '../../core/errors/errors';
-import { BaseRepository } from '../../core/repositories/base-repository';
-import { databaseConnection } from '../../bd/mongo.db';
-import { POSTS_COLLECTION_NAME } from '../../bd/collections';
+import { DatabaseConnection, databaseConnection } from '../../bd/mongo.db';
 
-class PostRepository extends BaseRepository<Post> {
+class PostRepository {
+  constructor(protected readonly databaseConnection: DatabaseConnection) {}
+
+  private get collection() {
+    return databaseConnection.getCollections().postsCollection;
+  }
+
   public async findAll(
     query: PostListQueryInput & { blogId?: string },
   ): Promise<{ items: WithId<Post>[]; totalCount: number }> {
@@ -87,6 +91,4 @@ class PostRepository extends BaseRepository<Post> {
   }
 }
 
-export const postRepository = new PostRepository(POSTS_COLLECTION_NAME, {
-  databaseConnection: databaseConnection,
-});
+export const postRepository = new PostRepository(databaseConnection);

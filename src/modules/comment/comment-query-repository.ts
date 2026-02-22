@@ -2,11 +2,14 @@ import { Filter, ObjectId, WithId } from 'mongodb';
 import { CommentDB, CommentListQueryInput, CommentOutputDTO } from './types';
 import { NotFoundError } from '../../core/errors/errors';
 import { ListResponse } from '../../core/types/list-response';
-import { BaseRepository } from '../../core/repositories/base-repository';
-import { databaseConnection } from '../../bd/mongo.db';
-import { COMMENTS_COLLECTION_NAME } from '../../bd/collections';
+import { DatabaseConnection, databaseConnection } from '../../bd/mongo.db';
+class CommentQueryRepository {
+  constructor(protected readonly databaseConnection: DatabaseConnection) {}
 
-class CommentQueryRepository extends BaseRepository<CommentDB> {
+  private get collection() {
+    return databaseConnection.getCollections().commentsCollection;
+  }
+
   private mapToOutputModel(comment: WithId<CommentDB>): CommentOutputDTO {
     return {
       id: comment._id.toString(),
@@ -65,8 +68,5 @@ class CommentQueryRepository extends BaseRepository<CommentDB> {
 }
 
 export const commentQueryRepository = new CommentQueryRepository(
-  COMMENTS_COLLECTION_NAME,
-  {
-    databaseConnection: databaseConnection,
-  },
+  databaseConnection,
 );

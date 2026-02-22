@@ -6,11 +6,15 @@ import {
   UpdateCommentPayload,
 } from './types';
 import { NotFoundError } from '../../core/errors/errors';
-import { databaseConnection } from '../../bd/mongo.db';
-import { BaseRepository } from '../../core/repositories/base-repository';
-import { COMMENTS_COLLECTION_NAME } from '../../bd/collections';
+import { DatabaseConnection, databaseConnection } from '../../bd/mongo.db';
 
-class CommentRepository extends BaseRepository<CommentDB> {
+class CommentRepository {
+  constructor(protected readonly databaseConnection: DatabaseConnection) {}
+
+  private get collection() {
+    return databaseConnection.getCollections().commentsCollection;
+  }
+
   private mapToDomainModel(comment: WithId<CommentDB>): Comment {
     return {
       id: comment._id.toString(),
@@ -82,9 +86,4 @@ class CommentRepository extends BaseRepository<CommentDB> {
   }
 }
 
-export const commentRepository = new CommentRepository(
-  COMMENTS_COLLECTION_NAME,
-  {
-    databaseConnection: databaseConnection,
-  },
-);
+export const commentRepository = new CommentRepository(databaseConnection);

@@ -6,10 +6,10 @@ import { User } from '../domain/types';
 import { CheckUserExistsPayload, CreateUserPayload } from './types';
 
 export class UserRepository {
-  private readonly collection;
+  constructor(protected readonly databaseConnection: DatabaseConnection) {}
 
-  constructor(protected readonly databaseConnection: DatabaseConnection) {
-    this.collection = this.databaseConnection.getCollections().usersCollection;
+  private get collection() {
+    return databaseConnection.getCollections().usersCollection;
   }
 
   public async findById(userId: string): Promise<User | null> {
