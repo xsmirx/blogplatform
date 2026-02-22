@@ -8,7 +8,7 @@ import {
 import { NotFoundError } from '../../core/errors/errors';
 import { databaseConnection } from '../../bd/mongo.db';
 import { BaseRepository } from '../../core/repositories/base-repository';
-import { COMMENTS_COLLECTION_NAME } from '../../core/repositories/collections';
+import { COMMENTS_COLLECTION_NAME } from '../../bd/collections';
 
 class CommentRepository extends BaseRepository<CommentDB> {
   private mapToDomainModel(comment: WithId<CommentDB>): Comment {

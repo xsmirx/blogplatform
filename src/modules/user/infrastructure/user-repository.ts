@@ -4,7 +4,7 @@ import { EmailNotUniqueError, LoginNotUniqueError } from '../user-errors';
 import { NotFoundError } from '../../../core/errors/errors';
 import { BaseRepository } from '../../../core/repositories/base-repository';
 import { databaseConnection } from '../../../bd/mongo.db';
-import { USERS_COLLECTION_NAME } from '../../../core/repositories/collections';
+import { USERS_COLLECTION_NAME } from '../../../bd/collections';
 
 export class UserRepository extends BaseRepository<UserDB> {
   public async findById(userId: string): Promise<User> {

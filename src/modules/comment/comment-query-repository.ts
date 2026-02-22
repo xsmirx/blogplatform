@@ -4,7 +4,7 @@ import { NotFoundError } from '../../core/errors/errors';
 import { ListResponse } from '../../core/types/list-response';
 import { BaseRepository } from '../../core/repositories/base-repository';
 import { databaseConnection } from '../../bd/mongo.db';
-import { COMMENTS_COLLECTION_NAME } from '../../core/repositories/collections';
+import { COMMENTS_COLLECTION_NAME } from '../../bd/collections';
 
 class CommentQueryRepository extends BaseRepository<CommentDB> {
   private mapToOutputModel(comment: WithId<CommentDB>): CommentOutputDTO {

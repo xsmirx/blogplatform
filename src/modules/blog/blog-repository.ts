@@ -3,7 +3,7 @@ import { Blog, BlogListQueryInput } from './types';
 import { NotFoundError } from '../../core/errors/errors';
 import { databaseConnection } from '../../bd/mongo.db';
 import { BaseRepository } from '../../core/repositories/base-repository';
-import { BLOGS_COLLECTION_NAME } from '../../core/repositories/collections';
+import { BLOGS_COLLECTION_NAME } from '../../bd/collections';
 
 class BlogRepository extends BaseRepository<Blog> {
   public async findAll(query: BlogListQueryInput): Promise<{

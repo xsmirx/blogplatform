@@ -1,4 +1,14 @@
 import { Db, Document, MongoClient } from 'mongodb';
+import { UserDB } from '../modules/user/types/types';
+import {
+  BLOGS_COLLECTION_NAME,
+  COMMENTS_COLLECTION_NAME,
+  POSTS_COLLECTION_NAME,
+  USERS_COLLECTION_NAME,
+} from './collections';
+import { Blog } from '../modules/blog/types';
+import { Post } from '../modules/post/types';
+import { CommentDB } from '../modules/comment/types';
 
 export class DatabaseConnection {
   private client: MongoClient | null = null;
@@ -23,15 +33,6 @@ export class DatabaseConnection {
     }
   }
 
-  public async getCollection<TSchema extends Document = Document>(
-    name: string,
-  ) {
-    if (!this.db) {
-      throw new Error('Database not connected');
-    }
-    return this.db?.collection<TSchema>(name);
-  }
-
   public getDb(): Db {
     if (!this.db) {
       throw new Error('Database not connected');
@@ -44,6 +45,26 @@ export class DatabaseConnection {
       throw new Error('Database not connected');
     }
     return this.client;
+  }
+
+  public async getCollection<TSchema extends Document = Document>(
+    name: string,
+  ) {
+    if (!this.db) {
+      throw new Error('Database not connected');
+    }
+    return this.db?.collection<TSchema>(name);
+  }
+
+  public getCollections() {
+    return {
+      usersCollection: this.getDb().collection<UserDB>(USERS_COLLECTION_NAME),
+      blogCollection: this.getDb().collection<Blog>(BLOGS_COLLECTION_NAME),
+      postsCollection: this.getDb().collection<Post>(POSTS_COLLECTION_NAME),
+      commentsCollection: this.getDb().collection<CommentDB>(
+        COMMENTS_COLLECTION_NAME,
+      ),
+    };
   }
 }
 

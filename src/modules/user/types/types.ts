@@ -1,13 +1,6 @@
 import { PaginationAndSorting } from '../../../core/types/pagination-and-sorting';
 import { User } from '../domain/user-entity';
 
-// export type User = {
-//   id: string;
-//   login: string;
-//   email: string;
-//   createdAt: string;
-// };
-
 export enum UserSortField {
   createdAt = 'createdAt',
   login = 'login',

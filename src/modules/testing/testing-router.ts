@@ -5,7 +5,7 @@ import {
   COMMENTS_COLLECTION_NAME,
   POSTS_COLLECTION_NAME,
   USERS_COLLECTION_NAME,
-} from '../../core/repositories/collections';
+} from '../../bd/collections';
 
 export const testingRouter: Router = Router();
 

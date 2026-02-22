@@ -3,7 +3,7 @@ import { Post, PostListQueryInput } from './types';
 import { NotFoundError } from '../../core/errors/errors';
 import { BaseRepository } from '../../core/repositories/base-repository';
 import { databaseConnection } from '../../bd/mongo.db';
-import { POSTS_COLLECTION_NAME } from '../../core/repositories/collections';
+import { POSTS_COLLECTION_NAME } from '../../bd/collections';
 
 class PostRepository extends BaseRepository<Post> {
   public async findAll(
