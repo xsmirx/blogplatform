@@ -114,8 +114,6 @@ export const getCommentListHandler: RequestHandler<
     { id: string } & CommentListQueryInput
   >(req);
 
-  console.log('pageSize', pageSize);
-
   await postService.findByIdOrFail(id);
 
   const result = await commentQueryRepository.findAllByPostId({
