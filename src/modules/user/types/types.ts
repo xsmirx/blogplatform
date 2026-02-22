@@ -1,16 +1,6 @@
 import { PaginationAndSorting } from '../../../core/types/pagination-and-sorting';
-import { User } from '../domain/user-entity';
 
-export enum UserSortField {
-  createdAt = 'createdAt',
-  login = 'login',
-  email = 'email',
-}
-
-export type UserListPagQueryInput = PaginationAndSorting<UserSortField> & {
-  searchLoginTerm?: string;
-  searchEmailTerm?: string;
-};
+// === DTO (API Layer) ===
 
 export type UserInputDTO = {
   login: string;
@@ -25,4 +15,32 @@ export type UserOutputDTO = {
   createdAt: string;
 };
 
-export type UserDB = User;
+// === Service Layer ===
+
+// === Query Repository Layer ===
+
+export enum UserSortField {
+  createdAt = 'createdAt',
+  login = 'login',
+  email = 'email',
+}
+
+export type UserListQueryInput = PaginationAndSorting<UserSortField> & {
+  searchLoginTerm?: string;
+  searchEmailTerm?: string;
+};
+
+// === Repository Layer ===
+
+// === Database ===
+export type UserDB = {
+  login: string;
+  email: string;
+  passwordHash: string;
+  createdAt: Date;
+  emailConfirmation: {
+    confirmationCode: string;
+    expirationDate: Date;
+    isConfirmed: boolean;
+  };
+};

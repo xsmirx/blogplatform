@@ -1,8 +1,6 @@
 import { PaginationAndSorting } from '../../core/types/pagination-and-sorting';
 
-export enum CommentSortField {
-  createdAt = 'createdAt',
-}
+// === Domain Model ===
 
 export type Comment = {
   id: string;
@@ -48,6 +46,10 @@ export type DeleteCommentInput = {
 };
 
 // === Query Repository Layer ===
+
+export enum CommentSortField {
+  createdAt = 'createdAt',
+}
 
 export type CommentListQueryInput = PaginationAndSorting<CommentSortField> & {
   postId: string;

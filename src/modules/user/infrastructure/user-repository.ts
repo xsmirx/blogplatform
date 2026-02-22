@@ -1,13 +1,37 @@
 import { ObjectId } from 'mongodb';
-import { User, UserDB } from '../types/types';
 import { EmailNotUniqueError, LoginNotUniqueError } from '../user-errors';
 import { NotFoundError } from '../../../core/errors/errors';
-import { BaseRepository } from '../../../core/repositories/base-repository';
-import { databaseConnection } from '../../../bd/mongo.db';
-import { USERS_COLLECTION_NAME } from '../../../bd/collections';
+import { DatabaseConnection, databaseConnection } from '../../../bd/mongo.db';
+import { User } from '../domain/types';
+import { CheckUserExistsPayload, CreateUserPayload } from './types';
 
-export class UserRepository extends BaseRepository<UserDB> {
-  public async findById(userId: string): Promise<User> {
+export class UserRepository {
+  private readonly collection;
+
+  constructor(protected readonly databaseConnection: DatabaseConnection) {
+    this.collection = this.databaseConnection.getCollections().usersCollection;
+  }
+
+  public async findById(userId: string): Promise<User | null> {
+    const user = await this.collection.findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      return null;
+    }
+    return {
+      id: user._id.toString(),
+      login: user.login,
+      email: user.email,
+      passwordHash: user.passwordHash,
+      createdAt: user.createdAt,
+      emailConfirmation: {
+        confirmationCode: user.emailConfirmation.confirmationCode,
+        expirationDate: user.emailConfirmation.expirationDate,
+        isConfirmed: user.emailConfirmation.isConfirmed,
+      },
+    };
+  }
+
+  public async findByIdOrFail(userId: string): Promise<User> {
     const user = await this.collection.findOne({ _id: new ObjectId(userId) });
     if (!user) {
       throw new NotFoundError('User not found');
@@ -16,13 +40,17 @@ export class UserRepository extends BaseRepository<UserDB> {
       id: user._id.toString(),
       login: user.login,
       email: user.email,
-      createdAt: user.createdAt.toISOString(),
+      passwordHash: user.passwordHash,
+      createdAt: user.createdAt,
+      emailConfirmation: {
+        confirmationCode: user.emailConfirmation.confirmationCode,
+        expirationDate: user.emailConfirmation.expirationDate,
+        isConfirmed: user.emailConfirmation.isConfirmed,
+      },
     };
   }
 
-  public async findByLoginOrEmail(
-    loginOrEmail: string,
-  ): Promise<(User & { saltedHash: string }) | null> {
+  public async findByLoginOrEmail(loginOrEmail: string): Promise<User | null> {
     const user = await this.collection.findOne({
       $or: [{ email: loginOrEmail.toLowerCase() }, { login: loginOrEmail }],
     });
@@ -33,27 +61,25 @@ export class UserRepository extends BaseRepository<UserDB> {
       id: user._id.toString(),
       login: user.login,
       email: user.email,
-      saltedHash: user.saltedHash,
-      createdAt: user.createdAt.toISOString(),
+      passwordHash: user.passwordHash,
+      createdAt: user.createdAt,
+      emailConfirmation: {
+        confirmationCode: user.emailConfirmation.confirmationCode,
+        expirationDate: user.emailConfirmation.expirationDate,
+        isConfirmed: user.emailConfirmation.isConfirmed,
+      },
     };
   }
 
-  public async checkUserExists({
-    email,
-    login,
-  }: {
-    email: string;
-    login: string;
-  }): Promise<void> {
-    const userByEmail = await this.collection.findOne({
-      email: email,
-    });
+  public async checkUserExists(payload: CheckUserExistsPayload): Promise<void> {
+    const userByEmail = await this.collection.findOne({ email: payload.email });
     if (userByEmail) {
       throw new EmailNotUniqueError(
         'User with given email or login already exists',
       );
     }
-    const userByLogin = await this.collection.findOne({ login });
+
+    const userByLogin = await this.collection.findOne({ login: payload.login });
     if (userByLogin) {
       throw new LoginNotUniqueError(
         'User with given email or login already exists',
@@ -61,16 +87,17 @@ export class UserRepository extends BaseRepository<UserDB> {
     }
   }
 
-  public async create(user: {
-    login: string;
-    email: string;
-    saltedHash: string;
-  }) {
+  public async create(payload: CreateUserPayload) {
     const result = await this.collection.insertOne({
-      login: user.login,
-      email: user.email,
-      saltedHash: user.saltedHash,
-      createdAt: new Date(),
+      login: payload.login,
+      email: payload.email,
+      passwordHash: payload.passwordHash,
+      createdAt: payload.createdAt,
+      emailConfirmation: {
+        confirmationCode: payload.emailConfirmation.confirmationCode,
+        expirationDate: payload.emailConfirmation.expirationDate,
+        isConfirmed: payload.emailConfirmation.isConfirmed,
+      },
     });
     return result.insertedId.toString();
   }
@@ -86,6 +113,4 @@ export class UserRepository extends BaseRepository<UserDB> {
   }
 }
 
-export const userRepository = new UserRepository(USERS_COLLECTION_NAME, {
-  databaseConnection: databaseConnection,
-});
+export const userRepository = new UserRepository(databaseConnection);
