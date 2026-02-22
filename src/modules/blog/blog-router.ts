@@ -28,7 +28,7 @@ import {
   contentValidation,
 } from '../post/post-validators';
 import { inputValidationResultMiddleware } from '../../core/middleware/input-validation-result.middleware';
-import { superAdminGuard } from '../auth/super-admin-guard';
+import { superAdminGuard } from '../auth/api/guards/super-admin-guard';
 
 export const blogRouter: Router = Router();
 

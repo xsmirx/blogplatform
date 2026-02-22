@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { superAdminGuard } from '../../auth/super-admin-guard';
+import { superAdminGuard } from '../../auth/api/guards/super-admin-guard';
 
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
 import { searchLoginTermValidation } from '../middlewares/user-search-login-term.validation';

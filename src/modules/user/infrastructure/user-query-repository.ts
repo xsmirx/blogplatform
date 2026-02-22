@@ -3,8 +3,8 @@ import { databaseConnection, DatabaseConnection } from '../../../bd/mongo.db';
 import { ListResponse } from '../../../core/types/list-response';
 import { UserDB, UserListQueryInput } from './types';
 import { NotFoundError } from '../../../core/errors/errors';
-import { MeOutputDTO } from '../../auth/types';
 import { UserOutputDTO } from '../api/types';
+import { MeOutputDTO } from '../../auth/api/types';
 
 class UserQueryRepository {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}

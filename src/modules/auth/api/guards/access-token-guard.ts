@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import { jwtService } from '../../core/adapters/jwt-service';
+import { jwtService } from '../../adapters/jwt-service';
 
 export const accessTokenGuard: RequestHandler = async (req, res, next) => {
   if (!req.headers.authorization) {

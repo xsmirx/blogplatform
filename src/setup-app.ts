@@ -4,8 +4,8 @@ import { postRouter } from './modules/post/post-router';
 import { testingRouter } from './modules/testing/testing-router';
 import { errorHandler } from './core/errors/error.handler';
 import { userRouter } from './modules/user/api/user-router';
-import { authRouter } from './modules/auth/auth-router';
 import { commentRouter } from './modules/comment/comment-router';
+import { authRouter } from './modules/auth/api/auth-router';
 
 export const setupApp = (app: Express) => {
   app.use(express.json()); // middleware для парсинга JSON в теле запроса

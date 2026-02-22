@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { settings } from '../settings/settings';
+import { settings } from '../../../core/settings/settings';
 
 class JwtService {
   public async generateToken(userId: string): Promise<string> {

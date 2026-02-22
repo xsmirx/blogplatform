@@ -17,13 +17,13 @@ import {
   sortDirectionValidation,
 } from './post-validators';
 import { inputValidationResultMiddleware } from '../../core/middleware/input-validation-result.middleware';
-import { superAdminGuard } from '../auth/super-admin-guard';
+import { superAdminGuard } from '../auth/api/guards/super-admin-guard';
 import {
   commentContentValidation,
   sortByValidation as commentSortByValidation,
   sortDirectionValidation as commentSortDirectionValidation,
 } from '../comment/comment-validators';
-import { accessTokenGuard } from '../auth/access-token-guard';
+import { accessTokenGuard } from '../auth/api/guards/access-token-guard';
 
 export const postRouter: Router = Router();
 

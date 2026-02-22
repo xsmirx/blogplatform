@@ -9,7 +9,7 @@ import {
   commentIdValidation,
 } from './comment-validators';
 import { inputValidationResultMiddleware } from '../../core/middleware/input-validation-result.middleware';
-import { accessTokenGuard } from '../auth/access-token-guard';
+import { accessTokenGuard } from '../auth/api/guards/access-token-guard';
 
 export const commentRouter: Router = Router();
 
