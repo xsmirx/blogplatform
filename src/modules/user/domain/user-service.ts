@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { bcryptService } from '../../../core/adapters/bcript-service';
 import { userRepository } from '../infrastructure/user-repository';
 
@@ -17,7 +18,13 @@ class UserService {
     return await userRepository.create({
       login: user.login,
       email: user.email,
-      saltedHash: saltedHash,
+      passwordHash: saltedHash,
+      createdAt: new Date(),
+      emailConfirmation: {
+        confirmationCode: randomUUID(),
+        expirationDate: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+        isConfirmed: false,
+      },
     });
   }
 

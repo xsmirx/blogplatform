@@ -1,8 +1,9 @@
 import { RequestHandler } from 'express';
 import { ListResponse } from '../../../../core/types/list-response';
-import { UserListQueryInput, UserOutputDTO } from '../../types/types';
 import { matchedData } from 'express-validator';
 import { userQueryRepository } from '../../infrastructure/user-query-repository';
+import { UserListQueryInput } from '../../infrastructure/types';
+import { UserOutputDTO } from '../types';
 
 export const userListHandler: RequestHandler<
   object,

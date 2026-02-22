@@ -1,19 +1,24 @@
 import { Filter, ObjectId, WithId } from 'mongodb';
-import { UserDB, UserListPagQueryInput, UserOutputDTO } from './types';
-import { NotFoundError } from '../../core/errors/errors';
-import { ListResponse } from '../../core/types/list-response';
-import { MeOutputDTO } from '../auth/types';
-import { BaseRepository } from '../../core/repositories/base-repository';
-import { databaseConnection } from '../../bd/mongo.db';
-import { USERS_COLLECTION_NAME } from '../../core/repositories/collections';
+import { databaseConnection, DatabaseConnection } from '../../../bd/mongo.db';
+import { ListResponse } from '../../../core/types/list-response';
+import { UserDB, UserOutputDTO } from '../types/types';
+import { UserListQueryInput } from './types';
+import { NotFoundError } from '../../../core/errors/errors';
+import { MeOutputDTO } from '../../auth/types';
 
-class UserQueryRepository extends BaseRepository<UserDB> {
+class UserQueryRepository {
+  private readonly collection;
+
+  constructor(protected readonly databaseConnection: DatabaseConnection) {
+    this.collection = this.databaseConnection.getCollections().usersCollection;
+  }
+
   private escapeRegex(text: string) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   public async findAll(
-    queries: UserListPagQueryInput,
+    queries: UserListQueryInput,
   ): Promise<ListResponse<UserOutputDTO>> {
     const {
       searchLoginTerm,
@@ -95,7 +100,7 @@ class UserQueryRepository extends BaseRepository<UserDB> {
     totalCount,
   }: {
     items: WithId<UserDB>[];
-    queries: UserListPagQueryInput;
+    queries: UserListQueryInput;
     totalCount: number;
   }): ListResponse<UserOutputDTO> {
     return {
@@ -108,9 +113,4 @@ class UserQueryRepository extends BaseRepository<UserDB> {
   }
 }
 
-export const userQueryRepository = new UserQueryRepository(
-  USERS_COLLECTION_NAME,
-  {
-    databaseConnection: databaseConnection,
-  },
-);
+export const userQueryRepository = new UserQueryRepository(databaseConnection);
