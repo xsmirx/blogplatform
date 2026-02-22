@@ -1,5 +1,4 @@
 import { Db, Document, MongoClient } from 'mongodb';
-import { UserDB } from '../modules/user/types/types';
 import {
   BLOGS_COLLECTION_NAME,
   COMMENTS_COLLECTION_NAME,
@@ -9,6 +8,7 @@ import {
 import { Blog } from '../modules/blog/types';
 import { Post } from '../modules/post/types';
 import { CommentDB } from '../modules/comment/types';
+import { UserDB } from '../modules/user/infrastructure/types';
 
 export class DatabaseConnection {
   private client: MongoClient | null = null;

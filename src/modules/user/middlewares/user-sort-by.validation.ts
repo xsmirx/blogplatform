@@ -1,6 +1,6 @@
 import { query } from 'express-validator';
-import { UserSortField } from '../types/types';
 import { SortQueryKey } from '../../../core/types/sort-query-key';
+import { UserSortField } from '../infrastructure/types';
 
 const allowedSortFields = Object.values(UserSortField);
 export const sortByValidation = query(SortQueryKey.sortBy)

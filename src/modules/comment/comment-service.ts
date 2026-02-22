@@ -13,7 +13,7 @@ class CommentService {
     postId,
     content,
   }: CreateCommentInput): Promise<string> {
-    const user = await userRepository.findById(userId);
+    const user = await userRepository.findByIdOrFail(userId);
 
     return await commentRepository.create({
       postId: postId,

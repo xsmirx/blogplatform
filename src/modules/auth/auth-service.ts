@@ -1,7 +1,7 @@
 import { bcryptService } from '../../core/adapters/bcript-service';
 import { jwtService } from '../../core/adapters/jwt-service';
 import { WrongCredentialsError } from '../../core/errors/errors';
-import { User } from '../user/types/types';
+import { User } from '../user/domain/types';
 import {
   UserRepository,
   userRepository,
@@ -40,13 +40,8 @@ export class AuthService {
       await this.deps.userRepository.findByLoginOrEmail(loginOrEmail);
     if (!user) return null;
 
-    return (await bcryptService.checkPassword(password, user.saltedHash))
-      ? {
-          id: user.id,
-          login: user.login,
-          email: user.email,
-          createdAt: user.createdAt,
-        }
+    return (await bcryptService.checkPassword(password, user.passwordHash))
+      ? user
       : null;
   }
 }

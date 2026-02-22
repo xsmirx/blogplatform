@@ -7,9 +7,8 @@ import {
 } from './types';
 import { matchedData } from 'express-validator';
 import { authService } from './auth-service';
-import { userQueryRepository } from '../user/user-query-repository';
-import { userRepository } from '../user/infrastructure/user-repository';
 import { userService } from '../user/domain/user-service';
+import { userQueryRepository } from '../user/infrastructure/user-query-repository';
 
 export const loginUserHandler: RequestHandler<
   object,
