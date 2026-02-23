@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { loginOrEmailValidation } from '../middlewares/login-or-email.validation';
-import { passwordValidation } from '../../user/middlewares/user-password.validation';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
 import { loginHandler } from './handlers/login.handler';
 import { accessTokenGuard } from './guards/access-token-guard';
@@ -9,6 +8,7 @@ import { codeValidation } from '../middlewares/code.validation';
 import { loginValidation } from '../../user/middlewares/user-login.validation';
 import { emailValidation } from '../../user/middlewares/user-email.validation';
 import { passwordValidationForRegistration } from '../middlewares/password-registration.validation';
+import { passwordLoginValidation } from '../middlewares/password-login.validatiom';
 
 export const authRouter: Router = Router();
 
@@ -16,7 +16,7 @@ authRouter
   .post(
     '/login',
     loginOrEmailValidation,
-    passwordValidation,
+    passwordLoginValidation,
     inputValidationResultMiddleware,
     loginHandler,
   )

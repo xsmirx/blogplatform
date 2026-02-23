@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { bcryptService } from '../../auth/adapters/bcript-service';
+import { bcryptService } from '../../../core/adapters/bcript-service';
 import { userRepository } from '../infrastructure/user-repository';
 
 class UserService {

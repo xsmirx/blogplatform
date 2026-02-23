@@ -1,4 +1,4 @@
-import { bcryptService } from '../adapters/bcript-service';
+import { bcryptService } from '../../../core/adapters/bcript-service';
 import { jwtService } from '../adapters/jwt-service';
 import { WrongCredentialsError } from '../../../core/errors/errors';
 import { User } from '../../user/domain/types';

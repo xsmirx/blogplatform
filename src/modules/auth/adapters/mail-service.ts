@@ -25,3 +25,5 @@ export class MailService {
     return !!info;
   }
 }
+
+export const mailService = new MailService();

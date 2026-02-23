@@ -11,7 +11,7 @@ import { sortByValidation } from '../middlewares/user-sort-by.validation';
 import { sortDirectionValidation } from '../middlewares/user-sort-direction.validation';
 import { userListHandler } from './handlers/user-list.handler';
 import { loginValidation } from '../middlewares/user-login.validation';
-import { passwordValidation } from '../middlewares/user-password.validation';
+import { passwordRegistrationValidation } from '../middlewares/user-password.validation';
 import { emailValidation } from '../middlewares/user-email.validation';
 import { createUserHandler } from './handlers/create-user.handler';
 import { idValidation } from '../middlewares/user-id.validaton';
@@ -36,7 +36,7 @@ userRouter
     '/',
     superAdminGuard,
     loginValidation,
-    passwordValidation,
+    passwordRegistrationValidation,
     emailValidation,
     inputValidationResultMiddleware,
     createUserHandler,

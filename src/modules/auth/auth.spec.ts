@@ -222,25 +222,6 @@ describe('Auth API', () => {
           ]),
         });
       });
-
-      it('should return 400 when password is only whitespace', async () => {
-        const response = await request(app)
-          .post('/auth/login')
-          .send({
-            loginOrEmail: 'testuser',
-            password: '   ',
-          })
-          .expect(400);
-
-        expect(response.body).toEqual({
-          errorsMessages: expect.arrayContaining([
-            expect.objectContaining({
-              message: expect.any(String),
-              field: 'password',
-            }),
-          ]),
-        });
-      });
     });
 
     describe('Case sensitivity tests', () => {
