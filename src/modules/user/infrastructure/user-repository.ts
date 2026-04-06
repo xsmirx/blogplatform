@@ -71,6 +71,27 @@ export class UserRepository {
     };
   }
 
+  public async findByConfirmationCode(code: string): Promise<User | null> {
+    const user = await this.collection.findOne({
+      'emailConfirmation.confirmationCode': code,
+    });
+    if (!user) {
+      return null;
+    }
+    return {
+      id: user._id.toString(),
+      login: user.login,
+      email: user.email,
+      passwordHash: user.passwordHash,
+      createdAt: user.createdAt,
+      emailConfirmation: {
+        confirmationCode: user.emailConfirmation.confirmationCode,
+        expirationDate: user.emailConfirmation.expirationDate,
+        isConfirmed: user.emailConfirmation.isConfirmed,
+      },
+    };
+  }
+
   public async checkUserExists(payload: CheckUserExistsPayload): Promise<void> {
     const userByEmail = await this.collection.findOne({ email: payload.email });
     if (userByEmail) {

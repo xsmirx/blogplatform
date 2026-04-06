@@ -10,6 +10,8 @@ import { emailValidation } from '../../user/middlewares/user-email.validation';
 import { passwordValidationForRegistration } from '../middlewares/password-registration.validation';
 import { passwordLoginValidation } from '../middlewares/password-login.validatiom';
 import { registrationHandler } from './handlers/register.handler';
+import { registrationEmailResendHandler } from './handlers/registrationEmailResend.handler';
+import { registrationConfirmationHandler } from './handlers/registrationConfirmation.handler';
 
 export const authRouter: Router = Router();
 
@@ -26,6 +28,7 @@ authRouter
     '/registration-confirmation',
     codeValidation,
     inputValidationResultMiddleware,
+    registrationConfirmationHandler,
   )
   .post(
     '/registration',
@@ -39,4 +42,5 @@ authRouter
     '/registration-email-resending',
     emailValidation,
     inputValidationResultMiddleware,
+    registrationEmailResendHandler,
   );

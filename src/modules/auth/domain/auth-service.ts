@@ -135,6 +135,53 @@ export class AuthService {
     };
   }
 
+  public async confirmRegistration({
+    code,
+  }: {
+    code: string;
+  }): Promise<Result<null>> {
+    const user = await this.userRepository.findByConfirmationCode(code);
+    if (!user) {
+      return {
+        status: ResultStatus.NotFound,
+        data: null,
+        extensions: [],
+        errorMessage: 'User not found',
+      };
+    }
+
+    if (user.emailConfirmation.isConfirmed) {
+      return {
+        status: ResultStatus.BadRequest,
+        data: null,
+        extensions: [],
+        errorMessage: 'Email already confirmed',
+      };
+    }
+
+    if (user.emailConfirmation.expirationDate < new Date()) {
+      return {
+        status: ResultStatus.BadRequest,
+        data: null,
+        extensions: [],
+        errorMessage: 'Confirmation code expired',
+      };
+    }
+
+    await this.userRepository.updateEmailConfirmation({
+      userId: user.id,
+      confirmationCode: user.emailConfirmation.confirmationCode,
+      expirationDate: user.emailConfirmation.expirationDate,
+      isConfirmed: true,
+    });
+
+    return {
+      status: ResultStatus.Success,
+      data: null,
+      extensions: [],
+    };
+  }
+
   public async resendEmailConfirmationCode(
     email: string,
   ): Promise<Result<null>> {
