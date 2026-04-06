@@ -5,9 +5,13 @@ import { testingRouter } from './modules/testing/testing-router';
 import { errorHandler } from './core/errors/error.handler';
 import { userRouter } from './modules/user/api/user-router';
 import { commentRouter } from './modules/comment/comment-router';
-import { authRouter } from './modules/auth/api/auth-router';
+import { createAuthRouter } from './modules/auth/api/auth-router';
+import type { AuthService } from './modules/auth/domain/auth-service';
 
-export const setupApp = (app: Express) => {
+export const setupApp = (
+  app: Express,
+  { authService }: { authService: AuthService },
+) => {
   app.use(express.json()); // middleware для парсинга JSON в теле запроса
 
   // основной роут
@@ -15,7 +19,7 @@ export const setupApp = (app: Express) => {
     res.status(200).send('Hello world! h06');
   });
 
-  app.use('/auth', authRouter);
+  app.use('/auth', createAuthRouter({ authService }));
   app.use('/users', userRouter);
   app.use('/blogs', blogRouter);
   app.use('/posts', postRouter);

@@ -4,10 +4,7 @@ import {
 } from '../../../core/adapters/bcript-service';
 import { jwtService, JwtService } from '../adapters/jwt-service';
 import { User } from '../../user/domain/types';
-import {
-  userRepository,
-  UserRepository,
-} from '../../user/infrastructure/user-repository';
+import { UserRepository } from '../../user/infrastructure/user-repository';
 import { Result } from '../../../core/result/result-type';
 import { ResultStatus } from '../../../core/result/result-status';
 import type { CreateUserPayload } from '../../user/infrastructure/types';
@@ -243,10 +240,3 @@ export class AuthService {
     };
   }
 }
-
-export const authService = new AuthService({
-  userRepository,
-  jwtService,
-  bcryptService,
-  mailService,
-});

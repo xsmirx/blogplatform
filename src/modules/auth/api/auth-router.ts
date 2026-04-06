@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { loginOrEmailValidation } from '../middlewares/login-or-email.validation';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
-import { loginHandler } from './handlers/login.handler';
+import { createLoginHandler } from './handlers/login.handler';
 import { accessTokenGuard } from './guards/access-token-guard';
 import { meHandler } from './handlers/me.handler';
 import { codeValidation } from '../middlewares/code.validation';
@@ -9,38 +9,47 @@ import { loginValidation } from '../../user/middlewares/user-login.validation';
 import { emailValidation } from '../../user/middlewares/user-email.validation';
 import { passwordValidationForRegistration } from '../middlewares/password-registration.validation';
 import { passwordLoginValidation } from '../middlewares/password-login.validatiom';
-import { registrationHandler } from './handlers/register.handler';
-import { registrationEmailResendHandler } from './handlers/registrationEmailResend.handler';
-import { registrationConfirmationHandler } from './handlers/registrationConfirmation.handler';
+import { createRegistrationHandler } from './handlers/register.handler';
+import { createRegistrationEmailResendHandler } from './handlers/registrationEmailResend.handler';
+import { createRegistrationConfirmationHandler } from './handlers/registrationConfirmation.handler';
+import type { AuthService } from '../domain/auth-service';
 
-export const authRouter: Router = Router();
+export const createAuthRouter = ({
+  authService,
+}: {
+  authService: AuthService;
+}) => {
+  const authRouter: Router = Router();
 
-authRouter
-  .post(
-    '/login',
-    loginOrEmailValidation,
-    passwordLoginValidation,
-    inputValidationResultMiddleware,
-    loginHandler,
-  )
-  .get('/me', accessTokenGuard, meHandler)
-  .post(
-    '/registration-confirmation',
-    codeValidation,
-    inputValidationResultMiddleware,
-    registrationConfirmationHandler,
-  )
-  .post(
-    '/registration',
-    loginValidation,
-    emailValidation,
-    passwordValidationForRegistration,
-    inputValidationResultMiddleware,
-    registrationHandler,
-  )
-  .post(
-    '/registration-email-resending',
-    emailValidation,
-    inputValidationResultMiddleware,
-    registrationEmailResendHandler,
-  );
+  authRouter
+    .post(
+      '/login',
+      loginOrEmailValidation,
+      passwordLoginValidation,
+      inputValidationResultMiddleware,
+      createLoginHandler({ authService }),
+    )
+    .get('/me', accessTokenGuard, meHandler)
+    .post(
+      '/registration-confirmation',
+      codeValidation,
+      inputValidationResultMiddleware,
+      createRegistrationConfirmationHandler({ authService }),
+    )
+    .post(
+      '/registration',
+      loginValidation,
+      emailValidation,
+      passwordValidationForRegistration,
+      inputValidationResultMiddleware,
+      createRegistrationHandler({ authService }),
+    )
+    .post(
+      '/registration-email-resending',
+      emailValidation,
+      inputValidationResultMiddleware,
+      createRegistrationEmailResendHandler({ authService }),
+    );
+
+  return authRouter;
+};
