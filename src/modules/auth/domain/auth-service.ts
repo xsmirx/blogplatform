@@ -1,5 +1,8 @@
-import { bcryptService } from '../../../core/adapters/bcript-service';
-import { jwtService } from '../adapters/jwt-service';
+import {
+  bcryptService,
+  BcryptService,
+} from '../../../core/adapters/bcript-service';
+import { jwtService, JwtService } from '../adapters/jwt-service';
 import { User } from '../../user/domain/types';
 import {
   userRepository,
@@ -9,11 +12,26 @@ import { Result } from '../../../core/result/result-type';
 import { ResultStatus } from '../../../core/result/result-status';
 import type { CreateUserPayload } from '../../user/infrastructure/types';
 import { randomUUID } from 'crypto';
-import { mailService } from '../adapters/mail-service';
+import { mailService, MailService } from '../adapters/mail-service';
 import { emailExamples } from '../adapters/email-examples';
 
 export class AuthService {
-  constructor(private readonly userRepository: UserRepository) {}
+  private readonly userRepository: UserRepository;
+  private readonly jwtService: JwtService;
+  private readonly bcryptService: BcryptService;
+  private readonly mailService: MailService;
+
+  constructor(deps: {
+    userRepository: UserRepository;
+    jwtService: JwtService;
+    bcryptService: BcryptService;
+    mailService: MailService;
+  }) {
+    this.userRepository = deps.userRepository;
+    this.jwtService = deps.jwtService;
+    this.bcryptService = deps.bcryptService;
+    this.mailService = deps.mailService;
+  }
 
   public async login({
     loginOrEmail,
@@ -35,7 +53,7 @@ export class AuthService {
       };
     }
 
-    const token = await jwtService.generateToken(result.data!.id);
+    const token = await this.jwtService.generateToken(result.data!.id);
 
     return {
       status: ResultStatus.Success,
@@ -61,7 +79,7 @@ export class AuthService {
       };
     }
 
-    const isPassCorrect = await bcryptService.checkPassword(
+    const isPassCorrect = await this.bcryptService.checkPassword(
       password,
       user.passwordHash,
     );
@@ -104,7 +122,7 @@ export class AuthService {
       };
     }
 
-    const passwordHash = await bcryptService.generateHash(password);
+    const passwordHash = await this.bcryptService.generateHash(password);
 
     const newUser: CreateUserPayload = {
       email,
@@ -120,7 +138,7 @@ export class AuthService {
 
     await this.userRepository.create(newUser);
 
-    mailService
+    this.mailService
       .sendEmail(
         newUser.email,
         newUser.emailConfirmation.confirmationCode,
@@ -214,7 +232,7 @@ export class AuthService {
       isConfirmed: false,
     });
 
-    mailService
+    this.mailService
       .sendEmail(email, newConfirmationCode, emailExamples.registrationEmail)
       .catch((er) => console.error('error in send email:', er));
 
@@ -226,4 +244,9 @@ export class AuthService {
   }
 }
 
-export const authService = new AuthService(userRepository);
+export const authService = new AuthService({
+  userRepository,
+  jwtService,
+  bcryptService,
+  mailService,
+});

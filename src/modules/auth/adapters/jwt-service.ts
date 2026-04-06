@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { settings } from '../../../core/settings/settings';
 
-class JwtService {
+export class JwtService {
   public async generateToken(userId: string): Promise<string> {
     return jwt.sign({ userId }, settings.AC_TOKEN_SECRET, {
       expiresIn: settings.AC_TOKEN_TIME,
