@@ -87,6 +87,22 @@ export class UserRepository {
     }
   }
 
+  async doesExistByLoginOrEmail({
+    login,
+    email,
+  }: {
+    login: string;
+    email: string;
+  }): Promise<'login' | 'email' | null> {
+    const userByLogin = await this.collection.findOne({ login });
+    if (userByLogin) return 'login';
+
+    const userByEmail = await this.collection.findOne({ email });
+    if (userByEmail) return 'email';
+
+    return null;
+  }
+
   public async create(payload: CreateUserPayload) {
     const result = await this.collection.insertOne({
       login: payload.login,

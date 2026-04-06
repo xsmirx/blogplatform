@@ -1,14 +1,18 @@
 import { RequestHandler } from 'express';
 import { matchedData } from 'express-validator';
-import { RegistrationInputDTO } from '../types';
+import {
+  RegistrationInputDTO,
+  type RegistrationEmailResendingInputDTO,
+} from '../types';
 import { authService } from '../../domain/auth-service';
 import { ResultStatus } from '../../../../core/result/result-status';
-export const registrationHandler: RequestHandler<
+
+export const registrationEmailResendHandler: RequestHandler<
   object,
   object | { errorsMessages: { message: string; field: string | null }[] },
   RegistrationInputDTO
 > = async (req, res) => {
-  const { email, login, password } = matchedData<RegistrationInputDTO>(req);
+  const { email } = matchedData<RegistrationEmailResendingInputDTO>(req);
 
   const result = await authService.registerUser({ email, login, password });
 

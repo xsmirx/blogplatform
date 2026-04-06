@@ -558,6 +558,402 @@ describe('Auth API', () => {
     });
   });
 
+  describe('POST /auth/registration', () => {
+    beforeEach(async () => {
+      await request(app).delete('/testing/all-data').expect(204);
+    });
+
+    it('should return 204 when input data is valid', async () => {
+      await request(app)
+        .post('/auth/registration')
+        .send(testUser)
+        .expect(204);
+    });
+
+    it('should return 400 when login is missing', async () => {
+      const response = await request(app)
+        .post('/auth/registration')
+        .send({
+          password: 'password123',
+          email: 'test@example.dev',
+        })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'login',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when password is missing', async () => {
+      const response = await request(app)
+        .post('/auth/registration')
+        .send({
+          login: 'testuser',
+          email: 'test@example.dev',
+        })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'password',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when email is missing', async () => {
+      const response = await request(app)
+        .post('/auth/registration')
+        .send({
+          login: 'testuser',
+          password: 'password123',
+        })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'email',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when login is too short (less than 3 characters)', async () => {
+      const response = await request(app)
+        .post('/auth/registration')
+        .send({
+          login: 'ab',
+          password: 'password123',
+          email: 'test@example.dev',
+        })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'login',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when login is too long (more than 10 characters)', async () => {
+      const response = await request(app)
+        .post('/auth/registration')
+        .send({
+          login: 'verylonglogin',
+          password: 'password123',
+          email: 'test@example.dev',
+        })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'login',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when login contains invalid characters', async () => {
+      const response = await request(app)
+        .post('/auth/registration')
+        .send({
+          login: 'user@123',
+          password: 'password123',
+          email: 'test@example.dev',
+        })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'login',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when password is too short (less than 6 characters)', async () => {
+      const response = await request(app)
+        .post('/auth/registration')
+        .send({
+          login: 'testuser',
+          password: 'pass1',
+          email: 'test@example.dev',
+        })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'password',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when password is too long (more than 20 characters)', async () => {
+      const response = await request(app)
+        .post('/auth/registration')
+        .send({
+          login: 'testuser',
+          password: 'verylongpasswordthatexceeds20characters',
+          email: 'test@example.dev',
+        })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'password',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when email has invalid format', async () => {
+      const response = await request(app)
+        .post('/auth/registration')
+        .send({
+          login: 'testuser',
+          password: 'password123',
+          email: 'invalid-email',
+        })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'email',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 with multiple errors when multiple fields are invalid', async () => {
+      const response = await request(app)
+        .post('/auth/registration')
+        .send({
+          login: 'ab',
+          password: 'short',
+          email: 'invalid',
+        })
+        .expect(400);
+
+      expect(response.body.errorsMessages.length).toBeGreaterThanOrEqual(3);
+      expect(response.body.errorsMessages).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: 'login' }),
+          expect.objectContaining({ field: 'password' }),
+          expect.objectContaining({ field: 'email' }),
+        ]),
+      );
+    });
+
+    it('should return 400 when login is already taken', async () => {
+      // Register first user
+      await request(app)
+        .post('/auth/registration')
+        .send(testUser)
+        .expect(204);
+
+      // Try to register with same login
+      const response = await request(app)
+        .post('/auth/registration')
+        .send({
+          login: testUser.login,
+          password: 'otherpassword1',
+          email: 'other@example.dev',
+        })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'login',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when email is already taken', async () => {
+      // Register first user
+      await request(app)
+        .post('/auth/registration')
+        .send(testUser)
+        .expect(204);
+
+      // Try to register with same email
+      const response = await request(app)
+        .post('/auth/registration')
+        .send({
+          login: 'otheruser',
+          password: 'otherpassword1',
+          email: testUser.email,
+        })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'email',
+          }),
+        ]),
+      });
+    });
+  });
+
+  describe('POST /auth/registration-confirmation', () => {
+    it('should return 400 when code is missing', async () => {
+      const response = await request(app)
+        .post('/auth/registration-confirmation')
+        .send({})
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'code',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when code is empty string', async () => {
+      const response = await request(app)
+        .post('/auth/registration-confirmation')
+        .send({ code: '' })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'code',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when code is only whitespace', async () => {
+      const response = await request(app)
+        .post('/auth/registration-confirmation')
+        .send({ code: '   ' })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'code',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when code is not a string', async () => {
+      const response = await request(app)
+        .post('/auth/registration-confirmation')
+        .send({ code: 12345 })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'code',
+          }),
+        ]),
+      });
+    });
+  });
+
+  describe('POST /auth/registration-email-resending', () => {
+    it('should return 400 when email is missing', async () => {
+      const response = await request(app)
+        .post('/auth/registration-email-resending')
+        .send({})
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'email',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when email has invalid format', async () => {
+      const response = await request(app)
+        .post('/auth/registration-email-resending')
+        .send({ email: 'not-an-email' })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'email',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when email has no @ symbol', async () => {
+      const response = await request(app)
+        .post('/auth/registration-email-resending')
+        .send({ email: 'invalidemail.com' })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'email',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when email has no domain', async () => {
+      const response = await request(app)
+        .post('/auth/registration-email-resending')
+        .send({ email: 'user@' })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'email',
+          }),
+        ]),
+      });
+    });
+  });
+
   describe('GET /auth/me', () => {
     let accessToken: string;
 

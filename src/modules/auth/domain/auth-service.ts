@@ -7,6 +7,10 @@ import {
 } from '../../user/infrastructure/user-repository';
 import { Result } from '../../../core/result/result-type';
 import { ResultStatus } from '../../../core/result/result-status';
+import type { CreateUserPayload } from '../../user/infrastructure/types';
+import { randomUUID } from 'crypto';
+import { mailService } from '../adapters/mail-service';
+import { emailExamples } from '../adapters/email-examples';
 
 export class AuthService {
   constructor(private readonly userRepository: UserRepository) {}
@@ -74,6 +78,59 @@ export class AuthService {
     return {
       status: ResultStatus.Success,
       data: user,
+      extensions: [],
+    };
+  }
+
+  public async registerUser({
+    email,
+    login,
+    password,
+  }: {
+    email: string;
+    login: string;
+    password: string;
+  }): Promise<Result<User | null>> {
+    const existingField = await this.userRepository.doesExistByLoginOrEmail({
+      email,
+      login,
+    });
+
+    if (existingField) {
+      return {
+        status: ResultStatus.BadRequest,
+        data: null,
+        extensions: [{ field: existingField, message: 'Already Registered' }],
+      };
+    }
+
+    const passwordHash = await bcryptService.generateHash(password);
+
+    const newUser: CreateUserPayload = {
+      email,
+      login,
+      passwordHash,
+      createdAt: new Date(),
+      emailConfirmation: {
+        confirmationCode: randomUUID(),
+        expirationDate: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+        isConfirmed: false,
+      },
+    };
+
+    await this.userRepository.create(newUser);
+
+    mailService
+      .sendEmail(
+        newUser.email,
+        newUser.emailConfirmation.confirmationCode,
+        emailExamples.registrationEmail,
+      )
+      .catch((er) => console.error('error in send email:', er));
+
+    return {
+      status: ResultStatus.Success,
+      data: null,
       extensions: [],
     };
   }

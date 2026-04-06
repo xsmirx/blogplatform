@@ -9,6 +9,7 @@ import { loginValidation } from '../../user/middlewares/user-login.validation';
 import { emailValidation } from '../../user/middlewares/user-email.validation';
 import { passwordValidationForRegistration } from '../middlewares/password-registration.validation';
 import { passwordLoginValidation } from '../middlewares/password-login.validatiom';
+import { registrationHandler } from './handlers/register.handler';
 
 export const authRouter: Router = Router();
 
@@ -32,6 +33,7 @@ authRouter
     emailValidation,
     passwordValidationForRegistration,
     inputValidationResultMiddleware,
+    registrationHandler,
   )
   .post(
     '/registration-email-resending',
