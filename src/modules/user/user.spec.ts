@@ -1,11 +1,9 @@
-import express from 'express';
 import request from 'supertest';
-import { setupApp } from '../../setup-app';
 import { databaseConnection } from '../../bd/mongo.db';
+import { createTestApp } from '../../test-setup-app';
 
 describe('User API', () => {
-  const app = express();
-  setupApp(app);
+  const app = createTestApp();
 
   const VALID_AUTH_HEADER = `Basic ${Buffer.from('admin:qwerty').toString('base64')}`;
   const INVALID_AUTH_HEADER = `Basic ${Buffer.from('admin:wrong').toString('base64')}`;

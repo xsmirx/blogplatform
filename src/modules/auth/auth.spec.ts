@@ -1,11 +1,9 @@
-import express from 'express';
 import request from 'supertest';
-import { setupApp } from '../../setup-app';
 import { databaseConnection } from '../../bd/mongo.db';
+import { createTestApp, mockMailService } from '../../test-setup-app';
 
 describe('Auth API', () => {
-  const app = express();
-  setupApp(app);
+  const app = createTestApp();
 
   const VALID_AUTH_HEADER = `Basic ${Buffer.from('admin:qwerty').toString('base64')}`;
 
@@ -28,6 +26,10 @@ describe('Auth API', () => {
     });
 
     await request(app).delete('/testing/all-data').expect(204);
+  });
+
+  afterEach(() => {
+    mockMailService.sendEmail.mockClear();
   });
 
   describe('POST /auth/login', () => {
@@ -564,10 +566,14 @@ describe('Auth API', () => {
     });
 
     it('should return 204 when input data is valid', async () => {
-      await request(app)
-        .post('/auth/registration')
-        .send(testUser)
-        .expect(204);
+      await request(app).post('/auth/registration').send(testUser).expect(204);
+
+      expect(mockMailService.sendEmail).toHaveBeenCalledTimes(1);
+      expect(mockMailService.sendEmail).toHaveBeenCalledWith(
+        testUser.email,
+        expect.any(String),
+        expect.any(Function),
+      );
     });
 
     it('should return 400 when login is missing', async () => {
@@ -587,6 +593,7 @@ describe('Auth API', () => {
           }),
         ]),
       });
+      expect(mockMailService.sendEmail).not.toHaveBeenCalled();
     });
 
     it('should return 400 when password is missing', async () => {
@@ -606,6 +613,7 @@ describe('Auth API', () => {
           }),
         ]),
       });
+      expect(mockMailService.sendEmail).not.toHaveBeenCalled();
     });
 
     it('should return 400 when email is missing', async () => {
@@ -625,6 +633,7 @@ describe('Auth API', () => {
           }),
         ]),
       });
+      expect(mockMailService.sendEmail).not.toHaveBeenCalled();
     });
 
     it('should return 400 when login is too short (less than 3 characters)', async () => {
@@ -769,10 +778,9 @@ describe('Auth API', () => {
 
     it('should return 400 when login is already taken', async () => {
       // Register first user
-      await request(app)
-        .post('/auth/registration')
-        .send(testUser)
-        .expect(204);
+      await request(app).post('/auth/registration').send(testUser).expect(204);
+
+      mockMailService.sendEmail.mockClear();
 
       // Try to register with same login
       const response = await request(app)
@@ -792,14 +800,14 @@ describe('Auth API', () => {
           }),
         ]),
       });
+      expect(mockMailService.sendEmail).not.toHaveBeenCalled();
     });
 
     it('should return 400 when email is already taken', async () => {
       // Register first user
-      await request(app)
-        .post('/auth/registration')
-        .send(testUser)
-        .expect(204);
+      await request(app).post('/auth/registration').send(testUser).expect(204);
+
+      mockMailService.sendEmail.mockClear();
 
       // Try to register with same email
       const response = await request(app)
@@ -819,10 +827,71 @@ describe('Auth API', () => {
           }),
         ]),
       });
+      expect(mockMailService.sendEmail).not.toHaveBeenCalled();
     });
   });
 
   describe('POST /auth/registration-confirmation', () => {
+    beforeEach(async () => {
+      await request(app).delete('/testing/all-data').expect(204);
+    });
+
+    it('should return 204 when confirmation code is valid', async () => {
+      // Register a user to get a confirmation code
+      await request(app).post('/auth/registration').send(testUser).expect(204);
+
+      // Extract the confirmation code from the mock call
+      const confirmationCode = mockMailService.sendEmail.mock.calls[0][1];
+
+      await request(app)
+        .post('/auth/registration-confirmation')
+        .send({ code: confirmationCode })
+        .expect(204);
+    });
+
+    it('should return 400 when code is already confirmed', async () => {
+      await request(app).post('/auth/registration').send(testUser).expect(204);
+
+      const confirmationCode = mockMailService.sendEmail.mock.calls[0][1];
+
+      // Confirm first time
+      await request(app)
+        .post('/auth/registration-confirmation')
+        .send({ code: confirmationCode })
+        .expect(204);
+
+      // Try to confirm again
+      const response = await request(app)
+        .post('/auth/registration-confirmation')
+        .send({ code: confirmationCode })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'code',
+          }),
+        ]),
+      });
+    });
+
+    it('should return 400 when code does not exist', async () => {
+      const response = await request(app)
+        .post('/auth/registration-confirmation')
+        .send({ code: 'nonexistent-code-12345' })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'code',
+          }),
+        ]),
+      });
+    });
+
     it('should return 400 when code is missing', async () => {
       const response = await request(app)
         .post('/auth/registration-confirmation')
@@ -889,7 +958,31 @@ describe('Auth API', () => {
   });
 
   describe('POST /auth/registration-email-resending', () => {
-    it('should return 400 when email is missing', async () => {
+    beforeEach(async () => {
+      await request(app).delete('/testing/all-data').expect(204);
+    });
+
+    it('should return 204 and resend email for unconfirmed user', async () => {
+      // Register a user (unconfirmed by default)
+      await request(app).post('/auth/registration').send(testUser).expect(204);
+
+      mockMailService.sendEmail.mockClear();
+
+      // Resend confirmation email
+      await request(app)
+        .post('/auth/registration-email-resending')
+        .send({ email: testUser.email })
+        .expect(204);
+
+      expect(mockMailService.sendEmail).toHaveBeenCalledTimes(1);
+      expect(mockMailService.sendEmail).toHaveBeenCalledWith(
+        testUser.email,
+        expect.any(String),
+        expect.any(Function),
+      );
+    });
+
+    it('should not send email when email is missing', async () => {
       const response = await request(app)
         .post('/auth/registration-email-resending')
         .send({})
@@ -903,9 +996,10 @@ describe('Auth API', () => {
           }),
         ]),
       });
+      expect(mockMailService.sendEmail).not.toHaveBeenCalled();
     });
 
-    it('should return 400 when email has invalid format', async () => {
+    it('should not send email when email has invalid format', async () => {
       const response = await request(app)
         .post('/auth/registration-email-resending')
         .send({ email: 'not-an-email' })
@@ -919,9 +1013,10 @@ describe('Auth API', () => {
           }),
         ]),
       });
+      expect(mockMailService.sendEmail).not.toHaveBeenCalled();
     });
 
-    it('should return 400 when email has no @ symbol', async () => {
+    it('should not send email when email has no @ symbol', async () => {
       const response = await request(app)
         .post('/auth/registration-email-resending')
         .send({ email: 'invalidemail.com' })
@@ -935,9 +1030,10 @@ describe('Auth API', () => {
           }),
         ]),
       });
+      expect(mockMailService.sendEmail).not.toHaveBeenCalled();
     });
 
-    it('should return 400 when email has no domain', async () => {
+    it('should not send email when email has no domain', async () => {
       const response = await request(app)
         .post('/auth/registration-email-resending')
         .send({ email: 'user@' })
@@ -951,6 +1047,7 @@ describe('Auth API', () => {
           }),
         ]),
       });
+      expect(mockMailService.sendEmail).not.toHaveBeenCalled();
     });
   });
 

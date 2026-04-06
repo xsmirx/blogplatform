@@ -1,15 +1,12 @@
-import {
-  bcryptService,
-  BcryptService,
-} from '../../../core/adapters/bcript-service';
-import { jwtService, JwtService } from '../adapters/jwt-service';
+import { BcryptService } from '../../../core/adapters/bcript-service';
+import { JwtService } from '../adapters/jwt-service';
 import { User } from '../../user/domain/types';
 import { UserRepository } from '../../user/infrastructure/user-repository';
 import { Result } from '../../../core/result/result-type';
 import { ResultStatus } from '../../../core/result/result-status';
 import type { CreateUserPayload } from '../../user/infrastructure/types';
 import { randomUUID } from 'crypto';
-import { mailService, MailService } from '../adapters/mail-service';
+import { MailService } from '../adapters/mail-service';
 import { emailExamples } from '../adapters/email-examples';
 
 export class AuthService {

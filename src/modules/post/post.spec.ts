@@ -1,14 +1,12 @@
-import express from 'express';
 import request from 'supertest';
-import { setupApp } from '../../setup-app';
 import { BlogInputDTO } from '../blog/types';
 import { ValidationError } from '../../core/types/validation-error';
 import { databaseConnection } from '../../bd/mongo.db';
 import { PostInputDTO } from './types';
+import { createTestApp } from '../../test-setup-app';
 
 describe('Post API', () => {
-  const app = express();
-  setupApp(app);
+  const app = createTestApp();
 
   const VALID_AUTH_HEADER = `Basic ${Buffer.from('admin:qwerty').toString('base64')}`;
   const INVALID_AUTH_HEADER = `Basic ${Buffer.from('admin:wrong').toString('base64')}`;
