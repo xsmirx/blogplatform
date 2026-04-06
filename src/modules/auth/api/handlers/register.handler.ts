@@ -3,6 +3,7 @@ import { matchedData } from 'express-validator';
 import { RegistrationInputDTO } from '../types';
 import { authService } from '../../domain/auth-service';
 import { ResultStatus } from '../../../../core/result/result-status';
+
 export const registrationHandler: RequestHandler<
   object,
   object | { errorsMessages: { message: string; field: string | null }[] },

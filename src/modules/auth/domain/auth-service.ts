@@ -134,6 +134,49 @@ export class AuthService {
       extensions: [],
     };
   }
+
+  public async resendEmailConfirmationCode(
+    email: string,
+  ): Promise<Result<null>> {
+    const user = await this.userRepository.findByLoginOrEmail(email);
+    if (!user) {
+      return {
+        status: ResultStatus.NotFound,
+        data: null,
+        extensions: [],
+        errorMessage: 'User not found',
+      };
+    }
+
+    if (user.emailConfirmation.isConfirmed) {
+      return {
+        status: ResultStatus.BadRequest,
+        errorMessage: 'Email already confirmed',
+        data: null,
+        extensions: [],
+      };
+    }
+
+    const newConfirmationCode = randomUUID();
+    const newExpirationDate = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await this.userRepository.updateEmailConfirmation({
+      userId: user.id,
+      confirmationCode: newConfirmationCode,
+      expirationDate: newExpirationDate,
+      isConfirmed: false,
+    });
+
+    mailService
+      .sendEmail(email, newConfirmationCode, emailExamples.registrationEmail)
+      .catch((er) => console.error('error in send email:', er));
+
+    return {
+      status: ResultStatus.Success,
+      data: null,
+      extensions: [],
+    };
+  }
 }
 
 export const authService = new AuthService(userRepository);

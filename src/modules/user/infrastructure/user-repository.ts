@@ -118,6 +118,33 @@ export class UserRepository {
     return result.insertedId.toString();
   }
 
+  public async updateEmailConfirmation({
+    userId,
+    confirmationCode,
+    expirationDate,
+    isConfirmed,
+  }: {
+    userId: string;
+    confirmationCode: string;
+    expirationDate: Date;
+    isConfirmed: boolean;
+  }): Promise<void> {
+    const result = await this.collection.updateOne(
+      { _id: new ObjectId(userId) },
+      {
+        $set: {
+          'emailConfirmation.confirmationCode': confirmationCode,
+          'emailConfirmation.expirationDate': expirationDate,
+          'emailConfirmation.isConfirmed': isConfirmed,
+        },
+      },
+    );
+
+    if (result.matchedCount === 0) {
+      throw new NotFoundError('User not found');
+    }
+  }
+
   public async delete(userId: string): Promise<void> {
     const result = await this.collection.deleteOne({
       _id: new ObjectId(userId),
