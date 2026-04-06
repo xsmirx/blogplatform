@@ -10,8 +10,11 @@ export class MailService {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
+        type: 'OAuth2',
         user: settings.EMAIL_ADDRESS,
-        pass: settings.EMAIL_PASSWORD,
+        clientId: settings.GOOGLE_CLIENT_ID,
+        clientSecret: settings.GOOGLE_CLIENT_SECRET,
+        refreshToken: settings.GOOGLE_REFRESH_TOKEN,
       },
     });
 

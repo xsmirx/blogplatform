@@ -32,9 +32,19 @@ if (!EMAIL_ADDRESS) {
   throw new Error('EMAIL_ADDRESS not found');
 }
 
-const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
-if (!EMAIL_PASSWORD) {
-  throw new Error('EMAIL_PASSWORD not found');
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+if (!GOOGLE_CLIENT_ID) {
+  throw new Error('GOOGLE_CLIENT_ID not found');
+}
+
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+if (!GOOGLE_CLIENT_SECRET) {
+  throw new Error('GOOGLE_CLIENT_SECRET not found');
+}
+
+const GOOGLE_REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
+if (!GOOGLE_REFRESH_TOKEN) {
+  throw new Error('GOOGLE_REFRESH_TOKEN not found');
 }
 
 export const settings = {
@@ -45,5 +55,7 @@ export const settings = {
   AC_TOKEN_SECRET,
   AC_TOKEN_TIME,
   EMAIL_ADDRESS,
-  EMAIL_PASSWORD,
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+  GOOGLE_REFRESH_TOKEN,
 };
