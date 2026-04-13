@@ -1,18 +1,33 @@
 import express, { Express } from 'express';
-import { blogRouter } from './modules/blog/blog-router';
-import { postRouter } from './modules/post/post-router';
-import { testingRouter } from './modules/testing/testing-router';
+import { createBlogRouter } from './modules/blog/blog-router';
+import { createPostRouter } from './modules/post/post-router';
+import { createTestingRouter } from './modules/testing/testing-router';
 import { errorHandler } from './core/errors/error.handler';
-import { userRouter } from './modules/user/api/user-router';
-import { commentRouter } from './modules/comment/comment-router';
+import { createUserRouter } from './modules/user/api/user-router';
+import { createCommentRouter } from './modules/comment/comment-router';
 import { createAuthRouter } from './modules/auth/api/auth-router';
 import type { AuthService } from './modules/auth/domain/auth-service';
+import type { UserService } from './modules/user/domain/user-service';
+import type { BlogService } from './modules/blog/blog-service';
+import type { PostService } from './modules/post/post-service';
+import type { CommentService } from './modules/comment/comment-service';
+import type { UserQueryRepository } from './modules/user/infrastructure/user-query-repository';
+import type { CommentQueryRepository } from './modules/comment/comment-query-repository';
+import type { DatabaseConnection } from './bd/mongo.db';
 import cookieParser from 'cookie-parser';
 
-export const setupApp = (
-  app: Express,
-  { authService }: { authService: AuthService },
-) => {
+type AppDependencies = {
+  authService: AuthService;
+  userService: UserService;
+  blogService: BlogService;
+  postService: PostService;
+  commentService: CommentService;
+  userQueryRepository: UserQueryRepository;
+  commentQueryRepository: CommentQueryRepository;
+  databaseConnection: DatabaseConnection;
+};
+
+export const setupApp = (app: Express, deps: AppDependencies) => {
   app.use(cookieParser());
   app.use(express.json()); // middleware для парсинга JSON в теле запроса
 
@@ -21,13 +36,13 @@ export const setupApp = (
     res.status(200).send('Hello world! h06');
   });
 
-  app.use('/auth', createAuthRouter({ authService }));
-  app.use('/users', userRouter);
-  app.use('/blogs', blogRouter);
-  app.use('/posts', postRouter);
-  app.use('/comments', commentRouter);
+  app.use('/auth', createAuthRouter({ authService: deps.authService, userQueryRepository: deps.userQueryRepository }));
+  app.use('/users', createUserRouter({ userService: deps.userService, userQueryRepository: deps.userQueryRepository }));
+  app.use('/blogs', createBlogRouter({ blogService: deps.blogService, postService: deps.postService }));
+  app.use('/posts', createPostRouter({ postService: deps.postService, commentService: deps.commentService, commentQueryRepository: deps.commentQueryRepository }));
+  app.use('/comments', createCommentRouter({ commentService: deps.commentService, commentQueryRepository: deps.commentQueryRepository }));
 
-  app.use('/testing/all-data', testingRouter);
+  app.use('/testing/all-data', createTestingRouter({ databaseConnection: deps.databaseConnection }));
 
   app.use(errorHandler);
 
