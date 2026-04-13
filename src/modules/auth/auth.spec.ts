@@ -2,6 +2,17 @@ import request from 'supertest';
 import { databaseConnection } from '../../bd/mongo.db';
 import { createTestApp, mockMailService } from '../../test-setup-app';
 
+const extractRefreshToken = (res: request.Response): string | null => {
+  const cookies = res.headers['set-cookie'];
+  if (!cookies) return null;
+  const arr = Array.isArray(cookies) ? cookies : [cookies];
+  for (const cookie of arr) {
+    const match = cookie.match(/^refreshToken=([^;]+)/);
+    if (match) return match[1];
+  }
+  return null;
+};
+
 describe('Auth API', () => {
   const app = createTestApp();
 
@@ -44,7 +55,7 @@ describe('Auth API', () => {
         .expect(201);
     });
 
-    it('should return 200 and accessToken when login and password are correct', async () => {
+    it('should return 200 and accessToken in body and refreshToken in cookie when login and password are correct', async () => {
       const response = await request(app)
         .post('/auth/login')
         .send({
@@ -57,10 +68,19 @@ describe('Auth API', () => {
         accessToken: expect.any(String),
       });
       expect(response.body.accessToken).toBeTruthy();
-      expect(response.body.accessToken.length).toBeGreaterThan(0);
+      expect(response.body.accessToken.split('.').length).toBe(3);
+
+      const refreshToken = extractRefreshToken(response);
+      expect(refreshToken).toBeTruthy();
+
+      const cookieHeader = response.headers['set-cookie'];
+      const rtCookie = (Array.isArray(cookieHeader) ? cookieHeader : [cookieHeader])
+        .find((c: string) => c.startsWith('refreshToken='));
+      expect(rtCookie).toContain('HttpOnly');
+      expect(rtCookie).toContain('Secure');
     });
 
-    it('should return 200 and accessToken when email and password are correct', async () => {
+    it('should return 200 and accessToken in body and refreshToken in cookie when email and password are correct', async () => {
       const response = await request(app)
         .post('/auth/login')
         .send({
@@ -73,7 +93,9 @@ describe('Auth API', () => {
         accessToken: expect.any(String),
       });
       expect(response.body.accessToken).toBeTruthy();
-      expect(response.body.accessToken.length).toBeGreaterThan(0);
+
+      const refreshToken = extractRefreshToken(response);
+      expect(refreshToken).toBeTruthy();
     });
 
     it('should return 401 when password is wrong', async () => {
@@ -1236,6 +1258,231 @@ describe('Auth API', () => {
         expect(response.body).not.toHaveProperty('login');
         expect(response.body).not.toHaveProperty('userId');
       });
+    });
+  });
+
+  describe('POST /auth/refresh-token', () => {
+    let refreshToken: string;
+
+    beforeEach(async () => {
+      await request(app).delete('/testing/all-data').expect(204);
+
+      await request(app)
+        .post('/users')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testUser)
+        .expect(201);
+
+      const loginResponse = await request(app)
+        .post('/auth/login')
+        .send({
+          loginOrEmail: testUser.login,
+          password: testUser.password,
+        })
+        .expect(200);
+
+      refreshToken = extractRefreshToken(loginResponse)!;
+    });
+
+    it('should return 200 and new accessToken in body and new refreshToken in cookie', async () => {
+      const response = await request(app)
+        .post('/auth/refresh-token')
+        .set('Cookie', `refreshToken=${refreshToken}`)
+        .expect(200);
+
+      expect(response.body).toEqual({
+        accessToken: expect.any(String),
+      });
+      expect(response.body.accessToken.split('.').length).toBe(3);
+
+      const newRefreshToken = extractRefreshToken(response);
+      expect(newRefreshToken).toBeTruthy();
+
+      const cookieHeader = response.headers['set-cookie'];
+      const rtCookie = (Array.isArray(cookieHeader) ? cookieHeader : [cookieHeader])
+        .find((c: string) => c.startsWith('refreshToken='));
+      expect(rtCookie).toContain('HttpOnly');
+      expect(rtCookie).toContain('Secure');
+    });
+
+    it('should return new accessToken that works for /auth/me', async () => {
+      const refreshResponse = await request(app)
+        .post('/auth/refresh-token')
+        .set('Cookie', `refreshToken=${refreshToken}`)
+        .expect(200);
+
+      const newAccessToken = refreshResponse.body.accessToken;
+
+      const meResponse = await request(app)
+        .get('/auth/me')
+        .set('authorization', `Bearer ${newAccessToken}`)
+        .expect(200);
+
+      expect(meResponse.body.login).toBe(testUser.login);
+      expect(meResponse.body.email).toBe(testUser.email);
+    });
+
+    it('should revoke old refreshToken after refresh', async () => {
+      // Use refresh token to get new pair
+      await request(app)
+        .post('/auth/refresh-token')
+        .set('Cookie', `refreshToken=${refreshToken}`)
+        .expect(200);
+
+      // Try to use the old refresh token again — should be revoked
+      await request(app)
+        .post('/auth/refresh-token')
+        .set('Cookie', `refreshToken=${refreshToken}`)
+        .expect(401);
+    });
+
+    it('should allow chaining refresh tokens', async () => {
+      // First refresh
+      const response1 = await request(app)
+        .post('/auth/refresh-token')
+        .set('Cookie', `refreshToken=${refreshToken}`)
+        .expect(200);
+
+      const newRefreshToken1 = extractRefreshToken(response1)!;
+
+      // Second refresh with the new token
+      const response2 = await request(app)
+        .post('/auth/refresh-token')
+        .set('Cookie', `refreshToken=${newRefreshToken1}`)
+        .expect(200);
+
+      expect(response2.body.accessToken).toBeTruthy();
+
+      const newRefreshToken2 = extractRefreshToken(response2);
+      expect(newRefreshToken2).toBeTruthy();
+      expect(newRefreshToken2).not.toBe(newRefreshToken1);
+    });
+
+    it('should return 401 when no cookie is sent', async () => {
+      await request(app)
+        .post('/auth/refresh-token')
+        .expect(401);
+    });
+
+    it('should return 401 when refreshToken cookie is invalid', async () => {
+      await request(app)
+        .post('/auth/refresh-token')
+        .set('Cookie', 'refreshToken=invalid.token.value')
+        .expect(401);
+    });
+
+    it('should return 401 when refreshToken cookie is empty', async () => {
+      await request(app)
+        .post('/auth/refresh-token')
+        .set('Cookie', 'refreshToken=')
+        .expect(401);
+    });
+
+    it('should return different tokens on each refresh', async () => {
+      const response = await request(app)
+        .post('/auth/refresh-token')
+        .set('Cookie', `refreshToken=${refreshToken}`)
+        .expect(200);
+
+      const newRefreshToken = extractRefreshToken(response);
+      expect(newRefreshToken).not.toBe(refreshToken);
+    });
+  });
+
+  describe('POST /auth/logout', () => {
+    let refreshToken: string;
+
+    beforeEach(async () => {
+      await request(app).delete('/testing/all-data').expect(204);
+
+      await request(app)
+        .post('/users')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testUser)
+        .expect(201);
+
+      const loginResponse = await request(app)
+        .post('/auth/login')
+        .send({
+          loginOrEmail: testUser.login,
+          password: testUser.password,
+        })
+        .expect(200);
+
+      refreshToken = extractRefreshToken(loginResponse)!;
+    });
+
+    it('should return 204 when logout with valid refreshToken', async () => {
+      await request(app)
+        .post('/auth/logout')
+        .set('Cookie', `refreshToken=${refreshToken}`)
+        .expect(204);
+    });
+
+    it('should revoke refreshToken after logout', async () => {
+      // Logout
+      await request(app)
+        .post('/auth/logout')
+        .set('Cookie', `refreshToken=${refreshToken}`)
+        .expect(204);
+
+      // Try to use the same refresh token — should be revoked
+      await request(app)
+        .post('/auth/refresh-token')
+        .set('Cookie', `refreshToken=${refreshToken}`)
+        .expect(401);
+    });
+
+    it('should return 401 when no cookie is sent', async () => {
+      await request(app)
+        .post('/auth/logout')
+        .expect(401);
+    });
+
+    it('should return 401 when refreshToken cookie is invalid', async () => {
+      await request(app)
+        .post('/auth/logout')
+        .set('Cookie', 'refreshToken=invalid.token.value')
+        .expect(401);
+    });
+
+    it('should return 401 when refreshToken is already revoked', async () => {
+      // Logout first time
+      await request(app)
+        .post('/auth/logout')
+        .set('Cookie', `refreshToken=${refreshToken}`)
+        .expect(204);
+
+      // Try to logout again with the same token
+      await request(app)
+        .post('/auth/logout')
+        .set('Cookie', `refreshToken=${refreshToken}`)
+        .expect(401);
+    });
+
+    it('should not affect other sessions (other refresh tokens should still work)', async () => {
+      // Login again to get a second refresh token
+      const loginResponse2 = await request(app)
+        .post('/auth/login')
+        .send({
+          loginOrEmail: testUser.login,
+          password: testUser.password,
+        })
+        .expect(200);
+
+      const refreshToken2 = extractRefreshToken(loginResponse2)!;
+
+      // Logout first session
+      await request(app)
+        .post('/auth/logout')
+        .set('Cookie', `refreshToken=${refreshToken}`)
+        .expect(204);
+
+      // Second session's refresh token should still work
+      await request(app)
+        .post('/auth/refresh-token')
+        .set('Cookie', `refreshToken=${refreshToken2}`)
+        .expect(200);
     });
   });
 });

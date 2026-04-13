@@ -7,11 +7,13 @@ import { userRouter } from './modules/user/api/user-router';
 import { commentRouter } from './modules/comment/comment-router';
 import { createAuthRouter } from './modules/auth/api/auth-router';
 import type { AuthService } from './modules/auth/domain/auth-service';
+import cookieParser from 'cookie-parser';
 
 export const setupApp = (
   app: Express,
   { authService }: { authService: AuthService },
 ) => {
+  app.use(cookieParser());
   app.use(express.json()); // middleware для парсинга JSON в теле запроса
 
   // основной роут
