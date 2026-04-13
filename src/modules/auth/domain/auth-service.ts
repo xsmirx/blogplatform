@@ -8,9 +8,11 @@ import type { CreateUserPayload } from '../../user/infrastructure/types';
 import { randomUUID } from 'crypto';
 import { MailService } from '../adapters/mail-service';
 import { emailExamples } from '../adapters/email-examples';
+import type { BlackListRefreshTokenRepository } from '../infrastructure/black-list-refresk-token-repository';
 
 export class AuthService {
   private readonly userRepository: UserRepository;
+  // private readonly blackListRefreshTokenRepository: BlackListRefreshTokenRepository;
   private readonly jwtService: JwtService;
   private readonly bcryptService: BcryptService;
   private readonly mailService: MailService;
@@ -20,11 +22,13 @@ export class AuthService {
     jwtService: JwtService;
     bcryptService: BcryptService;
     mailService: MailService;
+    blackListRefreshTokenRepository: BlackListRefreshTokenRepository;
   }) {
     this.userRepository = deps.userRepository;
     this.jwtService = deps.jwtService;
     this.bcryptService = deps.bcryptService;
     this.mailService = deps.mailService;
+    // this.blackListRefreshTokenRepository = deps.blackListRefreshTokenRepository;
   }
 
   public async login({
@@ -33,7 +37,7 @@ export class AuthService {
   }: {
     loginOrEmail: string;
     password: string;
-  }): Promise<Result<string | null>> {
+  }): Promise<Result<{ accessToken: string; refreshToken: string } | null>> {
     const result = await this.checkCredentials({
       loginOrEmail,
       password,
@@ -47,11 +51,16 @@ export class AuthService {
       };
     }
 
-    const token = await this.jwtService.generateToken(result.data!.id);
+    const accessToken = await this.jwtService.generateAccessToken(
+      result.data!.id,
+    );
+    const refreshToken = await this.jwtService.generateRefreshToken(
+      result.data!.id,
+    );
 
     return {
       status: ResultStatus.Success,
-      data: token,
+      data: { accessToken, refreshToken },
       extensions: [],
     };
   }

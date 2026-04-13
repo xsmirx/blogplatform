@@ -30,6 +30,10 @@ export const createLoginHandler = ({
       });
     }
 
-    return res.status(200).send({ accessToken: result.data! });
+    res.cookie('refresh_token', result.data!.refreshToken, {
+      httpOnly: true,
+      secure: true,
+    });
+    return res.status(200).send({ accessToken: result.data!.accessToken });
   };
 };

@@ -27,6 +27,16 @@ if (isNaN(AC_TOKEN_TIME)) {
   throw new Error('AC_TOKEN_TIME not found');
 }
 
+const RC_TOKEN_SECRET = process.env.RC_TOKEN_SECRET;
+if (!RC_TOKEN_SECRET) {
+  throw new Error('RC_TOKEN_SECRET not found');
+}
+
+const RC_TOKEN_TIME = Number(process.env.RC_TOKEN_TIME);
+if (isNaN(RC_TOKEN_TIME)) {
+  throw new Error('RC_TOKEN_TIME not found');
+}
+
 const EMAIL_ADDRESS = process.env.EMAIL_ADDRESS;
 if (!EMAIL_ADDRESS) {
   throw new Error('EMAIL_ADDRESS not found');
@@ -54,6 +64,8 @@ export const settings = {
   MONGO_DB_NAME,
   AC_TOKEN_SECRET,
   AC_TOKEN_TIME,
+  RC_TOKEN_SECRET,
+  RC_TOKEN_TIME,
   EMAIL_ADDRESS,
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,

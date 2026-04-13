@@ -1,6 +1,6 @@
 import request from 'supertest';
-import { databaseConnection } from '../../bd/mongo.db';
 import { createTestApp, mockMailService } from '../../test-setup-app';
+import { DatabaseConnection } from '../../bd/mongo.db';
 
 const extractRefreshToken = (res: request.Response): string | null => {
   const cookies = res.headers['set-cookie'];
@@ -31,10 +31,11 @@ describe('Auth API', () => {
   };
 
   beforeAll(async () => {
-    await databaseConnection.connect({
+    const databaseConnection = new DatabaseConnection({
       mongoURL: 'mongodb://admin:admin@localhost:27017',
       dbName: 'blogplatform-test',
     });
+    await databaseConnection.connect();
 
     await request(app).delete('/testing/all-data').expect(204);
   });
@@ -74,8 +75,9 @@ describe('Auth API', () => {
       expect(refreshToken).toBeTruthy();
 
       const cookieHeader = response.headers['set-cookie'];
-      const rtCookie = (Array.isArray(cookieHeader) ? cookieHeader : [cookieHeader])
-        .find((c: string) => c.startsWith('refreshToken='));
+      const rtCookie = (
+        Array.isArray(cookieHeader) ? cookieHeader : [cookieHeader]
+      ).find((c: string) => c.startsWith('refreshToken='));
       expect(rtCookie).toContain('HttpOnly');
       expect(rtCookie).toContain('Secure');
     });
@@ -1299,8 +1301,9 @@ describe('Auth API', () => {
       expect(newRefreshToken).toBeTruthy();
 
       const cookieHeader = response.headers['set-cookie'];
-      const rtCookie = (Array.isArray(cookieHeader) ? cookieHeader : [cookieHeader])
-        .find((c: string) => c.startsWith('refreshToken='));
+      const rtCookie = (
+        Array.isArray(cookieHeader) ? cookieHeader : [cookieHeader]
+      ).find((c: string) => c.startsWith('refreshToken='));
       expect(rtCookie).toContain('HttpOnly');
       expect(rtCookie).toContain('Secure');
     });
@@ -1359,9 +1362,7 @@ describe('Auth API', () => {
     });
 
     it('should return 401 when no cookie is sent', async () => {
-      await request(app)
-        .post('/auth/refresh-token')
-        .expect(401);
+      await request(app).post('/auth/refresh-token').expect(401);
     });
 
     it('should return 401 when refreshToken cookie is invalid', async () => {
@@ -1434,9 +1435,7 @@ describe('Auth API', () => {
     });
 
     it('should return 401 when no cookie is sent', async () => {
-      await request(app)
-        .post('/auth/logout')
-        .expect(401);
+      await request(app).post('/auth/logout').expect(401);
     });
 
     it('should return 401 when refreshToken cookie is invalid', async () => {

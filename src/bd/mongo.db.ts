@@ -1,5 +1,6 @@
 import { Db, MongoClient } from 'mongodb';
 import {
+  BLACK_LIST_REFRESH_TOKENS_COLLECTION_NAME,
   BLOGS_COLLECTION_NAME,
   COMMENTS_COLLECTION_NAME,
   POSTS_COLLECTION_NAME,
@@ -9,23 +10,27 @@ import { Blog } from '../modules/blog/types';
 import { Post } from '../modules/post/types';
 import { CommentDB } from '../modules/comment/types';
 import { UserDB } from '../modules/user/infrastructure/types';
+import type { BlackListRefreshTokenDB } from '../modules/auth/infrastructure/types';
 
 export class DatabaseConnection {
-  private client: MongoClient | null = null;
-  private db: Db | null = null;
-
-  public async connect({
-    mongoURL,
-    dbName,
-  }: {
-    mongoURL: string;
-    dbName: string;
-  }) {
+  constructor({ mongoURL, dbName }: { mongoURL: string; dbName: string }) {
     this.client = new MongoClient(mongoURL);
     this.db = this.client.db(dbName);
+  }
+  private client: MongoClient;
+  private db: Db;
+
+  private async initIndexes() {
+    await this.db
+      .collection(BLACK_LIST_REFRESH_TOKENS_COLLECTION_NAME)
+      .createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+  }
+
+  public async connect() {
     try {
       await this.client.connect();
       await this.db.command({ ping: 1 });
+      await this.initIndexes();
       console.log('✅ Connected to the database');
     } catch (e) {
       await this.client.close();
@@ -49,6 +54,10 @@ export class DatabaseConnection {
 
   public getCollections() {
     return {
+      blackListRefreshTokenCollection:
+        this.getDb().collection<BlackListRefreshTokenDB>(
+          BLACK_LIST_REFRESH_TOKENS_COLLECTION_NAME,
+        ),
       usersCollection: this.getDb().collection<UserDB>(USERS_COLLECTION_NAME),
       blogCollection: this.getDb().collection<Blog>(BLOGS_COLLECTION_NAME),
       postsCollection: this.getDb().collection<Post>(POSTS_COLLECTION_NAME),
@@ -65,5 +74,3 @@ export class DatabaseConnection {
     }
   }
 }
-
-export const databaseConnection = new DatabaseConnection();

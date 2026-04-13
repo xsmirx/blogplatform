@@ -12,7 +12,7 @@ export const accessTokenGuard: RequestHandler = async (req, res, next) => {
     return res.status(401).send();
   }
 
-  const payload = await jwtService.verifyToken(token);
+  const payload = await jwtService.verifyAccessToken(token);
 
   if (!payload) {
     return res.status(401).send();
