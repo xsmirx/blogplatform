@@ -1,9 +1,8 @@
 import request from 'supertest';
 import { BlogInputDTO } from '../blog/types';
 import { ValidationError } from '../../core/types/validation-error';
-import { databaseConnection } from '../../bd/mongo.db';
 import { PostInputDTO } from './types';
-import { createTestApp } from '../../test-setup-app';
+import { createTestApp, testDatabaseConnection } from '../../test-setup-app';
 
 describe('Post API', () => {
   const app = createTestApp();
@@ -35,10 +34,7 @@ describe('Post API', () => {
   let postId: string;
 
   beforeAll(async () => {
-    await databaseConnection.connect({
-      mongoURL: 'mongodb://admin:admin@localhost:27017',
-      dbName: 'blogplatform-test',
-    });
+    await testDatabaseConnection.connect();
 
     await request(app).delete('/testing/all-data').expect(204);
 

@@ -1,6 +1,5 @@
 import request from 'supertest';
-import { createTestApp, mockMailService } from '../../test-setup-app';
-import { DatabaseConnection } from '../../bd/mongo.db';
+import { createTestApp, mockMailService, testDatabaseConnection } from '../../test-setup-app';
 
 const extractRefreshToken = (res: request.Response): string | null => {
   const cookies = res.headers['set-cookie'];
@@ -31,11 +30,7 @@ describe('Auth API', () => {
   };
 
   beforeAll(async () => {
-    const databaseConnection = new DatabaseConnection({
-      mongoURL: 'mongodb://admin:admin@localhost:27017',
-      dbName: 'blogplatform-test',
-    });
-    await databaseConnection.connect();
+    await testDatabaseConnection.connect();
 
     await request(app).delete('/testing/all-data').expect(204);
   });

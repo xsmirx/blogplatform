@@ -1,8 +1,7 @@
 import request from 'supertest';
 import { BlogInputDTO } from './types';
 import { ValidationError } from '../../core/types/validation-error';
-import { databaseConnection } from '../../bd/mongo.db';
-import { createTestApp } from '../../test-setup-app';
+import { createTestApp, testDatabaseConnection } from '../../test-setup-app';
 
 describe('Blog API', () => {
   const app = createTestApp();
@@ -25,10 +24,7 @@ describe('Blog API', () => {
   let blogId: string;
 
   beforeAll(async () => {
-    await databaseConnection.connect({
-      mongoURL: 'mongodb://admin:admin@localhost:27017',
-      dbName: 'blogplatform-test',
-    });
+    await testDatabaseConnection.connect();
 
     await request(app).delete('/testing/all-data').expect(204);
   });
