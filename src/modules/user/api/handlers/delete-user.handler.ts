@@ -1,11 +1,14 @@
 import { RequestHandler } from 'express';
-import { userService } from '../../domain/user-service';
+import type { UserService } from '../../domain/user-service';
 
-export const deleteUserHandler: RequestHandler<{ id: string }> = async (
-  req,
-  res,
-) => {
-  const userId = req.params.id;
-  await userService.deleteUser(userId);
-  res.sendStatus(204);
+export const createDeleteUserHandler = ({
+  userService,
+}: {
+  userService: UserService;
+}): RequestHandler<{ id: string }> => {
+  return async (req, res) => {
+    const userId = req.params.id;
+    await userService.deleteUser(userId);
+    res.sendStatus(204);
+  };
 };
