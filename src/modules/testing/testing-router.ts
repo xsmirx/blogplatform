@@ -1,9 +1,17 @@
 import { Router } from 'express';
-import { databaseConnection } from '../../bd/mongo.db';
+import type { DatabaseConnection } from '../../bd/mongo.db';
 
-export const testingRouter: Router = Router();
+export const createTestingRouter = ({
+  databaseConnection,
+}: {
+  databaseConnection: DatabaseConnection;
+}) => {
+  const testingRouter: Router = Router();
 
-testingRouter.delete('/', async (req, res) => {
-  await databaseConnection.drop();
-  res.sendStatus(204);
-});
+  testingRouter.delete('/', async (req, res) => {
+    await databaseConnection.drop();
+    res.sendStatus(204);
+  });
+
+  return testingRouter;
+};

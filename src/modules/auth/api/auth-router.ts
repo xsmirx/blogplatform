@@ -3,7 +3,8 @@ import { loginOrEmailValidation } from '../middlewares/login-or-email.validation
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
 import { createLoginHandler } from './handlers/login.handler';
 import { accessTokenGuard } from './guards/access-token-guard';
-import { meHandler } from './handlers/me.handler';
+import { createMeHandler } from './handlers/me.handler';
+import type { UserQueryRepository } from '../../user/infrastructure/user-query-repository';
 import { codeValidation } from '../middlewares/code.validation';
 import { loginValidation } from '../../user/middlewares/user-login.validation';
 import { emailValidation } from '../../user/middlewares/user-email.validation';
@@ -16,8 +17,10 @@ import type { AuthService } from '../domain/auth-service';
 
 export const createAuthRouter = ({
   authService,
+  userQueryRepository,
 }: {
   authService: AuthService;
+  userQueryRepository: UserQueryRepository;
 }) => {
   const authRouter: Router = Router();
 
@@ -29,7 +32,7 @@ export const createAuthRouter = ({
       inputValidationResultMiddleware,
       createLoginHandler({ authService }),
     )
-    .get('/me', accessTokenGuard, meHandler)
+    .get('/me', accessTokenGuard, createMeHandler({ userQueryRepository }))
     .post(
       '/registration-confirmation',
       codeValidation,

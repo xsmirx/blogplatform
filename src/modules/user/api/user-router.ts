@@ -9,42 +9,54 @@ import { pageNumberValidation } from '../middlewares/user-page-numer.validation'
 import { pageSizeValidation } from '../middlewares/user-page-size.validation';
 import { sortByValidation } from '../middlewares/user-sort-by.validation';
 import { sortDirectionValidation } from '../middlewares/user-sort-direction.validation';
-import { userListHandler } from './handlers/user-list.handler';
+import { createUserListHandler } from './handlers/user-list.handler';
 import { loginValidation } from '../middlewares/user-login.validation';
 import { passwordRegistrationValidation } from '../middlewares/user-password.validation';
 import { emailValidation } from '../middlewares/user-email.validation';
-import { createUserHandler } from './handlers/create-user.handler';
+import { createCreateUserHandler } from './handlers/create-user.handler';
 import { idValidation } from '../middlewares/user-id.validaton';
-import { deleteUserHandler } from './handlers/delete-user.handler';
+import { createDeleteUserHandler } from './handlers/delete-user.handler';
+import type { UserService } from '../domain/user-service';
+import type { UserQueryRepository } from '../infrastructure/user-query-repository';
 
-export const userRouter: Router = Router();
+export const createUserRouter = ({
+  userService,
+  userQueryRepository,
+}: {
+  userService: UserService;
+  userQueryRepository: UserQueryRepository;
+}) => {
+  const userRouter: Router = Router();
 
-userRouter
-  .get(
-    '/',
-    superAdminGuard,
-    searchLoginTermValidation,
-    searchEmailTermValidation,
-    pageNumberValidation,
-    pageSizeValidation,
-    sortByValidation,
-    sortDirectionValidation,
-    inputValidationResultMiddleware,
-    userListHandler,
-  )
-  .post(
-    '/',
-    superAdminGuard,
-    loginValidation,
-    passwordRegistrationValidation,
-    emailValidation,
-    inputValidationResultMiddleware,
-    createUserHandler,
-  )
-  .delete(
-    '/:id',
-    superAdminGuard,
-    idValidation,
-    inputValidationResultMiddleware,
-    deleteUserHandler,
-  );
+  userRouter
+    .get(
+      '/',
+      superAdminGuard,
+      searchLoginTermValidation,
+      searchEmailTermValidation,
+      pageNumberValidation,
+      pageSizeValidation,
+      sortByValidation,
+      sortDirectionValidation,
+      inputValidationResultMiddleware,
+      createUserListHandler({ userQueryRepository }),
+    )
+    .post(
+      '/',
+      superAdminGuard,
+      loginValidation,
+      passwordRegistrationValidation,
+      emailValidation,
+      inputValidationResultMiddleware,
+      createCreateUserHandler({ userService, userQueryRepository }),
+    )
+    .delete(
+      '/:id',
+      superAdminGuard,
+      idValidation,
+      inputValidationResultMiddleware,
+      createDeleteUserHandler({ userService }),
+    );
+
+  return userRouter;
+};

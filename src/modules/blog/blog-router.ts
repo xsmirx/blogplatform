@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import {
-  createBlogHandler,
-  createPostHandler,
-  deleteBlogHandler,
-  getBlogHandler,
-  getBlogListHandler,
-  getPostListHandler,
-  updateBlogHandler,
+  createCreateBlogHandler,
+  createCreatePostHandler,
+  createDeleteBlogHandler,
+  createGetBlogHandler,
+  createGetBlogListHandler,
+  createGetPostListHandler,
+  createUpdateBlogHandler,
 } from './blog-handlers';
 import {
   blogDTOValidation,
@@ -29,59 +29,71 @@ import {
 } from '../post/post-validators';
 import { inputValidationResultMiddleware } from '../../core/middleware/input-validation-result.middleware';
 import { superAdminGuard } from '../auth/api/guards/super-admin-guard';
+import type { BlogService } from './blog-service';
+import type { PostService } from '../post/post-service';
 
-export const blogRouter: Router = Router();
+export const createBlogRouter = ({
+  blogService,
+  postService,
+}: {
+  blogService: BlogService;
+  postService: PostService;
+}) => {
+  const blogRouter: Router = Router();
 
-blogRouter
-  .get(
-    '/',
-    searchNameTermValidation,
-    pageNumberValidation,
-    pageSizeValidation,
-    sortByValidation,
-    sortDirectionValidation,
-    getBlogListHandler,
-  )
-  .get('/:id', idValidation, inputValidationResultMiddleware, getBlogHandler)
-  .get(
-    '/:blogId/posts',
-    blogIdValidation,
-    inputValidationResultMiddleware,
-    pageNumberValidationPost,
-    pageSizeValidationPost,
-    sortByValidationPost,
-    sortDirectionValidationPost,
-    getPostListHandler,
-  )
-  .post(
-    '/',
-    superAdminGuard,
-    blogDTOValidation,
-    inputValidationResultMiddleware,
-    createBlogHandler,
-  )
-  .post(
-    '/:blogId/posts',
-    superAdminGuard,
-    blogIdValidation,
-    titleValidation,
-    shortDescriptionValidation,
-    contentValidation,
-    inputValidationResultMiddleware,
-    createPostHandler,
-  )
-  .put(
-    '/:id',
-    superAdminGuard,
-    idValidation,
-    blogDTOValidation,
-    inputValidationResultMiddleware,
-    updateBlogHandler,
-  )
-  .delete(
-    '/:id',
-    superAdminGuard,
-    idValidation,
-    inputValidationResultMiddleware,
-    deleteBlogHandler,
-  );
+  blogRouter
+    .get(
+      '/',
+      searchNameTermValidation,
+      pageNumberValidation,
+      pageSizeValidation,
+      sortByValidation,
+      sortDirectionValidation,
+      createGetBlogListHandler({ blogService }),
+    )
+    .get('/:id', idValidation, inputValidationResultMiddleware, createGetBlogHandler({ blogService }))
+    .get(
+      '/:blogId/posts',
+      blogIdValidation,
+      inputValidationResultMiddleware,
+      pageNumberValidationPost,
+      pageSizeValidationPost,
+      sortByValidationPost,
+      sortDirectionValidationPost,
+      createGetPostListHandler({ postService }),
+    )
+    .post(
+      '/',
+      superAdminGuard,
+      blogDTOValidation,
+      inputValidationResultMiddleware,
+      createCreateBlogHandler({ blogService }),
+    )
+    .post(
+      '/:blogId/posts',
+      superAdminGuard,
+      blogIdValidation,
+      titleValidation,
+      shortDescriptionValidation,
+      contentValidation,
+      inputValidationResultMiddleware,
+      createCreatePostHandler({ postService }),
+    )
+    .put(
+      '/:id',
+      superAdminGuard,
+      idValidation,
+      blogDTOValidation,
+      inputValidationResultMiddleware,
+      createUpdateBlogHandler({ blogService }),
+    )
+    .delete(
+      '/:id',
+      superAdminGuard,
+      idValidation,
+      inputValidationResultMiddleware,
+      createDeleteBlogHandler({ blogService }),
+    );
+
+  return blogRouter;
+};

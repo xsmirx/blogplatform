@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import {
-  createCommentHandler,
-  createPostHandler,
-  deletePostHandler,
-  getCommentListHandler,
-  getPostHandler,
-  getPostListHandler,
-  updatePostHandler,
+  createCreateCommentHandler,
+  createCreatePostHandler,
+  createDeletePostHandler,
+  createGetCommentListHandler,
+  createGetPostHandler,
+  createGetPostListHandler,
+  createUpdatePostHandler,
 } from './post-handlers';
 import {
   idValidation,
@@ -24,59 +24,74 @@ import {
   sortDirectionValidation as commentSortDirectionValidation,
 } from '../comment/comment-validators';
 import { accessTokenGuard } from '../auth/api/guards/access-token-guard';
+import type { PostService } from './post-service';
+import type { CommentService } from '../comment/comment-service';
+import type { CommentQueryRepository } from '../comment/comment-query-repository';
 
-export const postRouter: Router = Router();
+export const createPostRouter = ({
+  postService,
+  commentService,
+  commentQueryRepository,
+}: {
+  postService: PostService;
+  commentService: CommentService;
+  commentQueryRepository: CommentQueryRepository;
+}) => {
+  const postRouter: Router = Router();
 
-postRouter
-  .get(
-    '/',
-    pageNumberValidation,
-    pageSizeValidation,
-    sortByValidation,
-    sortDirectionValidation,
-    inputValidationResultMiddleware,
-    getPostListHandler,
-  )
-  .get('/:id', idValidation, inputValidationResultMiddleware, getPostHandler)
-  .post(
-    '/',
-    superAdminGuard,
-    postDTOValidation,
-    inputValidationResultMiddleware,
-    createPostHandler,
-  )
-  .put(
-    '/:id',
-    superAdminGuard,
-    idValidation,
-    postDTOValidation,
-    inputValidationResultMiddleware,
-    updatePostHandler,
-  )
-  .delete(
-    '/:id',
-    superAdminGuard,
-    idValidation,
-    inputValidationResultMiddleware,
-    deletePostHandler,
-  );
+  postRouter
+    .get(
+      '/',
+      pageNumberValidation,
+      pageSizeValidation,
+      sortByValidation,
+      sortDirectionValidation,
+      inputValidationResultMiddleware,
+      createGetPostListHandler({ postService }),
+    )
+    .get('/:id', idValidation, inputValidationResultMiddleware, createGetPostHandler({ postService }))
+    .post(
+      '/',
+      superAdminGuard,
+      postDTOValidation,
+      inputValidationResultMiddleware,
+      createCreatePostHandler({ postService }),
+    )
+    .put(
+      '/:id',
+      superAdminGuard,
+      idValidation,
+      postDTOValidation,
+      inputValidationResultMiddleware,
+      createUpdatePostHandler({ postService }),
+    )
+    .delete(
+      '/:id',
+      superAdminGuard,
+      idValidation,
+      inputValidationResultMiddleware,
+      createDeletePostHandler({ postService }),
+    );
 
-postRouter
-  .get(
-    '/:id/comments',
-    idValidation,
-    pageNumberValidation,
-    pageSizeValidation,
-    commentSortByValidation,
-    commentSortDirectionValidation,
-    inputValidationResultMiddleware,
-    getCommentListHandler,
-  )
-  .post(
-    '/:id/comments',
-    accessTokenGuard,
-    idValidation,
-    commentContentValidation,
-    inputValidationResultMiddleware,
-    createCommentHandler,
-  );
+  postRouter
+    .get(
+      '/:id/comments',
+      idValidation,
+      pageNumberValidation,
+      pageSizeValidation,
+      commentSortByValidation,
+      commentSortDirectionValidation,
+      inputValidationResultMiddleware,
+      createGetCommentListHandler({ postService, commentQueryRepository }),
+    )
+    .post(
+      '/:id/comments',
+      accessTokenGuard,
+      idValidation,
+      commentContentValidation,
+      inputValidationResultMiddleware,
+      createCreateCommentHandler({ postService, commentService, commentQueryRepository }),
+    );
+
+  return postRouter;
+};
