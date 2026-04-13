@@ -1,5 +1,9 @@
 import request from 'supertest';
-import { createTestApp, mockMailService, testDatabaseConnection } from '../../test-setup-app';
+import {
+  createTestApp,
+  mockMailService,
+  testDatabaseConnection,
+} from '../../test-setup-app';
 
 const extractRefreshToken = (res: request.Response): string | null => {
   const cookies = res.headers['set-cookie'];

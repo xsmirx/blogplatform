@@ -30,7 +30,7 @@ export const createLoginHandler = ({
       });
     }
 
-    res.cookie('refresh_token', result.data!.refreshToken, {
+    res.cookie('refreshToken', result.data!.refreshToken, {
       httpOnly: true,
       secure: true,
     });
