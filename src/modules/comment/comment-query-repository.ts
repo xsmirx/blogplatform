@@ -2,12 +2,12 @@ import { Filter, ObjectId, WithId } from 'mongodb';
 import { CommentDB, CommentListQueryInput, CommentOutputDTO } from './types';
 import { NotFoundError } from '../../core/errors/errors';
 import { ListResponse } from '../../core/types/list-response';
-import { DatabaseConnection, databaseConnection } from '../../bd/mongo.db';
-class CommentQueryRepository {
+import { DatabaseConnection } from '../../bd/mongo.db';
+export class CommentQueryRepository {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}
 
   private get collection() {
-    return databaseConnection.getCollections().commentsCollection;
+    return this.databaseConnection.getCollections().commentsCollection;
   }
 
   private mapToOutputModel(comment: WithId<CommentDB>): CommentOutputDTO {
@@ -67,6 +67,3 @@ class CommentQueryRepository {
   }
 }
 
-export const commentQueryRepository = new CommentQueryRepository(
-  databaseConnection,
-);

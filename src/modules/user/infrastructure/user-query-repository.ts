@@ -1,16 +1,16 @@
 import { Filter, ObjectId, WithId } from 'mongodb';
-import { databaseConnection, DatabaseConnection } from '../../../bd/mongo.db';
+import { DatabaseConnection } from '../../../bd/mongo.db';
 import { ListResponse } from '../../../core/types/list-response';
 import { UserDB, UserListQueryInput } from './types';
 import { NotFoundError } from '../../../core/errors/errors';
 import { UserOutputDTO } from '../api/types';
 import { MeOutputDTO } from '../../auth/api/types';
 
-class UserQueryRepository {
+export class UserQueryRepository {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}
 
   private get collection() {
-    return databaseConnection.getCollections().usersCollection;
+    return this.databaseConnection.getCollections().usersCollection;
   }
 
   private escapeRegex(text: string) {
@@ -113,4 +113,3 @@ class UserQueryRepository {
   }
 }
 
-export const userQueryRepository = new UserQueryRepository(databaseConnection);

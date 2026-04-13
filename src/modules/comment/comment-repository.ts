@@ -6,13 +6,13 @@ import {
   UpdateCommentPayload,
 } from './types';
 import { NotFoundError } from '../../core/errors/errors';
-import { DatabaseConnection, databaseConnection } from '../../bd/mongo.db';
+import { DatabaseConnection } from '../../bd/mongo.db';
 
-class CommentRepository {
+export class CommentRepository {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}
 
   private get collection() {
-    return databaseConnection.getCollections().commentsCollection;
+    return this.databaseConnection.getCollections().commentsCollection;
   }
 
   private mapToDomainModel(comment: WithId<CommentDB>): Comment {
@@ -86,4 +86,3 @@ class CommentRepository {
   }
 }
 
-export const commentRepository = new CommentRepository(databaseConnection);

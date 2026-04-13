@@ -1,13 +1,13 @@
 import { Filter, ObjectId, WithId } from 'mongodb';
 import { Blog, BlogListQueryInput } from './types';
 import { NotFoundError } from '../../core/errors/errors';
-import { DatabaseConnection, databaseConnection } from '../../bd/mongo.db';
+import { DatabaseConnection } from '../../bd/mongo.db';
 
-class BlogRepository {
+export class BlogRepository {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}
 
   private get collection() {
-    return databaseConnection.getCollections().blogCollection;
+    return this.databaseConnection.getCollections().blogCollection;
   }
 
   public async findAll(query: BlogListQueryInput): Promise<{
@@ -91,4 +91,3 @@ class BlogRepository {
   }
 }
 
-export const blogRepository = new BlogRepository(databaseConnection);

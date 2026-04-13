@@ -1,13 +1,13 @@
 import { Filter, ObjectId, WithId } from 'mongodb';
 import { Post, PostListQueryInput } from './types';
 import { NotFoundError } from '../../core/errors/errors';
-import { DatabaseConnection, databaseConnection } from '../../bd/mongo.db';
+import { DatabaseConnection } from '../../bd/mongo.db';
 
-class PostRepository {
+export class PostRepository {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}
 
   private get collection() {
-    return databaseConnection.getCollections().postsCollection;
+    return this.databaseConnection.getCollections().postsCollection;
   }
 
   public async findAll(
@@ -91,4 +91,3 @@ class PostRepository {
   }
 }
 
-export const postRepository = new PostRepository(databaseConnection);

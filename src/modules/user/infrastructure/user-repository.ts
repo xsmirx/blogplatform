@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb';
 import { EmailNotUniqueError, LoginNotUniqueError } from '../user-errors';
 import { NotFoundError } from '../../../core/errors/errors';
-import { DatabaseConnection, databaseConnection } from '../../../bd/mongo.db';
+import { DatabaseConnection } from '../../../bd/mongo.db';
 import { User } from '../domain/types';
 import { CheckUserExistsPayload, CreateUserPayload } from './types';
 
@@ -9,7 +9,7 @@ export class UserRepository {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}
 
   private get collection() {
-    return databaseConnection.getCollections().usersCollection;
+    return this.databaseConnection.getCollections().usersCollection;
   }
 
   public async findById(userId: string): Promise<User | null> {
@@ -177,4 +177,3 @@ export class UserRepository {
   }
 }
 
-export const userRepository = new UserRepository(databaseConnection);
