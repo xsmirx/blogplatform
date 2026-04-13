@@ -1,21 +1,32 @@
 import { randomUUID } from 'node:crypto';
-import { bcryptService } from '../../../core/adapters/bcript-service';
-import { userRepository } from '../infrastructure/user-repository';
+import type { BcryptService } from '../../../core/adapters/bcript-service';
+import type { UserRepository } from '../infrastructure/user-repository';
 
-class UserService {
+export class UserService {
+  private readonly bcryptService: BcryptService;
+  private readonly userRepository: UserRepository;
+
+  constructor(deps: {
+    bcryptService: BcryptService;
+    userRepository: UserRepository;
+  }) {
+    this.bcryptService = deps.bcryptService;
+    this.userRepository = deps.userRepository;
+  }
+
   public async createUser(user: {
     login: string;
     email: string;
     password: string;
   }): Promise<string> {
-    await userRepository.checkUserExists({
+    await this.userRepository.checkUserExists({
       email: user.email,
       login: user.login,
     });
 
-    const saltedHash = await bcryptService.generateHash(user.password);
+    const saltedHash = await this.bcryptService.generateHash(user.password);
 
-    return await userRepository.create({
+    return await this.userRepository.create({
       login: user.login,
       email: user.email,
       passwordHash: saltedHash,
@@ -29,8 +40,6 @@ class UserService {
   }
 
   public async deleteUser(userId: string): Promise<void> {
-    await userRepository.delete(userId);
+    await this.userRepository.delete(userId);
   }
 }
-
-export const userService = new UserService();

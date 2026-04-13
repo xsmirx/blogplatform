@@ -1,24 +1,35 @@
-import { blogRepository } from '../blog/blog-repository';
-import { postRepository } from './post-repository';
+import type { BlogRepository } from '../blog/blog-repository';
+import type { PostRepository } from './post-repository';
 import { Post, PostInputDTO, PostListQueryInput } from './types';
 
-class PostService {
+export class PostService {
+  private readonly blogRepository: BlogRepository;
+  private readonly postRepository: PostRepository;
+
+  constructor(deps: {
+    blogRepository: BlogRepository;
+    postRepository: PostRepository;
+  }) {
+    this.blogRepository = deps.blogRepository;
+    this.postRepository = deps.postRepository;
+  }
+
   public async findMany(query: PostListQueryInput & { blogId?: string }) {
     if (query.blogId) {
-      await blogRepository.findByIdOrFail(query.blogId);
+      await this.blogRepository.findByIdOrFail(query.blogId);
     }
 
-    return postRepository.findAll(query);
+    return this.postRepository.findAll(query);
   }
 
   public async findByIdOrFail(id: string) {
-    return await postRepository.findByIdOrFail(id);
+    return await this.postRepository.findByIdOrFail(id);
   }
 
   public async create(dto: PostInputDTO) {
     const { blogId, content, shortDescription, title } = dto;
 
-    const blog = await blogRepository.findByIdOrFail(blogId);
+    const blog = await this.blogRepository.findByIdOrFail(blogId);
 
     const newPost: Post = {
       title,
@@ -28,18 +39,16 @@ class PostService {
       blogName: blog.name,
       createdAt: new Date(),
     };
-    const id = await postRepository.create(newPost);
-    return await postRepository.findByIdOrFail(id.toString());
+    const id = await this.postRepository.create(newPost);
+    return await this.postRepository.findByIdOrFail(id.toString());
   }
 
   public async update(id: string, dto: PostInputDTO) {
-    const blog = await blogRepository.findByIdOrFail(dto.blogId);
-    return postRepository.update(id, { ...dto, blogName: blog.name });
+    const blog = await this.blogRepository.findByIdOrFail(dto.blogId);
+    return this.postRepository.update(id, { ...dto, blogName: blog.name });
   }
 
   public async delete(id: string) {
-    return postRepository.delete(id);
+    return this.postRepository.delete(id);
   }
 }
-
-export const postService = new PostService();
