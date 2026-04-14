@@ -246,36 +246,35 @@ export class AuthService {
     };
   }
 
-  public async refreshToken({ refreshToken }: { refreshToken: string }) {
+  private async isValidRefreshToken(refreshToken: string) {
     const payload = await this.jwtService.verifyRefreshToken(refreshToken);
-
     if (!payload) {
-      return {
-        status: ResultStatus.Unauthorized,
-        data: null,
-        extensions: [],
-        errorMessage: 'Invalid refresh token',
-      };
+      return false;
     }
 
     if (payload.exp !== undefined && payload.exp * 1000 < Date.now()) {
-      return {
-        status: ResultStatus.Unauthorized,
-        data: null,
-        extensions: [],
-        errorMessage: 'Refresh token expired',
-      };
+      return false;
     }
 
     const isBlackListed =
       await this.blackListRefreshTokenRepository.isBlackListed(refreshToken);
 
     if (isBlackListed) {
+      return false;
+    }
+
+    return payload;
+  }
+
+  public async refreshToken({ refreshToken }: { refreshToken: string }) {
+    const payload = await this.isValidRefreshToken(refreshToken);
+
+    if (payload === false) {
       return {
         status: ResultStatus.Unauthorized,
         data: null,
         extensions: [],
-        errorMessage: 'Refresh token is blacklisted',
+        errorMessage: 'Refresh token is invalid',
       };
     }
 
@@ -303,6 +302,32 @@ export class AuthService {
     return {
       status: ResultStatus.Success,
       data: { accessToken: newAccessToken, refreshToken: newRefreshToken },
+      extensions: [],
+    };
+  }
+
+  public async logout({ refreshToken }: { refreshToken: string }) {
+    const payload = await this.isValidRefreshToken(refreshToken);
+
+    if (payload === false) {
+      return {
+        status: ResultStatus.Unauthorized,
+        data: null,
+        extensions: [],
+        errorMessage: 'Refresh token is invalid',
+      };
+    }
+
+    if (payload.exp !== undefined && payload.exp * 1000 >= Date.now()) {
+      await this.blackListRefreshTokenRepository.addToBlackList({
+        refreshToken,
+        expiresAt: new Date(payload.exp * 1000),
+      });
+    }
+
+    return {
+      status: ResultStatus.Success,
+      data: null,
       extensions: [],
     };
   }
