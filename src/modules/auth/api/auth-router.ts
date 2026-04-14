@@ -14,6 +14,7 @@ import { createRegistrationHandler } from './handlers/register.handler';
 import { createRegistrationEmailResendHandler } from './handlers/registrationEmailResend.handler';
 import { createRegistrationConfirmationHandler } from './handlers/registrationConfirmation.handler';
 import type { AuthService } from '../domain/auth-service';
+import { createRefreshTokenHandler } from './handlers/refreshToken.handler';
 
 export const createAuthRouter = ({
   authService,
@@ -52,7 +53,8 @@ export const createAuthRouter = ({
       emailValidation,
       inputValidationResultMiddleware,
       createRegistrationEmailResendHandler({ authService }),
-    );
+    )
+    .post('/refresh-token', createRefreshTokenHandler({ authService }));
 
   return authRouter;
 };

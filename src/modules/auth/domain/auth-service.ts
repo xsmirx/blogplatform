@@ -12,7 +12,7 @@ import type { BlackListRefreshTokenRepository } from '../infrastructure/black-li
 
 export class AuthService {
   private readonly userRepository: UserRepository;
-  // private readonly blackListRefreshTokenRepository: BlackListRefreshTokenRepository;
+  private readonly blackListRefreshTokenRepository: BlackListRefreshTokenRepository;
   private readonly jwtService: JwtService;
   private readonly bcryptService: BcryptService;
   private readonly mailService: MailService;
@@ -28,7 +28,7 @@ export class AuthService {
     this.jwtService = deps.jwtService;
     this.bcryptService = deps.bcryptService;
     this.mailService = deps.mailService;
-    // this.blackListRefreshTokenRepository = deps.blackListRefreshTokenRepository;
+    this.blackListRefreshTokenRepository = deps.blackListRefreshTokenRepository;
   }
 
   public async login({
@@ -242,6 +242,67 @@ export class AuthService {
     return {
       status: ResultStatus.Success,
       data: null,
+      extensions: [],
+    };
+  }
+
+  public async refreshToken({ refreshToken }: { refreshToken: string }) {
+    const payload = await this.jwtService.verifyRefreshToken(refreshToken);
+
+    if (!payload) {
+      return {
+        status: ResultStatus.Unauthorized,
+        data: null,
+        extensions: [],
+        errorMessage: 'Invalid refresh token',
+      };
+    }
+
+    if (payload.exp !== undefined && payload.exp * 1000 < Date.now()) {
+      return {
+        status: ResultStatus.Unauthorized,
+        data: null,
+        extensions: [],
+        errorMessage: 'Refresh token expired',
+      };
+    }
+
+    const isBlackListed =
+      await this.blackListRefreshTokenRepository.isBlackListed(refreshToken);
+
+    if (isBlackListed) {
+      return {
+        status: ResultStatus.Unauthorized,
+        data: null,
+        extensions: [],
+        errorMessage: 'Refresh token is blacklisted',
+      };
+    }
+
+    const user = await this.userRepository.findById(payload.userId);
+
+    if (!user) {
+      return {
+        status: ResultStatus.NotFound,
+        data: null,
+        extensions: [],
+        errorMessage: 'User not found',
+      };
+    }
+
+    const newAccessToken = await this.jwtService.generateAccessToken(user.id);
+    const newRefreshToken = await this.jwtService.generateRefreshToken(user.id);
+
+    if (payload.exp !== undefined && payload.exp * 1000 >= Date.now()) {
+      await this.blackListRefreshTokenRepository.addToBlackList({
+        refreshToken,
+        expiresAt: new Date(payload.exp * 1000),
+      });
+    }
+
+    return {
+      status: ResultStatus.Success,
+      data: { accessToken: newAccessToken, refreshToken: newRefreshToken },
       extensions: [],
     };
   }

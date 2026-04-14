@@ -1,4 +1,5 @@
-import jwt from 'jsonwebtoken';
+import jwt, { type JwtPayload } from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
 import { settings } from '../../../core/settings/settings';
 
 export class JwtService {
@@ -9,7 +10,7 @@ export class JwtService {
   }
 
   public async generateRefreshToken(userId: string): Promise<string> {
-    return jwt.sign({ userId }, settings.RC_TOKEN_SECRET, {
+    return jwt.sign({ userId, jti: randomUUID() }, settings.RC_TOKEN_SECRET, {
       expiresIn: settings.RC_TOKEN_TIME,
     });
   }
@@ -26,9 +27,11 @@ export class JwtService {
 
   public async verifyRefreshToken(
     token: string,
-  ): Promise<{ userId: string } | null> {
+  ): Promise<(JwtPayload & { userId: string }) | null> {
     try {
-      return jwt.verify(token, settings.RC_TOKEN_SECRET) as { userId: string };
+      return jwt.verify(token, settings.RC_TOKEN_SECRET) as JwtPayload & {
+        userId: string;
+      };
     } catch {
       return null;
     }
