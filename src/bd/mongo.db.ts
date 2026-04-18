@@ -1,16 +1,16 @@
 import { Db, MongoClient } from 'mongodb';
 import {
-  BLACK_LIST_REFRESH_TOKENS_COLLECTION_NAME,
   BLOGS_COLLECTION_NAME,
   COMMENTS_COLLECTION_NAME,
   POSTS_COLLECTION_NAME,
+  SESSIONS_COLLECTION_NAME,
   USERS_COLLECTION_NAME,
 } from './collections';
 import { Blog } from '../modules/blog/types';
 import { Post } from '../modules/post/types';
 import { CommentDB } from '../modules/comment/types';
 import { UserDB } from '../modules/user/infrastructure/types';
-import type { BlackListRefreshTokenDB } from '../modules/auth/infrastructure/types';
+import type { SessionDB } from '../modules/security/infrastructure/types';
 
 export class DatabaseConnection {
   constructor({ mongoURL, dbName }: { mongoURL: string; dbName: string }) {
@@ -20,11 +20,7 @@ export class DatabaseConnection {
   private client: MongoClient;
   private db: Db;
 
-  private async initIndexes() {
-    await this.db
-      .collection(BLACK_LIST_REFRESH_TOKENS_COLLECTION_NAME)
-      .createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-  }
+  private async initIndexes() {}
 
   public async connect() {
     try {
@@ -54,10 +50,9 @@ export class DatabaseConnection {
 
   public getCollections() {
     return {
-      blackListRefreshTokenCollection:
-        this.getDb().collection<BlackListRefreshTokenDB>(
-          BLACK_LIST_REFRESH_TOKENS_COLLECTION_NAME,
-        ),
+      sessionCollection: this.getDb().collection<SessionDB>(
+        SESSIONS_COLLECTION_NAME,
+      ),
       usersCollection: this.getDb().collection<UserDB>(USERS_COLLECTION_NAME),
       blogCollection: this.getDb().collection<Blog>(BLOGS_COLLECTION_NAME),
       postsCollection: this.getDb().collection<Post>(POSTS_COLLECTION_NAME),
