@@ -3,6 +3,7 @@ import {
   createTestApp,
   testDatabaseConnection,
 } from '../../test-setup-app';
+import jwt from 'jsonwebtoken';
 
 const extractRefreshToken = (res: request.Response): string | null => {
   const cookies = res.headers['set-cookie'];
@@ -13,6 +14,14 @@ const extractRefreshToken = (res: request.Response): string | null => {
     if (match) return match[1];
   }
   return null;
+};
+
+const decodeToken = (token: string): any => {
+  try {
+    return jwt.decode(token);
+  } catch {
+    return null;
+  }
 };
 
 describe('Security Devices API', () => {
@@ -35,6 +44,233 @@ describe('Security Devices API', () => {
   beforeAll(async () => {
     await testDatabaseConnection.connect();
     await request(app).delete('/testing/all-data').expect(204);
+  });
+
+  describe('Integration scenario (4 logins → refresh → delete → logout → delete all)', () => {
+    let refreshTokens: string[] = [];
+    let deviceIds: string[] = [];
+
+    beforeEach(async () => {
+      await request(app).delete('/testing/all-data').expect(204);
+
+      await request(app)
+        .post('/users')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testUser)
+        .expect(201);
+
+      refreshTokens = [];
+      deviceIds = [];
+
+      // Step 1: Login 4 times with different User-Agents
+      const userAgents = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1',
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6) Mobile/15E148',
+        'Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36',
+      ];
+
+      for (const userAgent of userAgents) {
+        const loginResponse = await request(app)
+          .post('/auth/login')
+          .set('User-Agent', userAgent)
+          .send({
+            loginOrEmail: testUser.login,
+            password: testUser.password,
+          })
+          .expect(200);
+
+        const refreshToken = extractRefreshToken(loginResponse)!;
+        refreshTokens.push(refreshToken);
+
+        // Extract deviceId from JWT payload
+        const decoded = decodeToken(refreshToken);
+        expect(decoded).toHaveProperty('deviceId');
+        deviceIds.push(decoded.deviceId);
+      }
+    });
+
+    it('should have 4 devices after 4 logins', async () => {
+      const devicesResponse = await request(app)
+        .get('/security/devices')
+        .set('Cookie', `refreshToken=${refreshTokens[0]}`)
+        .expect(200);
+
+      expect(devicesResponse.body.length).toBe(4);
+    });
+
+    it('should maintain all deviceIds after refresh of first device', async () => {
+      // Step 2: Refresh token of device 1
+      const beforeRefresh = await request(app)
+        .get('/security/devices')
+        .set('Cookie', `refreshToken=${refreshTokens[0]}`)
+        .expect(200);
+
+      const device1Before = beforeRefresh.body.find(
+        (d: any) => d.deviceId === deviceIds[0],
+      );
+      const lastActiveDateBefore = device1Before.lastActiveDate;
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const refreshResponse = await request(app)
+        .post('/auth/refresh-token')
+        .set('Cookie', `refreshToken=${refreshTokens[0]}`)
+        .expect(200);
+
+      const newRefreshToken1 = extractRefreshToken(refreshResponse)!;
+      refreshTokens[0] = newRefreshToken1;
+
+      // Step 3: Check devices list - quantity and deviceIds should not change
+      const afterRefresh = await request(app)
+        .get('/security/devices')
+        .set('Cookie', `refreshToken=${refreshTokens[0]}`)
+        .expect(200);
+
+      expect(afterRefresh.body.length).toBe(4);
+
+      // All deviceIds should remain the same
+      const deviceIdsAfter = afterRefresh.body.map((d: any) => d.deviceId);
+      expect(deviceIdsAfter.sort()).toEqual(deviceIds.sort());
+
+      // Only device 1's lastActiveDate should change
+      const device1After = afterRefresh.body.find(
+        (d: any) => d.deviceId === deviceIds[0],
+      );
+      expect(device1After.lastActiveDate).not.toBe(lastActiveDateBefore);
+      expect(new Date(device1After.lastActiveDate).getTime()).toBeGreaterThan(
+        new Date(lastActiveDateBefore).getTime(),
+      );
+
+      // Other devices' lastActiveDate should not change
+      for (let i = 1; i < 4; i++) {
+        const deviceBefore = beforeRefresh.body.find(
+          (d: any) => d.deviceId === deviceIds[i],
+        );
+        const deviceAfter = afterRefresh.body.find(
+          (d: any) => d.deviceId === deviceIds[i],
+        );
+        expect(deviceAfter.lastActiveDate).toBe(deviceBefore.lastActiveDate);
+      }
+    });
+
+    it('should remove device 2 from list after DELETE request', async () => {
+      // Step 4: Delete device 2 using device 1's token
+      await request(app)
+        .delete(`/security/devices/${deviceIds[1]}`)
+        .set('Cookie', `refreshToken=${refreshTokens[0]}`)
+        .expect(204);
+
+      // Get devices list - device 2 should be gone
+      const devicesResponse = await request(app)
+        .get('/security/devices')
+        .set('Cookie', `refreshToken=${refreshTokens[0]}`)
+        .expect(200);
+
+      expect(devicesResponse.body.length).toBe(3);
+      expect(devicesResponse.body.find((d: any) => d.deviceId === deviceIds[1])).toBeUndefined();
+    });
+
+    it('should remove device 3 from list after logout', async () => {
+      // Step 5: Logout from device 3
+      await request(app)
+        .post('/auth/logout')
+        .set('Cookie', `refreshToken=${refreshTokens[2]}`)
+        .expect(204);
+
+      // Get devices list using device 1 - device 3 should be gone
+      const devicesResponse = await request(app)
+        .get('/security/devices')
+        .set('Cookie', `refreshToken=${refreshTokens[0]}`)
+        .expect(200);
+
+      expect(devicesResponse.body.length).toBe(3);
+      expect(devicesResponse.body.find((d: any) => d.deviceId === deviceIds[2])).toBeUndefined();
+    });
+
+    it('should keep only current device after DELETE /security/devices', async () => {
+      // Step 6: Delete all other sessions using device 1
+      await request(app)
+        .delete('/security/devices')
+        .set('Cookie', `refreshToken=${refreshTokens[0]}`)
+        .expect(204);
+
+      // Get devices list - should only contain device 1
+      const devicesResponse = await request(app)
+        .get('/security/devices')
+        .set('Cookie', `refreshToken=${refreshTokens[0]}`)
+        .expect(200);
+
+      expect(devicesResponse.body.length).toBe(1);
+      expect(devicesResponse.body[0].deviceId).toBe(deviceIds[0]);
+    });
+
+    it('should return 401 for other devices after logout from device 3', async () => {
+      // Logout device 3
+      await request(app)
+        .post('/auth/logout')
+        .set('Cookie', `refreshToken=${refreshTokens[2]}`)
+        .expect(204);
+
+      // Device 3 should not be able to get devices
+      await request(app)
+        .get('/security/devices')
+        .set('Cookie', `refreshToken=${refreshTokens[2]}`)
+        .expect(401);
+    });
+
+    it('should return 404 when deleting non-existent device', async () => {
+      await request(app)
+        .delete('/security/devices/non-existent-device-id')
+        .set('Cookie', `refreshToken=${refreshTokens[0]}`)
+        .expect(404);
+    });
+
+    it('should return 403 when trying to delete another users device', async () => {
+      // Create another user
+      await request(app)
+        .post('/users')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testUser2)
+        .expect(201);
+
+      const otherUserLogin = await request(app)
+        .post('/auth/login')
+        .send({
+          loginOrEmail: testUser2.login,
+          password: testUser2.password,
+        })
+        .expect(200);
+
+      const otherUserRefreshToken = extractRefreshToken(otherUserLogin)!;
+
+      // Try to delete first user's device with second user's token
+      await request(app)
+        .delete(`/security/devices/${deviceIds[0]}`)
+        .set('Cookie', `refreshToken=${otherUserRefreshToken}`)
+        .expect(403);
+    });
+
+    it('should return 401 with invalid refreshToken', async () => {
+      await request(app)
+        .delete(`/security/devices/${deviceIds[0]}`)
+        .set('Cookie', 'refreshToken=invalid.token.value')
+        .expect(401);
+    });
+
+    it('deviceId should be present in refreshToken JWT payload', async () => {
+      for (let i = 0; i < refreshTokens.length; i++) {
+        const decoded = decodeToken(refreshTokens[i]);
+        expect(decoded).toHaveProperty('deviceId');
+        expect(decoded.deviceId).toBe(deviceIds[i]);
+        expect(typeof decoded.deviceId).toBe('string');
+      }
+    });
+
+    it('different logins should have different deviceIds', async () => {
+      const uniqueDeviceIds = new Set(deviceIds);
+      expect(uniqueDeviceIds.size).toBe(4);
+    });
   });
 
   describe('GET /security/devices', () => {
