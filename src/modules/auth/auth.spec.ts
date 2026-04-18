@@ -581,6 +581,140 @@ describe('Auth API', () => {
         expect(responses[2].body.accessToken).toBeTruthy();
       });
     });
+
+    describe('Device creation and tracking', () => {
+      it('should create a device session on successful login', async () => {
+        const loginResponse = await request(app)
+          .post('/auth/login')
+          .send({
+            loginOrEmail: testUser.login,
+            password: testUser.password,
+          })
+          .expect(200);
+
+        const refreshToken = extractRefreshToken(loginResponse);
+
+        // Device should be visible in security/devices endpoint
+        const devicesResponse = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${refreshToken}`)
+          .expect(200);
+
+        expect(Array.isArray(devicesResponse.body)).toBe(true);
+        expect(devicesResponse.body.length).toBeGreaterThan(0);
+        expect(devicesResponse.body[0]).toHaveProperty('deviceId');
+      });
+
+      it('should create separate devices for each login', async () => {
+        const login1 = await request(app)
+          .post('/auth/login')
+          .send({
+            loginOrEmail: testUser.login,
+            password: testUser.password,
+          })
+          .expect(200);
+
+        const login2 = await request(app)
+          .post('/auth/login')
+          .send({
+            loginOrEmail: testUser.login,
+            password: testUser.password,
+          })
+          .expect(200);
+
+        const refreshToken1 = extractRefreshToken(login1);
+        const refreshToken2 = extractRefreshToken(login2);
+
+        const devices1 = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${refreshToken1}`)
+          .expect(200);
+
+        const devices2 = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${refreshToken2}`)
+          .expect(200);
+
+        expect(devices1.body.length).toBe(2);
+        expect(devices2.body.length).toBe(2);
+      });
+
+      it('should capture IP address of login request', async () => {
+        const loginResponse = await request(app)
+          .post('/auth/login')
+          .send({
+            loginOrEmail: testUser.login,
+            password: testUser.password,
+          })
+          .expect(200);
+
+        const refreshToken = extractRefreshToken(loginResponse);
+
+        const devicesResponse = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${refreshToken}`)
+          .expect(200);
+
+        const device = devicesResponse.body[0];
+        expect(device.ip).toBeTruthy();
+        expect(typeof device.ip).toBe('string');
+      });
+
+      it('should extract device title from User-Agent header', async () => {
+        const userAgent =
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
+
+        const loginResponse = await request(app)
+          .post('/auth/login')
+          .set('User-Agent', userAgent)
+          .send({
+            loginOrEmail: testUser.login,
+            password: testUser.password,
+          })
+          .expect(200);
+
+        const refreshToken = extractRefreshToken(loginResponse);
+
+        const devicesResponse = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${refreshToken}`)
+          .expect(200);
+
+        const device = devicesResponse.body[0];
+        expect(device.title).toBeTruthy();
+        expect(typeof device.title).toBe('string');
+      });
+
+      it('should set lastActiveDate to login time', async () => {
+        const beforeLogin = new Date();
+
+        const loginResponse = await request(app)
+          .post('/auth/login')
+          .send({
+            loginOrEmail: testUser.login,
+            password: testUser.password,
+          })
+          .expect(200);
+
+        const afterLogin = new Date();
+        const refreshToken = extractRefreshToken(loginResponse);
+
+        const devicesResponse = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${refreshToken}`)
+          .expect(200);
+
+        const device = devicesResponse.body[0];
+        const lastActiveDate = new Date(device.lastActiveDate);
+
+        expect(lastActiveDate.getTime()).toBeGreaterThanOrEqual(
+          beforeLogin.getTime(),
+        );
+        expect(lastActiveDate.getTime()).toBeLessThanOrEqual(
+          afterLogin.getTime() + 1000,
+        );
+      });
+    });
   });
 
   describe('POST /auth/registration', () => {
@@ -1387,6 +1521,167 @@ describe('Auth API', () => {
       const newRefreshToken = extractRefreshToken(response);
       expect(newRefreshToken).not.toBe(refreshToken);
     });
+
+    describe('Device lastActiveDate update', () => {
+      it('should update device lastActiveDate on refresh-token', async () => {
+        // Get initial lastActiveDate
+        const devicesBeforeResponse = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${refreshToken}`)
+          .expect(200);
+
+        const initialLastActiveDate = new Date(
+          devicesBeforeResponse.body[0].lastActiveDate,
+        );
+
+        // Wait a bit to ensure time difference
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Refresh token
+        const refreshResponse = await request(app)
+          .post('/auth/refresh-token')
+          .set('Cookie', `refreshToken=${refreshToken}`)
+          .expect(200);
+
+        const newRefreshToken = extractRefreshToken(refreshResponse)!;
+
+        // Get updated lastActiveDate
+        const devicesAfterResponse = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${newRefreshToken}`)
+          .expect(200);
+
+        const updatedLastActiveDate = new Date(
+          devicesAfterResponse.body[0].lastActiveDate,
+        );
+
+        expect(updatedLastActiveDate.getTime()).toBeGreaterThan(
+          initialLastActiveDate.getTime(),
+        );
+      });
+
+      it('should maintain the same device during refresh-token chain', async () => {
+        // Get initial device info
+        const devicesInitialResponse = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${refreshToken}`)
+          .expect(200);
+
+        const initialDeviceId = devicesInitialResponse.body[0].deviceId;
+
+        // Refresh multiple times
+        let currentRefreshToken = refreshToken;
+        for (let i = 0; i < 3; i++) {
+          const refreshResponse = await request(app)
+            .post('/auth/refresh-token')
+            .set('Cookie', `refreshToken=${currentRefreshToken}`)
+            .expect(200);
+
+          currentRefreshToken = extractRefreshToken(refreshResponse)!;
+        }
+
+        // Get final device info
+        const devicesFinalResponse = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${currentRefreshToken}`)
+          .expect(200);
+
+        const finalDeviceId = devicesFinalResponse.body[0].deviceId;
+
+        // Device ID should remain the same
+        expect(finalDeviceId).toBe(initialDeviceId);
+      });
+
+      it('should update lastActiveDate to current time on refresh', async () => {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        const beforeRefresh = new Date();
+
+        const refreshResponse = await request(app)
+          .post('/auth/refresh-token')
+          .set('Cookie', `refreshToken=${refreshToken}`)
+          .expect(200);
+
+        const afterRefresh = new Date();
+        const newRefreshToken = extractRefreshToken(refreshResponse)!;
+
+        const devicesResponse = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${newRefreshToken}`)
+          .expect(200);
+
+        const device = devicesResponse.body[0];
+        const lastActiveDate = new Date(device.lastActiveDate);
+
+        expect(lastActiveDate.getTime()).toBeGreaterThanOrEqual(
+          beforeRefresh.getTime(),
+        );
+        expect(lastActiveDate.getTime()).toBeLessThanOrEqual(
+          afterRefresh.getTime() + 1000,
+        );
+      });
+
+      it('should update lastActiveDate for correct device when multiple sessions exist', async () => {
+        // Create a second login
+        const login2 = await request(app)
+          .post('/auth/login')
+          .send({
+            loginOrEmail: testUser.login,
+            password: testUser.password,
+          })
+          .expect(200);
+
+        const refreshToken2 = extractRefreshToken(login2)!;
+
+        // Get devices before refresh
+        const devicesBeforeResponse = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${refreshToken}`)
+          .expect(200);
+
+        const device1Before = devicesBeforeResponse.body.find(
+          (d: any) =>
+            extractRefreshToken(login2) ===
+            devicesBeforeResponse.body.find(
+              (dev: any) => dev.deviceId === d.deviceId,
+            ),
+        );
+        const device2Before = devicesBeforeResponse.body.find(
+          (d: any) => d !== device1Before,
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Refresh only the first token
+        const refreshResponse = await request(app)
+          .post('/auth/refresh-token')
+          .set('Cookie', `refreshToken=${refreshToken}`)
+          .expect(200);
+
+        const newRefreshToken = extractRefreshToken(refreshResponse)!;
+
+        // Get devices after refresh
+        const devicesAfterResponse = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${newRefreshToken}`)
+          .expect(200);
+
+        const device1After = devicesAfterResponse.body.find(
+          (d: any) => d.deviceId === device1Before.deviceId,
+        );
+
+        const device1LastActiveDateBefore = new Date(
+          device1Before.lastActiveDate,
+        );
+        const device1LastActiveDateAfter = new Date(
+          device1After.lastActiveDate,
+        );
+
+        expect(device1LastActiveDateAfter.getTime()).toBeGreaterThan(
+          device1LastActiveDateBefore.getTime(),
+        );
+      });
+    });
   });
 
   describe('POST /auth/logout', () => {
@@ -1481,6 +1776,90 @@ describe('Auth API', () => {
         .post('/auth/refresh-token')
         .set('Cookie', `refreshToken=${refreshToken2}`)
         .expect(200);
+    });
+
+    describe('Device termination on logout', () => {
+      it('should remove device from active devices list after logout', async () => {
+        // Get devices before logout
+        const devicesBeforeResponse = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${refreshToken}`)
+          .expect(200);
+
+        const initialDeviceCount = devicesBeforeResponse.body.length;
+
+        // Logout
+        await request(app)
+          .post('/auth/logout')
+          .set('Cookie', `refreshToken=${refreshToken}`)
+          .expect(204);
+
+        // Create another session to check devices
+        const loginResponse2 = await request(app)
+          .post('/auth/login')
+          .send({
+            loginOrEmail: testUser.login,
+            password: testUser.password,
+          })
+          .expect(200);
+
+        const refreshToken2 = extractRefreshToken(loginResponse2)!;
+
+        // Get devices after logout
+        const devicesAfterResponse = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${refreshToken2}`)
+          .expect(200);
+
+        const newDeviceCount = devicesAfterResponse.body.length;
+
+        // Device count should be less (old session removed)
+        expect(newDeviceCount).toBeLessThan(initialDeviceCount + 1);
+      });
+
+      it('should not affect devices of other users after logout', async () => {
+        // Create another user
+        await request(app)
+          .post('/users')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send(testUser2)
+          .expect(201);
+
+        const otherUserLogin = await request(app)
+          .post('/auth/login')
+          .send({
+            loginOrEmail: testUser2.login,
+            password: testUser2.password,
+          })
+          .expect(200);
+
+        const otherUserRefreshToken = extractRefreshToken(otherUserLogin)!;
+
+        // Get other user's devices count before
+        const otherDevicesBefore = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${otherUserRefreshToken}`)
+          .expect(200);
+
+        const otherDevicesCountBefore = otherDevicesBefore.body.length;
+
+        // Logout first user
+        await request(app)
+          .post('/auth/logout')
+          .set('Cookie', `refreshToken=${refreshToken}`)
+          .expect(204);
+
+        // Get other user's devices count after
+        const otherDevicesAfter = await request(app)
+          .get('/security/devices')
+          .set('Cookie', `refreshToken=${otherUserRefreshToken}`)
+          .expect(200);
+
+        const otherDevicesCountAfter = otherDevicesAfter.body.length;
+
+        // Other user's device count should not change
+        expect(otherDevicesCountAfter).toBe(otherDevicesCountBefore);
+      });
     });
   });
 });
