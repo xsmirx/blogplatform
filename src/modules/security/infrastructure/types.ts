@@ -1,4 +1,5 @@
-export type SessionDB = {
+export type DeviceDB = {
+  _id: string;
   userId: string;
   ip: string;
   deviceName: string;
@@ -6,7 +7,7 @@ export type SessionDB = {
   expiresAt: Date;
 };
 
-export type Session = {
+export type Device = {
   id: string;
   userId: string;
   ip: string;

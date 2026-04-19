@@ -1,16 +1,16 @@
-import { Db, MongoClient } from 'mongodb';
+import { Db, MongoClient, type Collection } from 'mongodb';
 import {
   BLOGS_COLLECTION_NAME,
   COMMENTS_COLLECTION_NAME,
+  DEVICES_COLLECTION_NAME,
   POSTS_COLLECTION_NAME,
-  SESSIONS_COLLECTION_NAME,
   USERS_COLLECTION_NAME,
 } from './collections';
 import { Blog } from '../modules/blog/types';
 import { Post } from '../modules/post/types';
 import { CommentDB } from '../modules/comment/types';
 import { UserDB } from '../modules/user/infrastructure/types';
-import type { SessionDB } from '../modules/security/infrastructure/types';
+import type { DeviceDB } from '../modules/security/infrastructure/types';
 
 export class DatabaseConnection {
   constructor({ mongoURL, dbName }: { mongoURL: string; dbName: string }) {
@@ -50,8 +50,8 @@ export class DatabaseConnection {
 
   public getCollections() {
     return {
-      sessionCollection: this.getDb().collection<SessionDB>(
-        SESSIONS_COLLECTION_NAME,
+      devicesCollection: this.getDb().collection<DeviceDB>(
+        DEVICES_COLLECTION_NAME,
       ),
       usersCollection: this.getDb().collection<UserDB>(USERS_COLLECTION_NAME),
       blogCollection: this.getDb().collection<Blog>(BLOGS_COLLECTION_NAME),

@@ -1,4 +1,4 @@
-export const SESSIONS_COLLECTION_NAME = 'sessions';
+export const DEVICES_COLLECTION_NAME = 'devices';
 
 export const USERS_COLLECTION_NAME = 'users';
 export const BLOGS_COLLECTION_NAME = 'blogs';
