@@ -15,6 +15,7 @@ import type { UserQueryRepository } from './modules/user/infrastructure/user-que
 import type { CommentQueryRepository } from './modules/comment/comment-query-repository';
 import type { DatabaseConnection } from './bd/mongo.db';
 import cookieParser from 'cookie-parser';
+import { createSecurityRouter } from './modules/security/api/security-router';
 
 type AppDependencies = {
   authService: AuthService;
@@ -36,13 +37,48 @@ export const setupApp = (app: Express, deps: AppDependencies) => {
     res.status(200).send('Hello world! h06');
   });
 
-  app.use('/auth', createAuthRouter({ authService: deps.authService, userQueryRepository: deps.userQueryRepository }));
-  app.use('/users', createUserRouter({ userService: deps.userService, userQueryRepository: deps.userQueryRepository }));
-  app.use('/blogs', createBlogRouter({ blogService: deps.blogService, postService: deps.postService }));
-  app.use('/posts', createPostRouter({ postService: deps.postService, commentService: deps.commentService, commentQueryRepository: deps.commentQueryRepository }));
-  app.use('/comments', createCommentRouter({ commentService: deps.commentService, commentQueryRepository: deps.commentQueryRepository }));
+  app.use('/security', createSecurityRouter());
+  app.use(
+    '/auth',
+    createAuthRouter({
+      authService: deps.authService,
+      userQueryRepository: deps.userQueryRepository,
+    }),
+  );
+  app.use(
+    '/users',
+    createUserRouter({
+      userService: deps.userService,
+      userQueryRepository: deps.userQueryRepository,
+    }),
+  );
+  app.use(
+    '/blogs',
+    createBlogRouter({
+      blogService: deps.blogService,
+      postService: deps.postService,
+    }),
+  );
+  app.use(
+    '/posts',
+    createPostRouter({
+      postService: deps.postService,
+      commentService: deps.commentService,
+      commentQueryRepository: deps.commentQueryRepository,
+    }),
+  );
+  app.use(
+    '/comments',
+    createCommentRouter({
+      commentService: deps.commentService,
+      commentQueryRepository: deps.commentQueryRepository,
+    }),
+  );
 
-  app.use('/testing/all-data', createTestingRouter({ databaseConnection: deps.databaseConnection }));
+  app.use(
+    '/testing/all-data',
+    createTestingRouter({ databaseConnection: deps.databaseConnection }),
+  );
 
   app.use(errorHandler);
 
