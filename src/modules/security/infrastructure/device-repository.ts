@@ -1,6 +1,7 @@
 import { type WithId } from 'mongodb';
 import type { DatabaseConnection } from '../../../bd/mongo.db';
-import type { Device, DeviceDB } from './types';
+import type { DeviceDB } from './types';
+import type { Device } from '../domain/types';
 
 export class DeviceRepository {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}
@@ -27,6 +28,14 @@ export class DeviceRepository {
     if (!result) return null;
 
     return this.mapToDomain(result);
+  }
+
+  public async findByUserId(userId: string): Promise<Device[]> {
+    const cursor = this.collection.find({
+      userId,
+    });
+    const results = await cursor.toArray();
+    return results.map((doc) => this.mapToDomain(doc));
   }
 
   public async create(device: Device) {

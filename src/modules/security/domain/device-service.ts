@@ -38,7 +38,17 @@ export class DeviceService {
     ip,
     deviceName,
     expiresAt,
-  }: UpdateDeviceInput) {}
+  }: UpdateDeviceInput) {
+    const device = await this.deviceRepository.findById(deviceId);
+    if (!device) throw new NotFoundError('Device not found');
+    if (device.userId !== userId) throw new ForbiddenError('Forbidden');
+
+    await this.deviceRepository.updateById(deviceId, {
+      ip,
+      deviceName,
+      expiresAt,
+    });
+  }
 
   public async terminateDevice({ userId, deviceId }: TerminateDeviceInput) {
     const device = await this.deviceRepository.findById(deviceId);
@@ -50,5 +60,15 @@ export class DeviceService {
   public async terminateAllDevicesExceptCurrent({
     userId,
     currentDeviceId,
-  }: TerminateAllDevicesExceptCurrentInput) {}
+  }: TerminateAllDevicesExceptCurrentInput) {
+    const devices = await this.deviceRepository.findByUserId(userId);
+    const devicesToTerminate = devices.filter(
+      (device) => device.id !== currentDeviceId,
+    );
+    await Promise.all(
+      devicesToTerminate.map((device) =>
+        this.deviceRepository.deleteById(device.id),
+      ),
+    );
+  }
 }
