@@ -1,7 +1,7 @@
 {
   "name": "blogplatform",
   "version": "1.0.0",
-  "description": "",
+  "description": "learning project for beckand development",
   "main": "index.js",
   "scripts": {
     "build": "tsc --project tsconfig.app.json",
@@ -14,7 +14,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.11.0",
+  "packageManager": "pnpm@10.33.2+sha512.a90faf6feeab71ad6c6e57f94e0fe1a12f5dcc22cd754db40ae9593eb6a3e0b6b12e3540218bb37ae083404b1f2ce6db2a4121e979829b4aff94b99f49da1cf8",
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/bcrypt": "^6.0.0",
@@ -37,12 +37,14 @@
     "typescript-eslint": "^8.52.0"
   },
   "dependencies": {
+    "@types/http-errors": "^2.0.5",
     "@types/jsonwebtoken": "^9.0.10",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "express-validator": "^7.3.1",
+    "http-errors": "^2.0.1",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.0.0",
     "nodemailer": "^8.0.1"

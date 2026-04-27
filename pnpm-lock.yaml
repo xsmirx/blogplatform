@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@types/http-errors':
+        specifier: ^2.0.5
+        version: 2.0.5
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
@@ -26,6 +29,9 @@ importers:
       express-validator:
         specifier: ^7.3.1
         version: 7.3.1
+      http-errors:
+        specifier: ^2.0.1
+        version: 2.0.1
       jsonwebtoken:
         specifier: ^9.0.3
         version: 9.0.3
