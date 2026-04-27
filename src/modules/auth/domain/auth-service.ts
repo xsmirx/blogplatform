@@ -8,36 +8,38 @@ import type { CreateUserPayload } from '../../user/infrastructure/types';
 import { randomUUID } from 'crypto';
 import { MailService } from '../adapters/mail-service';
 import { emailExamples } from '../adapters/email-examples';
-import type { BlackListRefreshTokenRepository } from '../infrastructure/black-list-refresk-token-repository';
+import type { DeviceService } from '../../security/domain/device-service';
+import type { LoginInput, RefreshInput } from './types';
 
 export class AuthService {
   private readonly userRepository: UserRepository;
-  private readonly blackListRefreshTokenRepository: BlackListRefreshTokenRepository;
+  private readonly deviceService: DeviceService;
   private readonly jwtService: JwtService;
   private readonly bcryptService: BcryptService;
   private readonly mailService: MailService;
 
   constructor(deps: {
     userRepository: UserRepository;
+    deviceService: DeviceService;
     jwtService: JwtService;
     bcryptService: BcryptService;
     mailService: MailService;
-    blackListRefreshTokenRepository: BlackListRefreshTokenRepository;
   }) {
     this.userRepository = deps.userRepository;
+    this.deviceService = deps.deviceService;
     this.jwtService = deps.jwtService;
     this.bcryptService = deps.bcryptService;
     this.mailService = deps.mailService;
-    this.blackListRefreshTokenRepository = deps.blackListRefreshTokenRepository;
   }
 
   public async login({
     loginOrEmail,
     password,
-  }: {
-    loginOrEmail: string;
-    password: string;
-  }): Promise<Result<{ accessToken: string; refreshToken: string } | null>> {
+    ip,
+    deviceName,
+  }: LoginInput): Promise<
+    Result<{ accessToken: string; refreshToken: string } | null>
+  > {
     const result = await this.checkCredentials({
       loginOrEmail,
       password,
@@ -51,12 +53,40 @@ export class AuthService {
       };
     }
 
-    const accessToken = await this.jwtService.generateAccessToken(
-      result.data!.id,
-    );
-    const refreshToken = await this.jwtService.generateRefreshToken(
-      result.data!.id,
-    );
+    const userId = result.data!.id;
+    const deviceId = randomUUID();
+
+    const accessToken = await this.jwtService.generateAccessToken({
+      userId,
+    });
+    const refreshToken = await this.jwtService.generateRefreshToken({
+      userId,
+      deviceId,
+    });
+
+    const refreshTokenPayload =
+      await this.jwtService.verifyRefreshToken(refreshToken);
+
+    const iat = refreshTokenPayload!.iat;
+    const exp = refreshTokenPayload!.exp;
+
+    if (iat === undefined || exp === undefined) {
+      return {
+        status: ResultStatus.Unauthorized,
+        data: null,
+        extensions: [],
+        errorMessage: 'Invalid token payload',
+      };
+    }
+
+    await this.deviceService.createDevice({
+      deviceId,
+      userId,
+      ip,
+      deviceName,
+      createdAt: new Date(iat * 1000),
+      expiresAt: new Date(exp * 1000),
+    });
 
     return {
       status: ResultStatus.Success,
@@ -246,89 +276,78 @@ export class AuthService {
     };
   }
 
-  private async isValidRefreshToken(refreshToken: string) {
-    const payload = await this.jwtService.verifyRefreshToken(refreshToken);
-    if (!payload) {
-      return false;
-    }
+  public async refresh({ deviceId, userId, ip, deviceName }: RefreshInput) {
+    const accessToken = await this.jwtService.generateAccessToken({ userId });
+    const refreshToken = await this.jwtService.generateRefreshToken({
+      userId,
+      deviceId,
+    });
+    const refreshTokenPayload =
+      await this.jwtService.verifyRefreshToken(refreshToken);
 
-    if (payload.exp !== undefined && payload.exp * 1000 < Date.now()) {
-      return false;
-    }
+    const iat = refreshTokenPayload!.iat;
+    const exp = refreshTokenPayload!.exp;
 
-    const isBlackListed =
-      await this.blackListRefreshTokenRepository.isBlackListed(refreshToken);
-
-    if (isBlackListed) {
-      return false;
-    }
-
-    return payload;
-  }
-
-  public async refreshToken({ refreshToken }: { refreshToken: string }) {
-    const payload = await this.isValidRefreshToken(refreshToken);
-
-    if (payload === false) {
-      return {
-        status: ResultStatus.Unauthorized,
-        data: null,
-        extensions: [],
-        errorMessage: 'Refresh token is invalid',
-      };
-    }
-
-    const user = await this.userRepository.findById(payload.userId);
-
-    if (!user) {
-      return {
-        status: ResultStatus.NotFound,
-        data: null,
-        extensions: [],
-        errorMessage: 'User not found',
-      };
-    }
-
-    const newAccessToken = await this.jwtService.generateAccessToken(user.id);
-    const newRefreshToken = await this.jwtService.generateRefreshToken(user.id);
-
-    if (payload.exp !== undefined && payload.exp * 1000 >= Date.now()) {
-      await this.blackListRefreshTokenRepository.addToBlackList({
-        refreshToken,
-        expiresAt: new Date(payload.exp * 1000),
-      });
-    }
-
-    return {
-      status: ResultStatus.Success,
-      data: { accessToken: newAccessToken, refreshToken: newRefreshToken },
-      extensions: [],
-    };
+    await this.deviceService.updateDevice({
+      deviceId,
+      userId,
+      expiresAt: new Date(exp * 1000),
+      ip,
+      deviceName,
+    });
+    // const payload = await this.isValidRefreshToken(refreshToken);
+    // if (payload === false) {
+    //   return {
+    //     status: ResultStatus.Unauthorized,
+    //     data: null,
+    //     extensions: [],
+    //     errorMessage: 'Refresh token is invalid',
+    //   };
+    // }
+    // const user = await this.userRepository.findById(payload.userId);
+    // if (!user) {
+    //   return {
+    //     status: ResultStatus.NotFound,
+    //     data: null,
+    //     extensions: [],
+    //     errorMessage: 'User not found',
+    //   };
+    // }
+    // const newAccessToken = await this.jwtService.generateAccessToken(user.id);
+    // const newRefreshToken = await this.jwtService.generateRefreshToken(user.id);
+    // if (payload.exp !== undefined && payload.exp * 1000 >= Date.now()) {
+    //   await this.blackListRefreshTokenRepository.addToBlackList({
+    //     refreshToken,
+    //     expiresAt: new Date(payload.exp * 1000),
+    //   });
+    // }
+    // return {
+    //   status: ResultStatus.Success,
+    //   data: { accessToken: newAccessToken, refreshToken: newRefreshToken },
+    //   extensions: [],
+    // };
   }
 
   public async logout({ refreshToken }: { refreshToken: string }) {
-    const payload = await this.isValidRefreshToken(refreshToken);
-
-    if (payload === false) {
-      return {
-        status: ResultStatus.Unauthorized,
-        data: null,
-        extensions: [],
-        errorMessage: 'Refresh token is invalid',
-      };
-    }
-
-    if (payload.exp !== undefined && payload.exp * 1000 >= Date.now()) {
-      await this.blackListRefreshTokenRepository.addToBlackList({
-        refreshToken,
-        expiresAt: new Date(payload.exp * 1000),
-      });
-    }
-
-    return {
-      status: ResultStatus.Success,
-      data: null,
-      extensions: [],
-    };
+    // const payload = await this.isValidRefreshToken(refreshToken);
+    // if (payload === false) {
+    //   return {
+    //     status: ResultStatus.Unauthorized,
+    //     data: null,
+    //     extensions: [],
+    //     errorMessage: 'Refresh token is invalid',
+    //   };
+    // }
+    // if (payload.exp !== undefined && payload.exp * 1000 >= Date.now()) {
+    //   await this.blackListRefreshTokenRepository.addToBlackList({
+    //     refreshToken,
+    //     expiresAt: new Date(payload.exp * 1000),
+    //   });
+    // }
+    // return {
+    //   status: ResultStatus.Success,
+    //   data: null,
+    //   extensions: [],
+    // };
   }
 }

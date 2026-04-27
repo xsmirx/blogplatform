@@ -21,7 +21,8 @@ export type UpdateDeviceInput = {
   userId: string;
   ip?: string;
   deviceName?: string;
-  expiresAt?: Date;
+  iat?: Date;
+  exp?: Date;
 };
 
 export type TerminateDeviceInput = {

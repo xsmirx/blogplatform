@@ -13,7 +13,7 @@ export const createRefreshTokenHandler = ({
     if (!refreshToken) {
       return res.sendStatus(401);
     }
-    const result = await authService.refreshToken({ refreshToken });
+    const result = await authService.refresh({ refreshToken });
 
     if (result.status !== ResultStatus.Success) {
       return res.sendStatus(401);

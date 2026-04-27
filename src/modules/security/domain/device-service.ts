@@ -37,15 +37,25 @@ export class DeviceService {
     userId,
     ip,
     deviceName,
-    expiresAt,
+    iat,
+    exp,
   }: UpdateDeviceInput) {
     const device = await this.deviceRepository.findById(deviceId);
     if (!device) throw new NotFoundError('Device not found');
     if (device.userId !== userId) throw new ForbiddenError('Forbidden');
 
+    if (device.ip !== ip) {
+      // throw location error
+    }
+
+    if (device.deviceName !== deviceName) {
+      // throw device name error
+    }
+
     await this.deviceRepository.updateById(deviceId, {
       ip,
       deviceName,
+      createdAt,
       expiresAt,
     });
   }
