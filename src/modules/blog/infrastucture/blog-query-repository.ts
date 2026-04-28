@@ -1,4 +1,4 @@
-import type { Filter, WithId } from 'mongodb';
+import { ObjectId, type Filter, type WithId } from 'mongodb';
 import type { DatabaseConnection } from '../../../bd/mongo.db';
 import type { BlogListQueryInput, BlogOutputDTO } from '../api/types';
 import type { BlogDB } from './types';
@@ -19,6 +19,11 @@ export class BlogQueryRepository {
       createdAt: blog.createdAt.toISOString(),
       isMembership: blog.isMembership,
     };
+  }
+
+  public async findById(id: string): Promise<BlogOutputDTO | null> {
+    const blog = await this.collection.findOne({ _id: new ObjectId(id) });
+    return blog ? this.mapToViewModel(blog) : null;
   }
 
   public async findAll(

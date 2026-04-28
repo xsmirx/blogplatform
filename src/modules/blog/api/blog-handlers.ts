@@ -1,138 +1,65 @@
 import { RequestHandler } from 'express';
-import { BlogInputDTO, BlogListQueryInput, BlogOutputDTO } from './api/types';
-import { ListResponse } from '../../core/types/list-response';
 import { matchedData } from 'express-validator';
-import { PostInputDTO, PostListQueryInput, PostOutputDTO } from '../post/types';
-import type { BlogService } from './domain/blog-service';
-import type { PostService } from '../post/post-service';
+import type { BlogService } from '../domain/blog-service';
+import type { ListResponse } from '../../../core/types/list-response';
+import type { BlogInputDTO, BlogListQueryInput, BlogOutputDTO } from './types';
+import type { BlogQueryRepository } from '../infrastucture/blog-query-repository';
+import { NotFoundError } from '../../../core/errors/errors';
 
 export const createGetBlogListHandler = ({
-  blogService,
+  blogQueryRepository,
 }: {
-  blogService: BlogService;
-}): RequestHandler<undefined, ListResponse<BlogOutputDTO>> => {
+  blogQueryRepository: BlogQueryRepository;
+}): RequestHandler<object, ListResponse<BlogOutputDTO>> => {
   return async (req, res) => {
     const validationData = matchedData<BlogListQueryInput>(req);
 
-    const { items, totalCount } = await blogService.findMany(validationData);
+    const { items, totalCount } =
+      await blogQueryRepository.findAll(validationData);
 
-    res.status(200).send({
+    return res.status(200).send({
       page: validationData.pageNumber,
       pageSize: validationData.pageSize,
       pagesCount: Math.ceil(totalCount / validationData.pageSize),
       totalCount: totalCount,
-      items: items.map((blog) => ({
-        id: blog._id.toString(),
-        name: blog.name,
-        description: blog.description,
-        websiteUrl: blog.websiteUrl,
-        createdAt: blog.createdAt.toISOString(),
-        isMembership: blog.isMembership,
-      })),
+      items,
     });
   };
 };
 
 export const createGetBlogHandler = ({
-  blogService,
+  blogQueryRepository,
 }: {
-  blogService: BlogService;
+  blogQueryRepository: BlogQueryRepository;
 }): RequestHandler<{ id: string }, BlogOutputDTO> => {
   return async (req, res) => {
     const blogId = req.params.id;
-    const blog = await blogService.findByIdOrFail(blogId);
-    res.status(200).send({
-      id: blog._id.toString(),
-      name: blog.name,
-      description: blog.description,
-      websiteUrl: blog.websiteUrl,
-      createdAt: blog.createdAt.toISOString(),
-      isMembership: blog.isMembership,
-    });
-  };
-};
-
-export const createGetPostListHandler = ({
-  postService,
-}: {
-  postService: PostService;
-}): RequestHandler<{ blogId: string }, ListResponse<PostOutputDTO>> => {
-  return async (req, res) => {
-    const blogId = req.params.blogId;
-    const validationData = matchedData<PostListQueryInput>(req);
-
-    const { items, totalCount } = await postService.findMany({
-      blogId,
-      ...validationData,
-    });
-
-    res.status(200).send({
-      page: validationData.pageNumber,
-      pageSize: validationData.pageSize,
-      pagesCount: Math.ceil(totalCount / validationData.pageSize),
-      totalCount: totalCount,
-      items: items.map((post) => ({
-        id: post._id.toString(),
-        title: post.title,
-        shortDescription: post.shortDescription,
-        content: post.content,
-        blogId: post.blogId,
-        blogName: post.blogName,
-        createdAt: post.createdAt.toISOString(),
-      })),
-    });
+    const blog = await blogQueryRepository.findById(blogId);
+    if (!blog) throw new NotFoundError('Blog', blogId);
+    return res.status(200).send(blog);
   };
 };
 
 export const createCreateBlogHandler = ({
   blogService,
+  blogQueryRepository,
 }: {
   blogService: BlogService;
-}): RequestHandler<unknown, BlogOutputDTO, BlogInputDTO> => {
+  blogQueryRepository: BlogQueryRepository;
+}): RequestHandler<object, BlogOutputDTO, BlogInputDTO> => {
   return async (req, res) => {
-    const { description, name, websiteUrl } = req.body;
-    const newBlog = await blogService.create({ description, name, websiteUrl });
-    res.status(201).send({
-      id: newBlog._id.toString(),
-      name: newBlog.name,
-      description: newBlog.description,
-      websiteUrl: newBlog.websiteUrl,
-      createdAt: newBlog.createdAt.toISOString(),
-      isMembership: newBlog.isMembership,
+    const { description, name, websiteUrl } = matchedData<BlogInputDTO>(req);
+    const newBlogId = await blogService.create({
+      description,
+      name,
+      websiteUrl,
     });
-  };
-};
-
-export const createCreatePostHandler = ({
-  postService,
-}: {
-  postService: PostService;
-}): RequestHandler<
-  { blogId: string },
-  unknown,
-  Omit<PostInputDTO, 'blogId'>
-> => {
-  return async (req, res) => {
-    const blogId = req.params.blogId;
-
-    const { title, shortDescription, content } = req.body;
-
-    const newPost = await postService.create({
-      blogId,
-      title,
-      shortDescription,
-      content,
-    });
-
-    res.status(201).send({
-      id: newPost._id.toString(),
-      title: newPost.title,
-      shortDescription: newPost.shortDescription,
-      content: newPost.content,
-      blogId: newPost.blogId,
-      blogName: newPost.blogName,
-      createdAt: newPost.createdAt.toISOString(),
-    });
+    const newBlog = await blogQueryRepository.findById(newBlogId);
+    if (!newBlog)
+      throw new Error(
+        `Blog ${newBlogId} was created but not found - DB inconsistency`,
+      );
+    res.status(201).send(newBlog);
   };
 };
 
@@ -142,10 +69,11 @@ export const createUpdateBlogHandler = ({
   blogService: BlogService;
 }): RequestHandler<{ id: string }, void, BlogInputDTO> => {
   return async (req, res) => {
-    const blogId = req.params.id;
-    const { name, description, websiteUrl } = req.body;
+    const { id, name, description, websiteUrl } = matchedData<
+      { id: string } & BlogInputDTO
+    >(req);
 
-    await blogService.update(blogId, {
+    await blogService.update(id, {
       name,
       description,
       websiteUrl,
@@ -160,9 +88,8 @@ export const createDeleteBlogHandler = ({
   blogService: BlogService;
 }): RequestHandler<{ id: string }> => {
   return async (req, res) => {
-    const blogId = req.params.id;
-
-    await blogService.delete(blogId);
+    const { id } = matchedData<{ id: string }>(req);
+    await blogService.delete(id);
     res.status(204).send();
   };
 };

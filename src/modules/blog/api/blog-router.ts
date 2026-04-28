@@ -18,11 +18,14 @@ import {
 import type { BlogService } from '../domain/blog-service';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
 import { superAdminGuard } from '../../auth/api/guards/super-admin-guard';
+import type { BlogQueryRepository } from '../infrastucture/blog-query-repository';
 
 export const createBlogRouter = ({
   blogService,
+  blogQueryRepository,
 }: {
   blogService: BlogService;
+  blogQueryRepository: BlogQueryRepository;
 }) => {
   const blogRouter: Router = Router();
 
@@ -34,20 +37,21 @@ export const createBlogRouter = ({
       pageSizeValidation,
       sortByValidation,
       sortDirectionValidation,
-      createGetBlogListHandler({ blogService }),
+      inputValidationResultMiddleware,
+      createGetBlogListHandler({ blogQueryRepository }),
     )
     .get(
       '/:id',
       idValidation,
       inputValidationResultMiddleware,
-      createGetBlogHandler({ blogService }),
+      createGetBlogHandler({ blogQueryRepository }),
     )
     .post(
       '/',
       superAdminGuard,
       blogDTOValidation,
       inputValidationResultMiddleware,
-      createCreateBlogHandler({ blogService }),
+      createCreateBlogHandler({ blogService, blogQueryRepository }),
     )
     .put(
       '/:id',
