@@ -1,5 +1,4 @@
 import express, { Express } from 'express';
-import { createBlogRouter } from './modules/blog/blog-router';
 import { createPostRouter } from './modules/post/post-router';
 import { createTestingRouter } from './modules/testing/testing-router';
 import { errorHandler } from './core/errors/error.handler';
@@ -16,6 +15,8 @@ import type { CommentQueryRepository } from './modules/comment/comment-query-rep
 import type { DatabaseConnection } from './bd/mongo.db';
 import cookieParser from 'cookie-parser';
 import { createSecurityRouter } from './modules/security/api/security-router';
+import { createPostByBlogRouter } from './modules/post/post-by-blog-router';
+import { createBlogRouter } from './modules/blog/api/blog-router';
 
 type AppDependencies = {
   authService: AuthService;
@@ -56,7 +57,6 @@ export const setupApp = (app: Express, deps: AppDependencies) => {
     '/blogs',
     createBlogRouter({
       blogService: deps.blogService,
-      postService: deps.postService,
     }),
   );
   app.use(
@@ -65,6 +65,12 @@ export const setupApp = (app: Express, deps: AppDependencies) => {
       postService: deps.postService,
       commentService: deps.commentService,
       commentQueryRepository: deps.commentQueryRepository,
+    }),
+  );
+  app.use(
+    '/blogs/:blogId/posts',
+    createPostByBlogRouter({
+      postService: deps.postService,
     }),
   );
   app.use(

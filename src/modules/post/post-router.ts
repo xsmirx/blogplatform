@@ -49,7 +49,12 @@ export const createPostRouter = ({
       inputValidationResultMiddleware,
       createGetPostListHandler({ postService }),
     )
-    .get('/:id', idValidation, inputValidationResultMiddleware, createGetPostHandler({ postService }))
+    .get(
+      '/:id',
+      idValidation,
+      inputValidationResultMiddleware,
+      createGetPostHandler({ postService }),
+    )
     .post(
       '/',
       superAdminGuard,
@@ -90,7 +95,11 @@ export const createPostRouter = ({
       idValidation,
       commentContentValidation,
       inputValidationResultMiddleware,
-      createCreateCommentHandler({ postService, commentService, commentQueryRepository }),
+      createCreateCommentHandler({
+        postService,
+        commentService,
+        commentQueryRepository,
+      }),
     );
 
   return postRouter;
