@@ -1,7 +1,7 @@
 import { body, param, query } from 'express-validator';
 import { PaginationQueryKey } from '../../core/types/pagiation-query-key';
 import { SortQueryKey } from '../../core/types/sort-query-key';
-import { BlogSortField } from './types';
+import { BlogSortField } from './api/types';
 import { SortDirection } from '../../core/types/sort-deriction';
 
 export const idValidation = param('id')

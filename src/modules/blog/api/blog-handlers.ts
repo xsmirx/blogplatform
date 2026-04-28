@@ -1,9 +1,9 @@
 import { RequestHandler } from 'express';
-import { BlogInputDTO, BlogListQueryInput, BlogOutputDTO } from './types';
+import { BlogInputDTO, BlogListQueryInput, BlogOutputDTO } from './api/types';
 import { ListResponse } from '../../core/types/list-response';
 import { matchedData } from 'express-validator';
 import { PostInputDTO, PostListQueryInput, PostOutputDTO } from '../post/types';
-import type { BlogService } from './blog-service';
+import type { BlogService } from './domain/blog-service';
 import type { PostService } from '../post/post-service';
 
 export const createGetBlogListHandler = ({
@@ -107,7 +107,11 @@ export const createCreatePostHandler = ({
   postService,
 }: {
   postService: PostService;
-}): RequestHandler<{ blogId: string }, unknown, Omit<PostInputDTO, 'blogId'>> => {
+}): RequestHandler<
+  { blogId: string },
+  unknown,
+  Omit<PostInputDTO, 'blogId'>
+> => {
   return async (req, res) => {
     const blogId = req.params.blogId;
 

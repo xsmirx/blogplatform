@@ -1,20 +1,30 @@
-export class NotFoundError extends Error {
+export class DomainError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'NotFoundError';
+    this.name = this.constructor.name;
   }
 }
 
-export class WrongCredentialsError extends Error {
+export class NotFoundError extends DomainError {
+  constructor(
+    public entity: string,
+    public id?: string | number,
+  ) {
+    super(`${entity}${id ? ` with id ${id}` : ''} not found`);
+  }
+}
+export class ForbiddenError extends DomainError {}
+export class UnauthorizedError extends DomainError {}
+export class WrongCredentialsError extends DomainError {
   constructor() {
     super('Wrong credentials provided');
-    this.name = 'WrongCredentialsError';
   }
 }
-
-export class ForbiddenError extends Error {
-  constructor(message: string) {
+export class ValidationError extends DomainError {
+  constructor(
+    public field: string,
+    message: string,
+  ) {
     super(message);
-    this.name = 'ForbiddenError';
   }
 }

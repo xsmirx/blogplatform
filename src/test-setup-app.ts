@@ -8,8 +8,8 @@ import { UserRepository } from './modules/user/infrastructure/user-repository';
 import { UserQueryRepository } from './modules/user/infrastructure/user-query-repository';
 import { BlackListRefreshTokenRepository } from './modules/auth/infrastructure/black-list-refresk-token-repository';
 import { UserService } from './modules/user/domain/user-service';
-import { BlogRepository } from './modules/blog/blog-repository';
-import { BlogService } from './modules/blog/blog-service';
+import { MongoBlogRepository } from './modules/blog/infrastucture/blog-repository';
+import { BlogService } from './modules/blog/domain/blog-service';
 import { PostRepository } from './modules/post/post-repository';
 import { PostService } from './modules/post/post-service';
 import { CommentRepository } from './modules/comment/comment-repository';
@@ -32,11 +32,15 @@ export const createTestApp = (): Express => {
   // Repositories
   const userRepository = new UserRepository(testDatabaseConnection);
   const userQueryRepository = new UserQueryRepository(testDatabaseConnection);
-  const blogRepository = new BlogRepository(testDatabaseConnection);
+  const blogRepository = new MongoBlogRepository(testDatabaseConnection);
   const postRepository = new PostRepository(testDatabaseConnection);
   const commentRepository = new CommentRepository(testDatabaseConnection);
-  const commentQueryRepository = new CommentQueryRepository(testDatabaseConnection);
-  const blackListRefreshTokenRepository = new BlackListRefreshTokenRepository(testDatabaseConnection);
+  const commentQueryRepository = new CommentQueryRepository(
+    testDatabaseConnection,
+  );
+  const blackListRefreshTokenRepository = new BlackListRefreshTokenRepository(
+    testDatabaseConnection,
+  );
 
   // Services
   const userService = new UserService({ bcryptService, userRepository });
@@ -49,7 +53,10 @@ export const createTestApp = (): Express => {
   });
   const blogService = new BlogService({ blogRepository });
   const postService = new PostService({ blogRepository, postRepository });
-  const commentService = new CommentService({ userRepository, commentRepository });
+  const commentService = new CommentService({
+    userRepository,
+    commentRepository,
+  });
 
   setupApp(app, {
     authService,

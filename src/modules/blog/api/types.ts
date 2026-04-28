@@ -1,12 +1,4 @@
-import { PaginationAndSorting } from '../../core/types/pagination-and-sorting';
-
-export type Blog = {
-  name: string;
-  description: string;
-  websiteUrl: string;
-  createdAt: Date;
-  isMembership: boolean;
-};
+import { PaginationAndSorting } from '../../../core/types/pagination-and-sorting';
 
 export enum BlogSortField {
   createdAt = 'createdAt',

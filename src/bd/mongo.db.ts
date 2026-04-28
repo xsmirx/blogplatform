@@ -1,4 +1,4 @@
-import { Db, MongoClient, type Collection } from 'mongodb';
+import { Db, MongoClient } from 'mongodb';
 import {
   BLOGS_COLLECTION_NAME,
   COMMENTS_COLLECTION_NAME,
@@ -6,11 +6,11 @@ import {
   POSTS_COLLECTION_NAME,
   USERS_COLLECTION_NAME,
 } from './collections';
-import { Blog } from '../modules/blog/types';
 import { Post } from '../modules/post/types';
 import { CommentDB } from '../modules/comment/types';
 import { UserDB } from '../modules/user/infrastructure/types';
 import type { DeviceDB } from '../modules/security/infrastructure/types';
+import type { BlogDB } from '../modules/blog/infrastucture/types';
 
 export class DatabaseConnection {
   constructor({ mongoURL, dbName }: { mongoURL: string; dbName: string }) {
@@ -54,7 +54,7 @@ export class DatabaseConnection {
         DEVICES_COLLECTION_NAME,
       ),
       usersCollection: this.getDb().collection<UserDB>(USERS_COLLECTION_NAME),
-      blogCollection: this.getDb().collection<Blog>(BLOGS_COLLECTION_NAME),
+      blogCollection: this.getDb().collection<BlogDB>(BLOGS_COLLECTION_NAME),
       postsCollection: this.getDb().collection<Post>(POSTS_COLLECTION_NAME),
       commentsCollection: this.getDb().collection<CommentDB>(
         COMMENTS_COLLECTION_NAME,

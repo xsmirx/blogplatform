@@ -1,13 +1,13 @@
-import type { BlogRepository } from '../blog/blog-repository';
+import type { MongoBlogRepository } from '../blog/infrastucture/blog-repository';
 import type { PostRepository } from './post-repository';
 import { Post, PostInputDTO, PostListQueryInput } from './types';
 
 export class PostService {
-  private readonly blogRepository: BlogRepository;
+  private readonly blogRepository: MongoBlogRepository;
   private readonly postRepository: PostRepository;
 
   constructor(deps: {
-    blogRepository: BlogRepository;
+    blogRepository: MongoBlogRepository;
     postRepository: PostRepository;
   }) {
     this.blogRepository = deps.blogRepository;

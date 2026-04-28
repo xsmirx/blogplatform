@@ -10,8 +10,8 @@ import { UserRepository } from './modules/user/infrastructure/user-repository';
 import { UserQueryRepository } from './modules/user/infrastructure/user-query-repository';
 import { BlackListRefreshTokenRepository } from './modules/auth/infrastructure/black-list-refresk-token-repository';
 import { UserService } from './modules/user/domain/user-service';
-import { BlogRepository } from './modules/blog/blog-repository';
-import { BlogService } from './modules/blog/blog-service';
+import { MongoBlogRepository } from './modules/blog/infrastucture/blog-repository';
+import { BlogService } from './modules/blog/domain/blog-service';
 import { PostRepository } from './modules/post/post-repository';
 import { PostService } from './modules/post/post-service';
 import { CommentRepository } from './modules/comment/comment-repository';
@@ -32,11 +32,13 @@ const bootstrap = async () => {
   // Repositories
   const userRepository = new UserRepository(databaseConnection);
   const userQueryRepository = new UserQueryRepository(databaseConnection);
-  const blogRepository = new BlogRepository(databaseConnection);
+  const blogRepository = new MongoBlogRepository(databaseConnection);
   const postRepository = new PostRepository(databaseConnection);
   const commentRepository = new CommentRepository(databaseConnection);
   const commentQueryRepository = new CommentQueryRepository(databaseConnection);
-  const blackListRefreshTokenRepository = new BlackListRefreshTokenRepository(databaseConnection);
+  const blackListRefreshTokenRepository = new BlackListRefreshTokenRepository(
+    databaseConnection,
+  );
 
   // Services
   const userService = new UserService({ bcryptService, userRepository });
@@ -49,7 +51,10 @@ const bootstrap = async () => {
   });
   const blogService = new BlogService({ blogRepository });
   const postService = new PostService({ blogRepository, postRepository });
-  const commentService = new CommentService({ userRepository, commentRepository });
+  const commentService = new CommentService({
+    userRepository,
+    commentRepository,
+  });
 
   setupApp(app, {
     authService,

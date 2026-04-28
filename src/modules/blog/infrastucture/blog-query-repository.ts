@@ -1,0 +1,51 @@
+import type { Filter, WithId } from 'mongodb';
+import type { DatabaseConnection } from '../../../bd/mongo.db';
+import type { BlogListQueryInput, BlogOutputDTO } from '../api/types';
+import type { BlogDB } from './types';
+
+export class BlogQueryRepository {
+  constructor(protected readonly databaseConnection: DatabaseConnection) {}
+
+  private get collection() {
+    return this.databaseConnection.getCollections().blogCollection;
+  }
+
+  private mapToViewModel(blog: WithId<BlogDB>): BlogOutputDTO {
+    return {
+      id: blog._id.toString(),
+      name: blog.name,
+      description: blog.description,
+      websiteUrl: blog.websiteUrl,
+      createdAt: blog.createdAt.toISOString(),
+      isMembership: blog.isMembership,
+    };
+  }
+
+  public async findAll(
+    query: BlogListQueryInput,
+  ): Promise<{ items: BlogOutputDTO[]; totalCount: number }> {
+    const { pageNumber, pageSize, sortBy, sortDirection, searchNameTerm } =
+      query;
+
+    const skip = (pageNumber - 1) * pageSize;
+
+    const filter: Filter<BlogDB> = {};
+
+    if (searchNameTerm) {
+      filter.name = { $regex: searchNameTerm, $options: 'i' };
+    }
+
+    const items = await this.collection
+      .find(filter)
+      .sort(sortBy, sortDirection)
+      .skip(skip)
+      .limit(pageSize)
+      .toArray();
+
+    const mappedItems = items.map((item) => this.mapToViewModel(item));
+
+    const totalCount = await this.collection.countDocuments(filter);
+
+    return { items: mappedItems, totalCount };
+  }
+}

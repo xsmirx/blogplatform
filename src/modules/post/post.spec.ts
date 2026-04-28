@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { BlogInputDTO } from '../blog/types';
+import { BlogInputDTO } from '../blog/api/types';
 import { ValidationError } from '../../core/types/validation-error';
 import { PostInputDTO } from './types';
 import { createTestApp, testDatabaseConnection } from '../../test-setup-app';

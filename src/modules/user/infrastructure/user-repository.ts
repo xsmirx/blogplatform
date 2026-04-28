@@ -1,6 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { EmailNotUniqueError, LoginNotUniqueError } from '../user-errors';
-import { NotFoundError } from '../../../core/errors/errors';
+import { NotFoundError, ValidationError } from '../../../core/errors/errors';
 import { DatabaseConnection } from '../../../bd/mongo.db';
 import { User } from '../domain/types';
 import { CheckUserExistsPayload, CreateUserPayload } from './types';
@@ -95,16 +94,12 @@ export class UserRepository {
   public async checkUserExists(payload: CheckUserExistsPayload): Promise<void> {
     const userByEmail = await this.collection.findOne({ email: payload.email });
     if (userByEmail) {
-      throw new EmailNotUniqueError(
-        'User with given email or login already exists',
-      );
+      throw new ValidationError('email', 'email should be unique');
     }
 
     const userByLogin = await this.collection.findOne({ login: payload.login });
     if (userByLogin) {
-      throw new LoginNotUniqueError(
-        'User with given email or login already exists',
-      );
+      throw new ValidationError('login', 'login should be unique');
     }
   }
 
@@ -176,4 +171,3 @@ export class UserRepository {
     }
   }
 }
-

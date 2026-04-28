@@ -8,7 +8,7 @@ import { createCommentRouter } from './modules/comment/comment-router';
 import { createAuthRouter } from './modules/auth/api/auth-router';
 import type { AuthService } from './modules/auth/domain/auth-service';
 import type { UserService } from './modules/user/domain/user-service';
-import type { BlogService } from './modules/blog/blog-service';
+import type { BlogService } from './modules/blog/domain/blog-service';
 import type { PostService } from './modules/post/post-service';
 import type { CommentService } from './modules/comment/comment-service';
 import type { UserQueryRepository } from './modules/user/infrastructure/user-query-repository';
