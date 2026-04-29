@@ -6,7 +6,7 @@ import {
   POSTS_COLLECTION_NAME,
   USERS_COLLECTION_NAME,
 } from './collections';
-import { Post } from '../modules/post/types';
+import { Post } from '../modules/post/api/types';
 import { CommentDB } from '../modules/comment/types';
 import { UserDB } from '../modules/user/infrastructure/types';
 import type { DeviceDB } from '../modules/security/infrastructure/types';

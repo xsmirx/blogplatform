@@ -1,6 +1,6 @@
 import { body, param, query } from 'express-validator';
 import { PaginationQueryKey } from '../../core/types/pagiation-query-key';
-import { PostSortField } from './types';
+import { PostSortField } from './api/types';
 import { SortQueryKey } from '../../core/types/sort-query-key';
 import { SortDirection } from '../../core/types/sort-deriction';
 

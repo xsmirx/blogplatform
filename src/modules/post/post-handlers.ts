@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import { PostInputDTO, PostListQueryInput, PostOutputDTO } from './types';
+import { PostInputDTO, PostListQueryInput, PostOutputDTO } from './api/types';
 import { ListResponse } from '../../core/types/list-response';
 import { matchedData } from 'express-validator';
 import {
@@ -7,7 +7,7 @@ import {
   CommentListQueryInput,
   CommentOutputDTO,
 } from '../comment/types';
-import type { PostService } from './post-service';
+import type { PostService } from './domain/post-service';
 import type { CommentService } from '../comment/comment-service';
 import type { CommentQueryRepository } from '../comment/comment-query-repository';
 

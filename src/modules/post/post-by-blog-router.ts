@@ -15,7 +15,7 @@ import {
   createCreatePostHandler,
   createGetPostListHandler,
 } from './post-handlers';
-import type { PostService } from './post-service';
+import type { PostService } from './domain/post-service';
 
 export const createPostByBlogRouter = ({
   postService,

@@ -4,7 +4,7 @@ import { createTestingRouter } from './modules/testing/testing-router';
 import { errorHandler } from './core/errors/error.handler';
 import { createCommentRouter } from './modules/comment/comment-router';
 import type { BlogService } from './modules/blog/domain/blog-service';
-import type { PostService } from './modules/post/post-service';
+import type { PostService } from './modules/post/domain/post-service';
 import type { CommentService } from './modules/comment/comment-service';
 import type { CommentQueryRepository } from './modules/comment/comment-query-repository';
 import type { DatabaseConnection } from './bd/mongo.db';

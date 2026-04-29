@@ -6,7 +6,7 @@ import { UserRepository } from './modules/user/infrastructure/user-repository';
 import { MongoBlogRepository } from './modules/blog/infrastucture/blog-repository';
 import { BlogService } from './modules/blog/domain/blog-service';
 import { PostRepository } from './modules/post/post-repository';
-import { PostService } from './modules/post/post-service';
+import { PostService } from './modules/post/domain/post-service';
 import { CommentRepository } from './modules/comment/comment-repository';
 import { CommentQueryRepository } from './modules/comment/comment-query-repository';
 import { CommentService } from './modules/comment/comment-service';

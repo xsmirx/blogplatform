@@ -1,5 +1,5 @@
 import { Filter, ObjectId, WithId } from 'mongodb';
-import { Post, PostListQueryInput } from './types';
+import { Post, PostListQueryInput } from './api/types';
 import { NotFoundError } from '../../core/errors/errors';
 import { DatabaseConnection } from '../../bd/mongo.db';
 
@@ -90,4 +90,3 @@ export class PostRepository {
     return;
   }
 }
-

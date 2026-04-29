@@ -44,6 +44,7 @@ export class MongoBlogRepository implements BlogRepository {
           name: blog.name,
           description: blog.description,
           websiteUrl: blog.websiteUrl,
+          isMembership: blog.isMembership,
         },
       },
     );

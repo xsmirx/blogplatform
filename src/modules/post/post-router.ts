@@ -24,7 +24,7 @@ import {
   sortDirectionValidation as commentSortDirectionValidation,
 } from '../comment/comment-validators';
 import { accessTokenGuard } from '../auth/api/guards/access-token-guard';
-import type { PostService } from './post-service';
+import type { PostService } from './domain/post-service';
 import type { CommentService } from '../comment/comment-service';
 import type { CommentQueryRepository } from '../comment/comment-query-repository';
 
