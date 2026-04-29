@@ -2,6 +2,7 @@ import { ObjectId, type Filter, type WithId } from 'mongodb';
 import type { DatabaseConnection } from '../../../bd/mongo.db';
 import type { BlogListQueryInput, BlogOutputDTO } from '../api/types';
 import type { BlogDB } from './types';
+import type { ListResponse } from '../../../core/types/list-response';
 
 export class BlogQueryRepository {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}
@@ -28,7 +29,7 @@ export class BlogQueryRepository {
 
   public async findAll(
     query: BlogListQueryInput,
-  ): Promise<{ items: BlogOutputDTO[]; totalCount: number }> {
+  ): Promise<ListResponse<BlogOutputDTO>> {
     const { pageNumber, pageSize, sortBy, sortDirection, searchNameTerm } =
       query;
 
@@ -51,6 +52,12 @@ export class BlogQueryRepository {
 
     const totalCount = await this.collection.countDocuments(filter);
 
-    return { items: mappedItems, totalCount };
+    return {
+      page: pageNumber,
+      pageSize,
+      pagesCount: Math.ceil(totalCount / pageSize),
+      totalCount,
+      items: mappedItems,
+    };
   }
 }

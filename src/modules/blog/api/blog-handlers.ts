@@ -13,17 +13,8 @@ export const createGetBlogListHandler = ({
 }): RequestHandler<object, ListResponse<BlogOutputDTO>> => {
   return async (req, res) => {
     const validationData = matchedData<BlogListQueryInput>(req);
-
-    const { items, totalCount } =
-      await blogQueryRepository.findAll(validationData);
-
-    return res.status(200).send({
-      page: validationData.pageNumber,
-      pageSize: validationData.pageSize,
-      pagesCount: Math.ceil(totalCount / validationData.pageSize),
-      totalCount: totalCount,
-      items,
-    });
+    const result = await blogQueryRepository.findAll(validationData);
+    return res.status(200).send(result);
   };
 };
 
