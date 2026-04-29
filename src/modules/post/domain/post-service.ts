@@ -1,7 +1,7 @@
 import { NotFoundError } from '../../../core/errors/errors';
 import type { BlogRepository } from '../../blog/domain/blog-repository.interface';
 import type { PostRepository } from './post-repository.interface';
-import type { CreatePostInput, NewPost, Post, UpdatePostInput } from './types';
+import type { CreatePostInput, NewPost, UpdatePostInput } from './types';
 
 export class PostService {
   private readonly blogRepository: BlogRepository;
@@ -13,12 +13,6 @@ export class PostService {
   }) {
     this.blogRepository = deps.blogRepository;
     this.postRepository = deps.postRepository;
-  }
-
-  public async findById(id: string): Promise<Post> {
-    const result = await this.postRepository.findById(id);
-    if (!result) throw new NotFoundError('Post', id);
-    return result;
   }
 
   public async create(input: CreatePostInput): Promise<string> {

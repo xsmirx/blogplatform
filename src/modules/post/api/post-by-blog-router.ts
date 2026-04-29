@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { superAdminGuard } from '../auth/api/guards/super-admin-guard';
-import { blogIdValidation } from '../blog/middlewares/blog-validators';
-import { inputValidationResultMiddleware } from '../../core/middleware/input-validation-result.middleware';
+import { superAdminGuard } from '../../auth/api/guards/super-admin-guard';
+import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
 import {
+  blogIdParamValidation,
   contentValidation,
   pageNumberValidation,
   pageSizeValidation,
@@ -10,40 +10,43 @@ import {
   sortByValidation,
   sortDirectionValidation,
   titleValidation,
-} from './post-validators';
+} from '../middlewares/post-validators';
 import {
   createCreatePostHandler,
   createGetPostListHandler,
 } from './post-handlers';
-import type { PostService } from './domain/post-service';
+import type { PostQueryRepository } from '../infrastructure/post-query-repository';
+import type { PostService } from '../domain/post-service';
 
 export const createPostByBlogRouter = ({
   postService,
+  postQueryRepository,
 }: {
   postService: PostService;
+  postQueryRepository: PostQueryRepository;
 }) => {
   const postByBlogRouter: Router = Router({ mergeParams: true });
 
   postByBlogRouter
     .get(
       '/',
-      blogIdValidation,
-      inputValidationResultMiddleware,
+      blogIdParamValidation,
       pageNumberValidation,
       pageSizeValidation,
       sortByValidation,
       sortDirectionValidation,
-      createGetPostListHandler({ postService }),
+      inputValidationResultMiddleware,
+      createGetPostListHandler({ postQueryRepository }),
     )
     .post(
       '/',
       superAdminGuard,
-      blogIdValidation,
+      blogIdParamValidation,
       titleValidation,
       shortDescriptionValidation,
       contentValidation,
       inputValidationResultMiddleware,
-      createCreatePostHandler({ postService }),
+      createCreatePostHandler({ postService, postQueryRepository }),
     );
 
   return postByBlogRouter;

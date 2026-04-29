@@ -7,7 +7,9 @@ export enum PostSortField {
   shortDescription = 'shortDescription',
 }
 
-export type PostListQueryInput = PaginationAndSorting<PostSortField>;
+export type PostListQueryInput = PaginationAndSorting<PostSortField> & {
+  blogId?: string;
+};
 
 export type PostInputDTO = {
   title: string;

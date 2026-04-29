@@ -9,7 +9,7 @@ import type { CommentService } from './modules/comment/comment-service';
 import type { CommentQueryRepository } from './modules/comment/comment-query-repository';
 import type { DatabaseConnection } from './bd/mongo.db';
 import cookieParser from 'cookie-parser';
-import { createPostByBlogRouter } from './modules/post/post-by-blog-router';
+import { createPostByBlogRouter } from './modules/post/api/post-by-blog-router';
 import { createBlogRouter } from './modules/blog/api/blog-router';
 import type { BlogQueryRepository } from './modules/blog/infrastucture/blog-query-repository';
 

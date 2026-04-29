@@ -59,7 +59,7 @@ export const createCreateBlogHandler = ({
       throw new Error(
         `Blog ${newBlogId} was created but not found - DB inconsistency`,
       );
-    res.status(201).send(newBlog);
+    return res.status(201).send(newBlog);
   };
 };
 
@@ -78,7 +78,7 @@ export const createUpdateBlogHandler = ({
       description,
       websiteUrl,
     });
-    res.status(204).send();
+    return res.status(204).send();
   };
 };
 
@@ -90,6 +90,6 @@ export const createDeleteBlogHandler = ({
   return async (req, res) => {
     const { id } = matchedData<{ id: string }>(req);
     await blogService.delete(id);
-    res.status(204).send();
+    return res.status(204).send();
   };
 };

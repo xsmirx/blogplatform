@@ -1,8 +1,8 @@
 import { body, param, query } from 'express-validator';
-import { PaginationQueryKey } from '../../core/types/pagiation-query-key';
-import { PostSortField } from './api/types';
-import { SortQueryKey } from '../../core/types/sort-query-key';
-import { SortDirection } from '../../core/types/sort-deriction';
+import { PaginationQueryKey } from '../../../core/types/pagiation-query-key';
+import { PostSortField } from '../api/types';
+import { SortQueryKey } from '../../../core/types/sort-query-key';
+import { SortDirection } from '../../../core/types/sort-deriction';
 
 export const idValidation = param('id')
   .exists()
@@ -13,6 +13,17 @@ export const idValidation = param('id')
   .isLength({ min: 1 })
   .withMessage('ID must not be empty')
   .isMongoId();
+
+export const blogIdParamValidation = param('blogId')
+  .exists()
+  .withMessage('Blog ID is required')
+  .isString()
+  .trim()
+  .withMessage('Blog ID must be a string')
+  .isLength({ min: 1 })
+  .withMessage('Blog ID must not be empty')
+  .isMongoId()
+  .withMessage('Blog ID must be a valid Mongo ID');
 
 export const pageNumberValidation = query(PaginationQueryKey.pageNumber)
   .default(1)

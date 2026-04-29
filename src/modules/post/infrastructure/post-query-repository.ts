@@ -1,7 +1,8 @@
-import type { Filter, WithId } from 'mongodb';
+import { ObjectId, type Filter, type WithId } from 'mongodb';
 import type { DatabaseConnection } from '../../../bd/mongo.db';
 import type { PostListQueryInput, PostOutputDTO } from '../api/types';
 import type { PostDB } from './types';
+import type { ListResponse } from '../../../core/types/list-response';
 
 export class PostQueryRepository {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}
@@ -22,10 +23,15 @@ export class PostQueryRepository {
     };
   }
 
+  public async findById(id: string): Promise<PostOutputDTO | null> {
+    const post = await this.collection.findOne({ _id: new ObjectId(id) });
+    return post ? this.mapToViewModel(post) : null;
+  }
+
   public async findAll(
-    query: PostListQueryInput & { blogId?: string },
-  ): Promise<{ items: PostOutputDTO[]; totalCount: number }> {
-    const { pageNumber, pageSize, sortBy, sortDirection, blogId } = query;
+    input: PostListQueryInput,
+  ): Promise<ListResponse<PostOutputDTO>> {
+    const { pageNumber, pageSize, sortBy, sortDirection, blogId } = input;
 
     const skip = (pageNumber - 1) * pageSize;
 
@@ -44,6 +50,12 @@ export class PostQueryRepository {
 
     const totalCount = await this.collection.countDocuments(filter);
 
-    return { items: items.map(this.mapToViewModel), totalCount };
+    return {
+      page: pageNumber,
+      pageSize: pageSize,
+      pagesCount: Math.ceil(totalCount / pageSize),
+      totalCount: totalCount,
+      items: items.map((item) => this.mapToViewModel(item)),
+    };
   }
 }

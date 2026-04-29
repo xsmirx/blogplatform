@@ -5,12 +5,6 @@ import type { BlogRepository } from './blog-repository.interface';
 export class BlogService {
   constructor(private readonly blogRepository: BlogRepository) {}
 
-  public async getBlogById(id: string) {
-    const result = await this.blogRepository.findById(id);
-    if (!result) throw new NotFoundError('Blog', id);
-    return result;
-  }
-
   public async create(input: CreateBlogInput): Promise<string> {
     const { name, description, websiteUrl } = input;
 
