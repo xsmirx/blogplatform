@@ -10,7 +10,7 @@ import { BlackListRefreshTokenRepository } from './modules/auth/infrastructure/b
 import { UserService } from './modules/user/domain/user-service';
 import { MongoBlogRepository } from './modules/blog/infrastucture/blog-repository';
 import { BlogService } from './modules/blog/domain/blog-service';
-import { PostRepository } from './modules/post/post-repository';
+import { PostRepository } from './modules/post/infrastructure/post-repository';
 import { PostService } from './modules/post/domain/post-service';
 import { CommentRepository } from './modules/comment/comment-repository';
 import { CommentQueryRepository } from './modules/comment/comment-query-repository';

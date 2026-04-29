@@ -48,7 +48,6 @@ export class MongoBlogRepository implements BlogRepository {
         },
       },
     );
-
     return result.matchedCount > 0;
   }
 

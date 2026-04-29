@@ -6,11 +6,11 @@ import {
   POSTS_COLLECTION_NAME,
   USERS_COLLECTION_NAME,
 } from './collections';
-import { Post } from '../modules/post/api/types';
 import { CommentDB } from '../modules/comment/types';
 import { UserDB } from '../modules/user/infrastructure/types';
 import type { DeviceDB } from '../modules/security/infrastructure/types';
 import type { BlogDB } from '../modules/blog/infrastucture/types';
+import type { PostDB } from '../modules/post/infrastructure/types';
 
 export class DatabaseConnection {
   constructor({ mongoURL, dbName }: { mongoURL: string; dbName: string }) {
@@ -55,7 +55,7 @@ export class DatabaseConnection {
       ),
       usersCollection: this.getDb().collection<UserDB>(USERS_COLLECTION_NAME),
       blogCollection: this.getDb().collection<BlogDB>(BLOGS_COLLECTION_NAME),
-      postsCollection: this.getDb().collection<Post>(POSTS_COLLECTION_NAME),
+      postsCollection: this.getDb().collection<PostDB>(POSTS_COLLECTION_NAME),
       commentsCollection: this.getDb().collection<CommentDB>(
         COMMENTS_COLLECTION_NAME,
       ),
