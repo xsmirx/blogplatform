@@ -1,8 +1,9 @@
 import { RequestHandler } from 'express';
-import { CommentInputDTO, CommentOutputDTO } from './types';
+import type { CommentQueryRepository } from '../infrastucture/comment-query-repository';
+import type { CommentInputDTO, CommentOutputDTO } from './types';
 import { matchedData } from 'express-validator';
-import type { CommentQueryRepository } from './comment-query-repository';
-import type { CommentService } from './comment-service';
+import { NotFoundError } from '../../../core/errors/errors';
+import type { CommentService } from '../domain/comment-service';
 
 export const createGetCommentHandler = ({
   commentQueryRepository,
@@ -12,7 +13,8 @@ export const createGetCommentHandler = ({
   return async (req, res) => {
     const { id } = matchedData<{ id: string }>(req);
     const comment = await commentQueryRepository.findById(id);
-    res.status(200).send(comment);
+    if (!comment) throw new NotFoundError('Comment', id);
+    return res.status(200).send(comment);
   };
 };
 
@@ -24,10 +26,8 @@ export const createUpdateCommentHandler = ({
   return async (req, res) => {
     const userId = req.appContext!.user!.userId;
     const { id, content } = matchedData<{ id: string } & CommentInputDTO>(req);
-
-    await commentService.updateComment({ id, userId, content });
-
-    res.status(204).send();
+    await commentService.updateComment(id, userId, { content });
+    return res.status(204).send();
   };
 };
 
@@ -39,9 +39,7 @@ export const createDeleteCommentHandler = ({
   return async (req, res) => {
     const userId = req.appContext!.user!.userId;
     const { id } = matchedData<{ id: string }>(req);
-
-    await commentService.deleteComment({ id, userId });
-
-    res.status(204).send();
+    await commentService.deleteComment(id, userId);
+    return res.status(204).send();
   };
 };

@@ -1,7 +1,7 @@
 import { body, param, query } from 'express-validator';
-import { CommentSortField } from './types';
-import { SortQueryKey } from '../../core/types/sort-query-key';
-import { SortDirection } from '../../core/types/sort-deriction';
+import { CommentSortField } from '../api/types';
+import { SortQueryKey } from '../../../core/types/sort-query-key';
+import { SortDirection } from '../../../core/types/sort-deriction';
 
 export const commentIdValidation = param('id')
   .isString()

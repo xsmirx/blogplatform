@@ -1,8 +1,9 @@
-import { Filter, ObjectId, WithId } from 'mongodb';
-import { CommentDB, CommentListQueryInput, CommentOutputDTO } from './types';
-import { NotFoundError } from '../../core/errors/errors';
-import { ListResponse } from '../../core/types/list-response';
-import { DatabaseConnection } from '../../bd/mongo.db';
+import { ObjectId, type Filter, type WithId } from 'mongodb';
+import type { DatabaseConnection } from '../../../bd/mongo.db';
+import type { CommentDB } from './types';
+import type { CommentListQueryInput, CommentOutputDTO } from '../api/types';
+import type { ListResponse } from '../../../core/types/list-response';
+
 export class CommentQueryRepository {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}
 
@@ -22,7 +23,7 @@ export class CommentQueryRepository {
     };
   }
 
-  private mapListToListResponceViewModel({
+  private mapListToListResponseViewModel({
     items,
     queries,
     totalCount,
@@ -36,7 +37,7 @@ export class CommentQueryRepository {
       pageSize: queries.pageSize,
       pagesCount: Math.ceil(totalCount / queries.pageSize),
       totalCount: totalCount,
-      items: items.map(this.mapToOutputModel),
+      items: items.map((comment) => this.mapToOutputModel(comment)),
     };
   }
 
@@ -55,15 +56,12 @@ export class CommentQueryRepository {
 
     const totalCount = await this.collection.countDocuments(filter);
 
-    return this.mapListToListResponceViewModel({ items, queries, totalCount });
+    return this.mapListToListResponseViewModel({ items, queries, totalCount });
   }
 
-  public async findById(id: string): Promise<CommentOutputDTO> {
+  public async findById(id: string): Promise<CommentOutputDTO | null> {
     const comment = await this.collection.findOne({ _id: new ObjectId(id) });
-    if (!comment) {
-      throw new NotFoundError('Comment not found');
-    }
+    if (!comment) return null;
     return this.mapToOutputModel(comment);
   }
 }
-

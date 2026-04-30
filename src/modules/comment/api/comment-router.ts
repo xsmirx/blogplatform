@@ -1,17 +1,17 @@
 import { Router } from 'express';
-import {
-  createUpdateCommentHandler,
-  createDeleteCommentHandler,
-  createGetCommentHandler,
-} from './comment-handlers';
+import type { CommentService } from '../domain/comment-service';
+import type { CommentQueryRepository } from '../infrastucture/comment-query-repository';
 import {
   commentContentValidation,
   commentIdValidation,
-} from './comment-validators';
-import { inputValidationResultMiddleware } from '../../core/middleware/input-validation-result.middleware';
-import { accessTokenGuard } from '../auth/api/guards/access-token-guard';
-import type { CommentService } from './comment-service';
-import type { CommentQueryRepository } from './comment-query-repository';
+} from '../middlewares/comment-validators';
+import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
+import { accessTokenGuard } from '../../auth/api/guards/access-token-guard';
+import {
+  createDeleteCommentHandler,
+  createGetCommentHandler,
+  createUpdateCommentHandler,
+} from './comment-handlers';
 
 export const createCommentRouter = ({
   commentService,
