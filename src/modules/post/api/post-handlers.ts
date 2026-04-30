@@ -5,16 +5,24 @@ import type { ListResponse } from '../../../core/types/list-response';
 import type { PostInputDTO, PostListQueryInput, PostOutputDTO } from './types';
 import { matchedData } from 'express-validator';
 import { NotFoundError } from '../../../core/errors/errors';
+import type { BlogQueryRepository } from '../../blog/infrastucture/blog-query-repository';
 
 export const createGetPostListHandler = ({
+  blogQueryRepository,
   postQueryRepository,
 }: {
+  blogQueryRepository: BlogQueryRepository;
   postQueryRepository: PostQueryRepository;
 }): RequestHandler<{ blogId?: string }, ListResponse<PostOutputDTO>> => {
   return async (req, res) => {
     const { pageNumber, pageSize, sortBy, sortDirection, blogId } = matchedData<
       PostListQueryInput & { blogId?: string }
     >(req);
+
+    if (blogId !== undefined) {
+      const blog = await blogQueryRepository.findById(blogId);
+      if (!blog) throw new NotFoundError('Blog', blogId);
+    }
 
     const result = await postQueryRepository.findAll({
       pageNumber,

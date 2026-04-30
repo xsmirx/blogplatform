@@ -72,6 +72,7 @@ export const setupApp = (app: Express, deps: AppDependencies) => {
     createPostByBlogRouter({
       postService: deps.postService,
       postQueryRepository: deps.postQueryRepository,
+      blogQueryRepository: deps.blogQueryRepository,
     }),
   );
   // app.use(

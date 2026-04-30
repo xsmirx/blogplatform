@@ -17,12 +17,15 @@ import {
 } from './post-handlers';
 import type { PostQueryRepository } from '../infrastructure/post-query-repository';
 import type { PostService } from '../domain/post-service';
+import type { BlogQueryRepository } from '../../blog/infrastucture/blog-query-repository';
 
 export const createPostByBlogRouter = ({
   postService,
+  blogQueryRepository,
   postQueryRepository,
 }: {
   postService: PostService;
+  blogQueryRepository: BlogQueryRepository;
   postQueryRepository: PostQueryRepository;
 }) => {
   const postByBlogRouter: Router = Router({ mergeParams: true });
@@ -36,7 +39,7 @@ export const createPostByBlogRouter = ({
       sortByValidation,
       sortDirectionValidation,
       inputValidationResultMiddleware,
-      createGetPostListHandler({ postQueryRepository }),
+      createGetPostListHandler({ blogQueryRepository, postQueryRepository }),
     )
     .post(
       '/',
