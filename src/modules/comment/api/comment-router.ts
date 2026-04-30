@@ -3,7 +3,7 @@ import type { CommentService } from '../domain/comment-service';
 import type { CommentQueryRepository } from '../infrastucture/comment-query-repository';
 import {
   commentContentValidation,
-  commentIdValidation,
+  idValidation,
 } from '../middlewares/comment-validators';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
 import { accessTokenGuard } from '../../auth/api/guards/access-token-guard';
@@ -25,14 +25,14 @@ export const createCommentRouter = ({
   commentRouter
     .get(
       '/:id',
-      commentIdValidation,
+      idValidation,
       inputValidationResultMiddleware,
       createGetCommentHandler({ commentQueryRepository }),
     )
     .put(
       '/:id',
       accessTokenGuard,
-      commentIdValidation,
+      idValidation,
       commentContentValidation,
       inputValidationResultMiddleware,
       createUpdateCommentHandler({ commentService }),
@@ -40,7 +40,7 @@ export const createCommentRouter = ({
     .delete(
       '/:id',
       accessTokenGuard,
-      commentIdValidation,
+      idValidation,
       inputValidationResultMiddleware,
       createDeleteCommentHandler({ commentService }),
     );

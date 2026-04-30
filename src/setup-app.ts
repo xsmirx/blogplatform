@@ -13,6 +13,10 @@ import type { PostQueryRepository } from './modules/post/infrastructure/post-que
 import type { UserService } from './modules/user/domain/user-service';
 import type { UserQueryRepository } from './modules/user/infrastructure/user-query-repository';
 import { createUserRouter } from './modules/user/api/user-router';
+import { createCommentRouter } from './modules/comment/api/comment-router';
+import { createCommentByPostRouter } from './modules/comment/api/comment-by-post-router';
+import type { CommentQueryRepository } from './modules/comment/infrastucture/comment-query-repository';
+import type { CommentService } from './modules/comment/domain/comment-service';
 
 type AppDependencies = {
   // authService: AuthService;
@@ -22,8 +26,8 @@ type AppDependencies = {
   blogQueryRepository: BlogQueryRepository;
   postService: PostService;
   postQueryRepository: PostQueryRepository;
-  // commentService: CommentService;
-  // commentQueryRepository: CommentQueryRepository;
+  commentService: CommentService;
+  commentQueryRepository: CommentQueryRepository;
   databaseConnection: DatabaseConnection;
 };
 
@@ -63,8 +67,7 @@ export const setupApp = (app: Express, deps: AppDependencies) => {
     createPostRouter({
       postService: deps.postService,
       postQueryRepository: deps.postQueryRepository,
-      // commentService: deps.commentService,
-      // commentQueryRepository: deps.commentQueryRepository,
+      blogQueryRepository: deps.blogQueryRepository,
     }),
   );
   app.use(
@@ -75,14 +78,21 @@ export const setupApp = (app: Express, deps: AppDependencies) => {
       blogQueryRepository: deps.blogQueryRepository,
     }),
   );
-  // app.use(
-  //   '/comments',
-  //   createCommentRouter({
-  //     commentService: deps.commentService,
-  //     commentQueryRepository: deps.commentQueryRepository,
-  //   }),
-  // );
-  // app.use('/posts/:postId/comments');
+  app.use(
+    '/comments',
+    createCommentRouter({
+      commentService: deps.commentService,
+      commentQueryRepository: deps.commentQueryRepository,
+    }),
+  );
+  app.use(
+    '/posts/:postId/comments',
+    createCommentByPostRouter({
+      commentService: deps.commentService,
+      commentQueryRepository: deps.commentQueryRepository,
+      postQueryRepository: deps.postQueryRepository,
+    }),
+  );
 
   app.use(
     '/testing/all-data',

@@ -1,4 +1,8 @@
-import { ForbiddenError, NotFoundError } from '../../../core/errors/errors';
+import {
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from '../../../core/errors/errors';
 import type { UserRepository } from '../../user/domain/user-repository.interface';
 import type { CommentRepository } from './comment-repository.interface';
 import type { Comment, CreateCommentInput, UpdateCommentInput } from './types';
@@ -35,8 +39,11 @@ export class CommentService {
     const user = await this.userRepository.findById(userId);
     if (!user) throw new NotFoundError('User', userId);
 
+    const post = await this.commentRepository.findById(postId);
+    if (!post) throw new ValidationError('postId', 'Post not found');
+
     return await this.commentRepository.create({
-      postId: postId,
+      postId: post.id,
       content: content,
       userId: user.id,
       userLogin: user.login,

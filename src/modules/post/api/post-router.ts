@@ -18,15 +18,16 @@ import {
   sortByValidation,
   sortDirectionValidation,
 } from '../middlewares/post-validators';
+import type { BlogQueryRepository } from '../../blog/infrastucture/blog-query-repository';
 
 export const createPostRouter = ({
   postService,
   postQueryRepository,
+  blogQueryRepository,
 }: {
   postService: PostService;
   postQueryRepository: PostQueryRepository;
-  // commentService: CommentService;
-  // commentQueryRepository: CommentQueryRepository;
+  blogQueryRepository: BlogQueryRepository;
 }) => {
   const postRouter: Router = Router();
 
@@ -38,7 +39,7 @@ export const createPostRouter = ({
       sortByValidation,
       sortDirectionValidation,
       inputValidationResultMiddleware,
-      createGetPostListHandler({ postQueryRepository }),
+      createGetPostListHandler({ postQueryRepository, blogQueryRepository }),
     )
     .get(
       '/:id',
@@ -68,30 +69,6 @@ export const createPostRouter = ({
       inputValidationResultMiddleware,
       createDeletePostHandler({ postService }),
     );
-
-  // postRouter
-  //   .get(
-  //     '/:id/comments',
-  //     idValidation,
-  //     pageNumberValidation,
-  //     pageSizeValidation,
-  //     commentSortByValidation,
-  //     commentSortDirectionValidation,
-  //     inputValidationResultMiddleware,
-  //     createGetCommentListHandler({ postService, commentQueryRepository }),
-  //   )
-  //   .post(
-  //     '/:id/comments',
-  //     accessTokenGuard,
-  //     idValidation,
-  //     commentContentValidation,
-  //     inputValidationResultMiddleware,
-  //     createCreateCommentHandler({
-  //       postService,
-  //       commentService,
-  //       commentQueryRepository,
-  //     }),
-  //   );
 
   return postRouter;
 };
