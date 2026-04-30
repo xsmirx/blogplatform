@@ -14,7 +14,11 @@ export const createCreateUserHandler = ({
   return async (req, res) => {
     const { login, email, password } = matchedData<UserInputDTO>(req);
     const userId = await userService.createUser({ login, email, password });
-    const user = await userQueryRepository.findUserById(userId);
-    res.status(201).send(user);
+    const user = await userQueryRepository.findById(userId);
+    if (!user)
+      throw new Error(
+        `User ${userId} was created but not found - DB inconsistency`,
+      );
+    return res.status(201).send(user);
   };
 };

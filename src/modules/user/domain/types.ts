@@ -10,3 +10,9 @@ export type User = {
     isConfirmed: boolean;
   };
 };
+
+export type CreateUserInput = {
+  login: string;
+  email: string;
+  password: string;
+};

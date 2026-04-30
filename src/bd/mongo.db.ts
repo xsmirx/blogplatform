@@ -50,14 +50,14 @@ export class DatabaseConnection {
 
   public getCollections() {
     return {
-      devicesCollection: this.getDb().collection<DeviceDB>(
-        DEVICES_COLLECTION_NAME,
-      ),
-      usersCollection: this.getDb().collection<UserDB>(USERS_COLLECTION_NAME),
       blogCollection: this.getDb().collection<BlogDB>(BLOGS_COLLECTION_NAME),
       postsCollection: this.getDb().collection<PostDB>(POSTS_COLLECTION_NAME),
+      usersCollection: this.getDb().collection<UserDB>(USERS_COLLECTION_NAME),
       commentsCollection: this.getDb().collection<CommentDB>(
         COMMENTS_COLLECTION_NAME,
+      ),
+      devicesCollection: this.getDb().collection<DeviceDB>(
+        DEVICES_COLLECTION_NAME,
       ),
     };
   }

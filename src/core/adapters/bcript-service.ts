@@ -9,5 +9,3 @@ export class BcryptService {
     return await bcrypt.compare(password, hash);
   }
 }
-
-export const bcryptService = new BcryptService();

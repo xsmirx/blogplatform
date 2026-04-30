@@ -1,11 +1,8 @@
 import express, { Express } from 'express';
 import { createTestingRouter } from './modules/testing/testing-router';
 import { errorHandler } from './core/errors/error.handler';
-import { createCommentRouter } from './modules/comment/comment-router';
 import type { BlogService } from './modules/blog/domain/blog-service';
 import type { PostService } from './modules/post/domain/post-service';
-import type { CommentService } from './modules/comment/comment-service';
-import type { CommentQueryRepository } from './modules/comment/comment-query-repository';
 import type { DatabaseConnection } from './bd/mongo.db';
 import cookieParser from 'cookie-parser';
 import { createPostByBlogRouter } from './modules/post/api/post-by-blog-router';
@@ -13,17 +10,20 @@ import { createBlogRouter } from './modules/blog/api/blog-router';
 import type { BlogQueryRepository } from './modules/blog/infrastucture/blog-query-repository';
 import { createPostRouter } from './modules/post/api/post-router';
 import type { PostQueryRepository } from './modules/post/infrastructure/post-query-repository';
+import type { UserService } from './modules/user/domain/user-service';
+import type { UserQueryRepository } from './modules/user/infrastructure/user-query-repository';
+import { createUserRouter } from './modules/user/api/user-router';
 
 type AppDependencies = {
   // authService: AuthService;
-  // userService: UserService;
-  // userQueryRepository: UserQueryRepository;
+  userService: UserService;
+  userQueryRepository: UserQueryRepository;
   blogService: BlogService;
   blogQueryRepository: BlogQueryRepository;
   postService: PostService;
   postQueryRepository: PostQueryRepository;
-  commentService: CommentService;
-  commentQueryRepository: CommentQueryRepository;
+  // commentService: CommentService;
+  // commentQueryRepository: CommentQueryRepository;
   databaseConnection: DatabaseConnection;
 };
 
@@ -44,13 +44,13 @@ export const setupApp = (app: Express, deps: AppDependencies) => {
   //     userQueryRepository: deps.userQueryRepository,
   //   }),
   // );
-  // app.use(
-  //   '/users',
-  //   createUserRouter({
-  //     userService: deps.userService,
-  //     userQueryRepository: deps.userQueryRepository,
-  //   }),
-  // );
+  app.use(
+    '/users',
+    createUserRouter({
+      userService: deps.userService,
+      userQueryRepository: deps.userQueryRepository,
+    }),
+  );
   app.use(
     '/blogs',
     createBlogRouter({
@@ -74,13 +74,13 @@ export const setupApp = (app: Express, deps: AppDependencies) => {
       postQueryRepository: deps.postQueryRepository,
     }),
   );
-  app.use(
-    '/comments',
-    createCommentRouter({
-      commentService: deps.commentService,
-      commentQueryRepository: deps.commentQueryRepository,
-    }),
-  );
+  // app.use(
+  //   '/comments',
+  //   createCommentRouter({
+  //     commentService: deps.commentService,
+  //     commentQueryRepository: deps.commentQueryRepository,
+  //   }),
+  // );
   // app.use('/posts/:postId/comments');
 
   app.use(

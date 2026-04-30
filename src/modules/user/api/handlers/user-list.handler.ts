@@ -1,8 +1,7 @@
 import { RequestHandler } from 'express';
 import { ListResponse } from '../../../../core/types/list-response';
 import { matchedData } from 'express-validator';
-import { UserListQueryInput } from '../../infrastructure/types';
-import { UserOutputDTO } from '../types';
+import { UserOutputDTO, type UserListQueryInput } from '../types';
 import type { UserQueryRepository } from '../../infrastructure/user-query-repository';
 
 export const createUserListHandler = ({
@@ -11,11 +10,25 @@ export const createUserListHandler = ({
   userQueryRepository: UserQueryRepository;
 }): RequestHandler<object, ListResponse<UserOutputDTO>> => {
   return async (req, res) => {
-    const queries = matchedData<UserListQueryInput>(req, {
+    const {
+      pageNumber,
+      pageSize,
+      searchLoginTerm,
+      searchEmailTerm,
+      sortBy,
+      sortDirection,
+    } = matchedData<UserListQueryInput>(req, {
       includeOptionals: true,
     });
 
-    const users = await userQueryRepository.findAll(queries);
-    res.status(200).send(users);
+    const users = await userQueryRepository.findAll({
+      pageNumber,
+      pageSize,
+      searchLoginTerm,
+      searchEmailTerm,
+      sortBy,
+      sortDirection,
+    });
+    return res.status(200).send(users);
   };
 };

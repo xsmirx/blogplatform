@@ -1,10 +1,8 @@
 import { Filter, ObjectId, WithId } from 'mongodb';
 import { DatabaseConnection } from '../../../bd/mongo.db';
 import { ListResponse } from '../../../core/types/list-response';
-import { UserDB, UserListQueryInput } from './types';
-import { NotFoundError } from '../../../core/errors/errors';
-import { UserOutputDTO } from '../api/types';
-import { MeOutputDTO } from '../../auth/api/types';
+import { UserDB } from './types';
+import { UserOutputDTO, type UserListQueryInput } from '../api/types';
 
 export class UserQueryRepository {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}
@@ -13,9 +11,36 @@ export class UserQueryRepository {
     return this.databaseConnection.getCollections().usersCollection;
   }
 
+  private mapUserToViewModel(user: WithId<UserDB>): UserOutputDTO {
+    return {
+      id: user._id.toString(),
+      login: user.login,
+      email: user.email,
+      createdAt: user.createdAt.toISOString(),
+    };
+  }
+
   private escapeRegex(text: string) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
+
+  public async findById(userId: string): Promise<UserOutputDTO | null> {
+    const user = await this.collection.findOne({ _id: new ObjectId(userId) });
+    if (!user) return null;
+    return this.mapUserToViewModel(user);
+  }
+
+  // public async findMeById(userId: string): Promise<MeOutputDTO> {
+  //   const me = await this.collection.findOne({ _id: new ObjectId(userId) });
+  //   if (!me) {
+  //     throw new NotFoundError('User not found');
+  //   }
+  //   return {
+  //     userId: me._id.toString(),
+  //     login: me.login,
+  //     email: me.email,
+  //   };
+  // }
 
   public async findAll(
     queries: UserListQueryInput,
@@ -58,58 +83,12 @@ export class UserQueryRepository {
 
     const totalCount = await this.collection.countDocuments(filter);
 
-    return this.mapUserListToListResponseViewModel({
+    return {
+      page: pageNumber,
+      pageSize: pageSize,
+      pagesCount: Math.ceil(totalCount / pageSize),
       totalCount: totalCount,
-      items: users,
-      queries,
-    });
-  }
-
-  public async findUserById(userId: string): Promise<UserOutputDTO> {
-    const user = await this.collection.findOne({ _id: new ObjectId(userId) });
-    if (!user) {
-      throw new NotFoundError('User not found');
-    }
-    return this.mapUserToViewModel(user);
-  }
-
-  public async findMeById(userId: string): Promise<MeOutputDTO> {
-    const me = await this.collection.findOne({ _id: new ObjectId(userId) });
-    if (!me) {
-      throw new NotFoundError('User not found');
-    }
-    return {
-      userId: me._id.toString(),
-      login: me.login,
-      email: me.email,
-    };
-  }
-
-  private mapUserToViewModel(user: WithId<UserDB>): UserOutputDTO {
-    return {
-      id: user._id.toString(),
-      login: user.login,
-      email: user.email,
-      createdAt: user._id.getTimestamp().toISOString(),
-    };
-  }
-
-  private mapUserListToListResponseViewModel({
-    items,
-    queries,
-    totalCount,
-  }: {
-    items: WithId<UserDB>[];
-    queries: UserListQueryInput;
-    totalCount: number;
-  }): ListResponse<UserOutputDTO> {
-    return {
-      page: queries.pageNumber,
-      pageSize: queries.pageSize,
-      pagesCount: Math.ceil(totalCount / queries.pageSize),
-      totalCount: totalCount,
-      items: items.map(this.mapUserToViewModel),
+      items: users.map((user) => this.mapUserToViewModel(user)),
     };
   }
 }
-
