@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import type { BcryptService } from '../../../core/adapters/bcript-service';
 import type { UserRepository } from './user-repository.interface';
-import { NotFoundError, ValidationError } from '../../../core/errors/errors';
+import {
+  NotFoundError,
+  UniqueConstraintError,
+} from '../../../core/errors/domain-errors';
 import type { CreateUserInput } from './types';
 
 export class UserService {
@@ -19,11 +22,11 @@ export class UserService {
   public async createUser(user: CreateUserInput): Promise<string> {
     const byLoginResult = await this.userRepository.findByLogin(user.login);
     if (byLoginResult)
-      throw new ValidationError('login', 'Login already exists');
+      throw new UniqueConstraintError<CreateUserInput>('login', user.login);
 
     const byEmailResult = await this.userRepository.findByEmail(user.email);
     if (byEmailResult)
-      throw new ValidationError('email', 'Email already exists');
+      throw new UniqueConstraintError<CreateUserInput>('email', user.email);
 
     const saltedHash = await this.bcryptService.generateHash(user.password);
 

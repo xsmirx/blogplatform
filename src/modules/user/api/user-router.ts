@@ -13,7 +13,10 @@ import { createUserListHandler } from './handlers/user-list.handler';
 import { loginValidation } from '../middlewares/user-login.validation';
 import { passwordRegistrationValidation } from '../middlewares/user-password.validation';
 import { emailValidation } from '../middlewares/user-email.validation';
-import { createCreateUserHandler } from './handlers/create-user.handler';
+import {
+  createCreateUserHandler,
+  translateCreateUserErrors,
+} from './handlers/create-user.handler';
 import { idValidation } from '../middlewares/user-id.validaton';
 import { createDeleteUserHandler } from './handlers/delete-user.handler';
 import type { UserService } from '../domain/user-service';
@@ -49,6 +52,7 @@ export const createUserRouter = ({
       emailValidation,
       inputValidationResultMiddleware,
       createCreateUserHandler({ userService, userQueryRepository }),
+      translateCreateUserErrors,
     )
     .delete(
       '/:id',

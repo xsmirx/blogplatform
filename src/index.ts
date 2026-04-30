@@ -12,6 +12,9 @@ import { MongoPostRepository } from './modules/post/infrastructure/post-reposito
 import { UserQueryRepository } from './modules/user/infrastructure/user-query-repository';
 import { UserService } from './modules/user/domain/user-service';
 import { BcryptService } from './core/adapters/bcript-service';
+import { CommentService } from './modules/comment/domain/comment-service';
+import { MongoCommentRepository } from './modules/comment/infrastucture/comment-repository';
+import { CommentQueryRepository } from './modules/comment/infrastucture/comment-query-repository';
 
 const bootstrap = async () => {
   // connect to DB
@@ -31,8 +34,8 @@ const bootstrap = async () => {
   const blogQueryRepository = new BlogQueryRepository(databaseConnection);
   const postRepository = new MongoPostRepository(databaseConnection);
   const postQueryRepository = new PostQueryRepository(databaseConnection);
-  // const commentRepository = new CommentRepository(databaseConnection);
-  // const commentQueryRepository = new CommentQueryRepository(databaseConnection);
+  const commentRepository = new MongoCommentRepository(databaseConnection);
+  const commentQueryRepository = new CommentQueryRepository(databaseConnection);
 
   // Services
   const bcryptService = new BcryptService();
@@ -46,10 +49,11 @@ const bootstrap = async () => {
   // });
   const blogService = new BlogService(blogRepository);
   const postService = new PostService({ blogRepository, postRepository });
-  // const commentService = new CommentService({
-  //   userRepository,
-  //   commentRepository,
-  // });
+  const commentService = new CommentService({
+    userRepository,
+    postRepository,
+    commentRepository,
+  });
 
   setupApp(app, {
     // authService,
@@ -59,8 +63,8 @@ const bootstrap = async () => {
     blogQueryRepository,
     postService,
     postQueryRepository,
-    // commentService,
-    // commentQueryRepository,
+    commentService,
+    commentQueryRepository,
     databaseConnection,
   });
 

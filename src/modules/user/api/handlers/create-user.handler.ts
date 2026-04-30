@@ -1,8 +1,10 @@
-import { RequestHandler } from 'express';
+import { type ErrorRequestHandler, type RequestHandler } from 'express';
 import { matchedData } from 'express-validator';
 import { UserInputDTO, UserOutputDTO } from '../types';
 import type { UserService } from '../../domain/user-service';
 import type { UserQueryRepository } from '../../infrastructure/user-query-repository';
+import { UniqueConstraintError } from '../../../../core/errors/domain-errors';
+import { ValidationError } from '../../../../core/errors/api-errors';
 
 export const createCreateUserHandler = ({
   userService,
@@ -21,4 +23,18 @@ export const createCreateUserHandler = ({
       );
     return res.status(201).send(user);
   };
+};
+
+export const translateCreateUserErrors: ErrorRequestHandler = (
+  error,
+  req,
+  res,
+  next,
+) => {
+  if (error instanceof UniqueConstraintError) {
+    return next(
+      new ValidationError([{ field: error.paramKey, message: error.message }]),
+    );
+  }
+  return next(error);
 };

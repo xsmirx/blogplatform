@@ -10,6 +10,7 @@ export type CommentListQueryInput = PaginationAndSorting<CommentSortField> & {
 
 export type CommentInputDTO = {
   content: string;
+  postId: string;
 };
 
 export type CommentOutputDTO = {

@@ -4,7 +4,7 @@ import type { BlogService } from '../domain/blog-service';
 import type { ListResponse } from '../../../core/types/list-response';
 import type { BlogInputDTO, BlogListQueryInput, BlogOutputDTO } from './types';
 import type { BlogQueryRepository } from '../infrastucture/blog-query-repository';
-import { NotFoundError } from '../../../core/errors/errors';
+import { NotFoundError } from '../../../core/errors/domain-errors';
 
 export const createGetBlogListHandler = ({
   blogQueryRepository,

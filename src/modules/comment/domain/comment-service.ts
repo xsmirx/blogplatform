@@ -1,22 +1,25 @@
 import {
   ForbiddenError,
   NotFoundError,
-  ValidationError,
-} from '../../../core/errors/errors';
+} from '../../../core/errors/domain-errors';
+import type { PostRepository } from '../../post/domain/post-repository.interface';
 import type { UserRepository } from '../../user/domain/user-repository.interface';
 import type { CommentRepository } from './comment-repository.interface';
 import type { Comment, CreateCommentInput, UpdateCommentInput } from './types';
 
 export class CommentService {
   private readonly userRepository: UserRepository;
+  private readonly postRepository: PostRepository;
   private readonly commentRepository: CommentRepository;
 
   constructor(deps: {
     userRepository: UserRepository;
+    postRepository: PostRepository;
     commentRepository: CommentRepository;
   }) {
     this.userRepository = deps.userRepository;
     this.commentRepository = deps.commentRepository;
+    this.postRepository = deps.postRepository;
   }
 
   private async getCommentForOwner(
@@ -39,8 +42,8 @@ export class CommentService {
     const user = await this.userRepository.findById(userId);
     if (!user) throw new NotFoundError('User', userId);
 
-    const post = await this.commentRepository.findById(postId);
-    if (!post) throw new ValidationError('postId', 'Post not found');
+    const post = await this.postRepository.findById(postId);
+    if (!post) throw new NotFoundError('Post', postId);
 
     return await this.commentRepository.create({
       postId: post.id,

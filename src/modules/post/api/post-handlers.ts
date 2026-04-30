@@ -4,7 +4,7 @@ import type { PostQueryRepository } from '../infrastructure/post-query-repositor
 import type { ListResponse } from '../../../core/types/list-response';
 import type { PostInputDTO, PostListQueryInput, PostOutputDTO } from './types';
 import { matchedData } from 'express-validator';
-import { NotFoundError } from '../../../core/errors/errors';
+import { NotFoundError } from '../../../core/errors/domain-errors';
 import type { BlogQueryRepository } from '../../blog/infrastucture/blog-query-repository';
 
 export const createGetPostListHandler = ({

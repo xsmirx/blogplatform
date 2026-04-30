@@ -6,7 +6,7 @@ import type {
   CommentOutputDTO,
 } from './types';
 import { matchedData } from 'express-validator';
-import { NotFoundError } from '../../../core/errors/errors';
+import { NotFoundError } from '../../../core/errors/domain-errors';
 import type { CommentService } from '../domain/comment-service';
 import type { ListResponse } from '../../../core/types/list-response';
 import type { PostQueryRepository } from '../../post/infrastructure/post-query-repository';
@@ -55,13 +55,13 @@ export const createCreateCommentHandler = ({
 }: {
   commentService: CommentService;
   commentQueryRepository: CommentQueryRepository;
-}): RequestHandler<{ id: string }, CommentOutputDTO, CommentInputDTO> => {
+}): RequestHandler<{ postId: string }, CommentOutputDTO, CommentInputDTO> => {
   return async (req, res) => {
     const userId = req.appContext!.user!.userId;
-    const { id, content } = matchedData<{ id: string } & CommentInputDTO>(req);
+    const { postId, content } = matchedData<CommentInputDTO>(req);
 
     const commentId = await commentService.createComment({
-      postId: id,
+      postId,
       userId,
       content,
     });

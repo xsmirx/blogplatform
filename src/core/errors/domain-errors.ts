@@ -20,11 +20,11 @@ export class WrongCredentialsError extends DomainError {
     super('Wrong credentials provided');
   }
 }
-export class ValidationError extends DomainError {
+export class UniqueConstraintError<T> extends DomainError {
   constructor(
-    public field: string,
-    message: string,
+    public paramKey: keyof T & string,
+    public value: string,
   ) {
-    super(message);
+    super(`${paramKey} should be unique`);
   }
 }

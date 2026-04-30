@@ -1,4 +1,4 @@
-import { NotFoundError } from '../../../core/errors/errors';
+import { NotFoundError } from '../../../core/errors/domain-errors';
 import type { BlogRepository } from '../../blog/domain/blog-repository.interface';
 import type { PostRepository } from './post-repository.interface';
 import type { CreatePostInput, NewPost, UpdatePostInput } from './types';

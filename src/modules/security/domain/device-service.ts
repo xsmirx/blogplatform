@@ -1,4 +1,7 @@
-import { ForbiddenError, NotFoundError } from '../../../core/errors/errors';
+import {
+  ForbiddenError,
+  NotFoundError,
+} from '../../../core/errors/domain-errors';
 import type { DeviceRepository } from '../infrastructure/device-repository';
 import type {
   CreateDeviceInput,
