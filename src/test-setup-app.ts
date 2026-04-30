@@ -14,6 +14,9 @@ import { BlogService } from './modules/blog/domain/blog-service';
 import { MongoPostRepository } from './modules/post/infrastructure/post-repository';
 import { PostQueryRepository } from './modules/post/infrastructure/post-query-repository';
 import { PostService } from './modules/post/domain/post-service';
+import { CommentService } from './modules/comment/domain/comment-service';
+import { MongoCommentRepository } from './modules/comment/infrastucture/comment-repository';
+import { CommentQueryRepository } from './modules/comment/infrastucture/comment-query-repository';
 // import { CommentRepository } from './modules/comment/comment-repository';
 // import { CommentQueryRepository } from './modules/comment/comment-query-repository';
 // import { CommentService } from './modules/comment/comment-service';
@@ -38,10 +41,10 @@ export const createTestApp = (): Express => {
   const blogQueryRepository = new BlogQueryRepository(testDatabaseConnection);
   const postRepository = new MongoPostRepository(testDatabaseConnection);
   const postQueryRepository = new PostQueryRepository(testDatabaseConnection);
-  // const commentRepository = new CommentRepository(testDatabaseConnection);
-  // const commentQueryRepository = new CommentQueryRepository(
-  //   testDatabaseConnection,
-  // );
+  const commentRepository = new MongoCommentRepository(testDatabaseConnection);
+  const commentQueryRepository = new CommentQueryRepository(
+    testDatabaseConnection,
+  );
   // const blackListRefreshTokenRepository = new BlackListRefreshTokenRepository(
   //   testDatabaseConnection,
   // );
@@ -59,10 +62,11 @@ export const createTestApp = (): Express => {
   // });
   const blogService = new BlogService(blogRepository);
   const postService = new PostService({ blogRepository, postRepository });
-  // const commentService = new CommentService({
-  //   userRepository,
-  //   commentRepository,
-  // });
+  const commentService = new CommentService({
+    userRepository,
+    postRepository,
+    commentRepository,
+  });
 
   setupApp(app, {
     // authService,
@@ -72,8 +76,8 @@ export const createTestApp = (): Express => {
     blogQueryRepository,
     postService,
     postQueryRepository,
-    // commentService,
-    // commentQueryRepository,
+    commentService,
+    commentQueryRepository,
     databaseConnection: testDatabaseConnection,
   });
 

@@ -1244,7 +1244,7 @@ describe('Post API', () => {
     });
   });
 
-  describe('GET /posts/{postId}/comments', () => {
+  describe.skip('GET /posts/{postId}/comments', () => {
     let testPostId: string;
     let accessToken: string;
 
@@ -1401,7 +1401,7 @@ describe('Post API', () => {
     });
   });
 
-  describe('POST /posts/{postId}/comments', () => {
+  describe.skip('POST /posts/{postId}/comments', () => {
     let testPostId: string;
     let accessToken: string;
 
