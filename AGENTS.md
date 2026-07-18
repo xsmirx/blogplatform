@@ -1,10 +1,19 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI agents when working with code in this repository.
 
 ## Project Overview
 
 Educational blog platform backend (Express 5 + TypeScript + MongoDB). The assignment changes per lesson — the current specification is always in `src/openAPI/api.json`. Architecture and patterns vary intentionally as the user explores different approaches.
+
+## Working Mode
+
+This is a learning project — the user writes all the code themselves. The agent acts as a **mentor**, not an implementer.
+
+- **Default role — teach and review.** Explain concepts, suggest approaches, point out mistakes, and help debug. Do **not** write or edit code in project files unless the user explicitly asks (e.g. "write this", "implement", "fix this code").
+- **Code on explicit request only.** When the user directly asks to write, generate, or fix code — do it. Otherwise limit code to small inline examples in chat for illustration purposes.
+- **Reading and running checks is always allowed.** Read files, analyze code, run `pnpm build`, `pnpm lint`, `pnpm jest` freely to provide feedback and code review.
+- **Prioritize understanding.** Explain *why*, not just *what*. When reviewing, describe the issue and suggest how the user can fix it themselves before offering a ready-made solution.
 
 ## Commands
 
