@@ -11,7 +11,7 @@ import { PostQueryRepository } from './modules/post/infrastructure/post-query-re
 import { MongoPostRepository } from './modules/post/infrastructure/post-repository';
 import { UserQueryRepository } from './modules/user/infrastructure/user-query-repository';
 import { UserService } from './modules/user/domain/user-service';
-import { BcryptService } from './core/adapters/bcript-service';
+import { BcryptAdapter } from './core/adapters/bcrypt-adapter';
 import { CommentService } from './modules/comment/domain/comment-service';
 import { MongoCommentRepository } from './modules/comment/infrastucture/comment-repository';
 import { CommentQueryRepository } from './modules/comment/infrastucture/comment-query-repository';
@@ -38,7 +38,7 @@ const bootstrap = async () => {
   const commentQueryRepository = new CommentQueryRepository(databaseConnection);
 
   // Services
-  const bcryptService = new BcryptService();
+  const bcryptService = new BcryptAdapter();
 
   const userService = new UserService({ bcryptService, userRepository });
   // const authService = new AuthService({

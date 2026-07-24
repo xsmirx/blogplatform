@@ -2,7 +2,7 @@ import jwt, { type JwtPayload } from 'jsonwebtoken';
 import { settings } from '../../../core/settings/settings';
 import type { AccessTokenPayload, RefreshTokenPayload } from './types';
 
-export class JwtService {
+export class JwtAdapter {
   public async generateAccessToken({
     userId,
   }: AccessTokenPayload): Promise<string> {
@@ -43,4 +43,4 @@ export class JwtService {
   }
 }
 
-export const jwtService = new JwtService();
+export const jwtAdapter = new JwtAdapter();

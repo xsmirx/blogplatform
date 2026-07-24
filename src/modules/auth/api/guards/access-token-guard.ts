@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import { jwtService } from '../../adapters/jwt-service';
+import { jwtAdapter } from '../../adapters/jwt-adapter';
 
 export const accessTokenGuard: RequestHandler = async (req, res, next) => {
   if (!req.headers.authorization) {
@@ -12,7 +12,7 @@ export const accessTokenGuard: RequestHandler = async (req, res, next) => {
     return res.status(401).send();
   }
 
-  const payload = await jwtService.verifyAccessToken(token);
+  const payload = await jwtAdapter.verifyAccessToken(token);
 
   if (!payload) {
     return res.status(401).send();

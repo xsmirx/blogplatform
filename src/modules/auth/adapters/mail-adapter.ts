@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import { settings } from '../../../core/settings/settings';
 
-export class MailService {
+export class MailAdapter {
   async sendEmail(
     email: string,
     code: string,
@@ -29,4 +29,4 @@ export class MailService {
   }
 }
 
-export const mailService = new MailService();
+export const mailAdapter = new MailAdapter();

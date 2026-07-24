@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { BcryptService } from '../../../core/adapters/bcript-service';
+import type { BcryptAdapter } from '../../../core/adapters/bcrypt-adapter';
 import type { UserRepository } from './user-repository.interface';
 import {
   NotFoundError,
@@ -9,11 +9,11 @@ import type { CreateUserInput } from './types';
 
 export class UserService {
   private readonly userRepository: UserRepository;
-  private readonly bcryptService: BcryptService;
+  private readonly bcryptService: BcryptAdapter;
 
   constructor(deps: {
     userRepository: UserRepository;
-    bcryptService: BcryptService;
+    bcryptService: BcryptAdapter;
   }) {
     this.userRepository = deps.userRepository;
     this.bcryptService = deps.bcryptService;

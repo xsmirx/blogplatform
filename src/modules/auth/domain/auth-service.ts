@@ -1,12 +1,12 @@
-import { BcryptService } from '../../../core/adapters/bcript-service';
-import { JwtService } from '../adapters/jwt-service';
+import { BcryptAdapter } from '../../../core/adapters/bcrypt-adapter';
+import { JwtAdapter } from '../adapters/jwt-adapter';
 import { User } from '../../user/domain/types';
 import { UserRepository } from '../../user/infrastructure/user-repository';
 import { Result } from '../../../core/result/result-type';
 import { ResultStatus } from '../../../core/result/result-status';
 import type { CreateUserPayload } from '../../user/infrastructure/types';
 import { randomUUID } from 'crypto';
-import { MailService } from '../adapters/mail-service';
+import { MailAdapter } from '../adapters/mail-adapter';
 import { emailExamples } from '../adapters/email-examples';
 import type { DeviceService } from '../../security/domain/device-service';
 import type { LoginInput, RefreshInput } from './types';
@@ -14,22 +14,22 @@ import type { LoginInput, RefreshInput } from './types';
 export class AuthService {
   private readonly userRepository: UserRepository;
   private readonly deviceService: DeviceService;
-  private readonly jwtService: JwtService;
-  private readonly bcryptService: BcryptService;
-  private readonly mailService: MailService;
+  private readonly jwtAdapter: JwtAdapter;
+  private readonly bcryptAdapter: BcryptAdapter;
+  private readonly mailAdapter: MailAdapter;
 
   constructor(deps: {
     userRepository: UserRepository;
     deviceService: DeviceService;
-    jwtService: JwtService;
-    bcryptService: BcryptService;
-    mailService: MailService;
+    jwtService: JwtAdapter;
+    bcryptService: BcryptAdapter;
+    mailService: MailAdapter;
   }) {
     this.userRepository = deps.userRepository;
     this.deviceService = deps.deviceService;
-    this.jwtService = deps.jwtService;
-    this.bcryptService = deps.bcryptService;
-    this.mailService = deps.mailService;
+    this.jwtAdapter = deps.jwtService;
+    this.bcryptAdapter = deps.bcryptService;
+    this.mailAdapter = deps.mailService;
   }
 
   public async login({
@@ -56,16 +56,16 @@ export class AuthService {
     const userId = result.data!.id;
     const deviceId = randomUUID();
 
-    const accessToken = await this.jwtService.generateAccessToken({
+    const accessToken = await this.jwtAdapter.generateAccessToken({
       userId,
     });
-    const refreshToken = await this.jwtService.generateRefreshToken({
+    const refreshToken = await this.jwtAdapter.generateRefreshToken({
       userId,
       deviceId,
     });
 
     const refreshTokenPayload =
-      await this.jwtService.verifyRefreshToken(refreshToken);
+      await this.jwtAdapter.verifyRefreshToken(refreshToken);
 
     const iat = refreshTokenPayload!.iat;
     const exp = refreshTokenPayload!.exp;
@@ -112,7 +112,7 @@ export class AuthService {
       };
     }
 
-    const isPassCorrect = await this.bcryptService.checkPassword(
+    const isPassCorrect = await this.bcryptAdapter.checkPassword(
       password,
       user.passwordHash,
     );
@@ -155,7 +155,7 @@ export class AuthService {
       };
     }
 
-    const passwordHash = await this.bcryptService.generateHash(password);
+    const passwordHash = await this.bcryptAdapter.generateHash(password);
 
     const newUser: CreateUserPayload = {
       email,
@@ -171,7 +171,7 @@ export class AuthService {
 
     await this.userRepository.create(newUser);
 
-    this.mailService
+    this.mailAdapter
       .sendEmail(
         newUser.email,
         newUser.emailConfirmation.confirmationCode,
@@ -265,7 +265,7 @@ export class AuthService {
       isConfirmed: false,
     });
 
-    this.mailService
+    this.mailAdapter
       .sendEmail(email, newConfirmationCode, emailExamples.registrationEmail)
       .catch((er) => console.error('error in send email:', er));
 
@@ -277,13 +277,13 @@ export class AuthService {
   }
 
   public async refresh({ deviceId, userId, ip, deviceName }: RefreshInput) {
-    const accessToken = await this.jwtService.generateAccessToken({ userId });
-    const refreshToken = await this.jwtService.generateRefreshToken({
+    const accessToken = await this.jwtAdapter.generateAccessToken({ userId });
+    const refreshToken = await this.jwtAdapter.generateRefreshToken({
       userId,
       deviceId,
     });
     const refreshTokenPayload =
-      await this.jwtService.verifyRefreshToken(refreshToken);
+      await this.jwtAdapter.verifyRefreshToken(refreshToken);
 
     const iat = refreshTokenPayload!.iat;
     const exp = refreshTokenPayload!.exp;

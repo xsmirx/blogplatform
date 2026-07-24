@@ -9,7 +9,7 @@ import { codeValidation } from '../middlewares/code.validation';
 import { loginValidation } from '../../user/middlewares/user-login.validation';
 import { emailValidation } from '../../user/middlewares/user-email.validation';
 import { passwordValidationForRegistration } from '../middlewares/password-registration.validation';
-import { passwordLoginValidation } from '../middlewares/password-login.validatiom';
+import { passwordLoginValidation } from '../middlewares/password-login.validation';
 import { createRegistrationHandler } from './handlers/register.handler';
 import { createRegistrationEmailResendHandler } from './handlers/registrationEmailResend.handler';
 import { createRegistrationConfirmationHandler } from './handlers/registrationConfirmation.handler';
