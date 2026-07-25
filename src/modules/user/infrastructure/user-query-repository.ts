@@ -2,7 +2,11 @@ import { Filter, ObjectId, WithId } from 'mongodb';
 import { DatabaseConnection } from '../../../bd/mongo.db';
 import { ListResponse } from '../../../core/types/list-response';
 import { UserDB } from './types';
-import { UserOutputDTO, type UserListQueryInput } from '../api/types';
+import {
+  MeOutputDTO,
+  UserOutputDTO,
+  type UserListQueryInput,
+} from '../api/types';
 
 export class UserQueryRepository {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}
@@ -30,17 +34,17 @@ export class UserQueryRepository {
     return this.mapUserToViewModel(user);
   }
 
-  // public async findMeById(userId: string): Promise<MeOutputDTO> {
-  //   const me = await this.collection.findOne({ _id: new ObjectId(userId) });
-  //   if (!me) {
-  //     throw new NotFoundError('User not found');
-  //   }
-  //   return {
-  //     userId: me._id.toString(),
-  //     login: me.login,
-  //     email: me.email,
-  //   };
-  // }
+  public async findMeById(userId: string): Promise<MeOutputDTO | null> {
+    const me = await this.collection.findOne({ _id: new ObjectId(userId) });
+    if (!me) {
+      return null;
+    }
+    return {
+      userId: me._id.toString(),
+      login: me.login,
+      email: me.email,
+    };
+  }
 
   public async findAll(
     queries: UserListQueryInput,

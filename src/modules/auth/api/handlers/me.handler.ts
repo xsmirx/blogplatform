@@ -1,6 +1,7 @@
 import { RequestHandler } from 'express';
-import { MeOutputDTO } from '../types';
 import type { UserQueryRepository } from '../../../user/infrastructure/user-query-repository';
+import { UnauthorizedError } from '../../../../core/errors/domain-errors';
+import { MeOutputDTO } from '../../../user/api/types';
 
 export const createMeHandler = ({
   userQueryRepository,
@@ -8,15 +9,14 @@ export const createMeHandler = ({
   userQueryRepository: UserQueryRepository;
 }): RequestHandler<object, MeOutputDTO> => {
   return async (req, res) => {
-    const userId = req.appContext?.user?.userId;
-
-    if (userId === undefined) {
-      res.sendStatus(401);
-      return;
-    }
+    const userId = req.appContext?.user?.userId as string;
 
     const user = await userQueryRepository.findMeById(userId);
 
-    res.status(200).send(user);
+    if (!user) {
+      throw new UnauthorizedError('Unauthorized');
+    }
+
+    return res.status(200).send(user);
   };
 };

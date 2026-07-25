@@ -23,3 +23,9 @@ export type UserOutputDTO = {
   email: string;
   createdAt: string;
 };
+
+export type MeOutputDTO = {
+  userId: string;
+  login: string;
+  email: string;
+};
