@@ -2,8 +2,9 @@ import { type WithId } from 'mongodb';
 import type { DatabaseConnection } from '../../../bd/mongo.db';
 import type { DeviceDB } from './types';
 import type { Device } from '../domain/types';
+import { DeviceRepository } from '../domain/ports/device-repository.interface';
 
-export class DeviceRepository {
+export class MongoDeviceRepository implements DeviceRepository {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}
 
   private get collection() {
