@@ -6,6 +6,8 @@ import { DeviceQueryRepository } from '../infrastructure/device-query-repository
 import { createRefreshTokenGuard } from '../../../core/guards/refresh-token-guard';
 import { JwtAdapter } from '../../../core/adapters/jwt-adapter';
 import { DeviceService } from '../domain/device-service';
+import { deviceIdValidationParam } from '../middlewares/device-id.validation';
+import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
 
 export const createSecurityRouter = ({
   deviceService,
@@ -31,6 +33,8 @@ export const createSecurityRouter = ({
     )
     .delete(
       '/devices/:deviceId',
+      deviceIdValidationParam,
+      inputValidationResultMiddleware,
       createRefreshTokenGuard({ jwtAdapter }),
       createDeleteDeviceHandler({ deviceService }),
     );
