@@ -28,7 +28,13 @@ export class DeviceQueryRepository {
     const devices = await this.collection.find({ userId }).toArray();
 
     return devices
-      .map(this.mapToViewModel)
-      .sort((a) => (a.deviceId === currentDeviceId ? 1 : 0));
+      .map((device) => this.mapToViewModel(device))
+      .sort((a, b) =>
+        a.deviceId === currentDeviceId
+          ? -1
+          : b.deviceId === currentDeviceId
+            ? 1
+            : 0,
+      );
   }
 }

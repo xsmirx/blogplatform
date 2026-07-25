@@ -4,7 +4,7 @@ import { UnauthorizedError } from '../errors/domain-errors';
 
 export const createRefreshTokenGuard =
   ({ jwtAdapter }: { jwtAdapter: JwtAdapter }): RequestHandler =>
-  async (req, res, next) => {
+  (req, res, next) => {
     const refreshToken = req.cookies.refreshToken as string | undefined;
 
     if (!refreshToken) {
@@ -17,11 +17,7 @@ export const createRefreshTokenGuard =
       throw new UnauthorizedError('bad refreshToken');
     }
 
-    const { userId, deviceId, exp } = payload;
-
-    if (!exp || exp < Date.now()) {
-      throw new UnauthorizedError('bad refreshToken');
-    }
+    const { userId, deviceId } = payload;
 
     if (!deviceId) {
       throw new UnauthorizedError('bad refreshToken');
