@@ -15,13 +15,17 @@ import { createRegistrationConfirmationHandler } from './handlers/registrationCo
 import type { AuthService } from '../domain/auth-service';
 import { createRefreshTokenHandler } from './handlers/refreshToken.handler';
 import { createLogoutHandler } from './handlers/logout.handler';
+import { createAccessTokenGuard } from '../../../core/guards/access-token-guard';
+import { JwtAdapter } from '../../../core/adapters/jwt-adapter';
 
 export const createAuthRouter = ({
   authService,
   userQueryRepository,
+  jwtAdapter,
 }: {
   authService: AuthService;
   userQueryRepository: UserQueryRepository;
+  jwtAdapter: JwtAdapter;
 }) => {
   const authRouter: Router = Router();
 
@@ -33,7 +37,11 @@ export const createAuthRouter = ({
       inputValidationResultMiddleware,
       createLoginHandler({ authService }),
     )
-    .get('/me', accessTokenGuard, createMeHandler({ userQueryRepository }))
+    .get(
+      '/me',
+      createAccessTokenGuard({ jwtAdapter }),
+      createMeHandler({ userQueryRepository }),
+    )
     .post(
       '/registration-confirmation',
       codeValidation,
