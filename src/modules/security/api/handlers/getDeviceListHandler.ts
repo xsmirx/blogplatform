@@ -7,7 +7,7 @@ export const createGetDeviceListHandler =
     deviceQueryRepository,
   }: {
     deviceQueryRepository: DeviceQueryRepository;
-  }): RequestHandler<undefined, DeviceOutputDTO[]> =>
+  }): RequestHandler<object, DeviceOutputDTO[]> =>
   async (req, res) => {
     const userId = req.appContext?.user?.userId as string;
     const currentDeviceId = req.appContext?.device?.deviceId as string;

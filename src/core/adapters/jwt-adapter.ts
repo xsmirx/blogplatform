@@ -1,28 +1,29 @@
 import jwt, { type JwtPayload } from 'jsonwebtoken';
-import { settings } from '../../../core/settings/settings';
-import type { AccessTokenPayload, RefreshTokenPayload } from './types';
+import { settings } from '../settings/settings';
+import type {
+  AccessTokenPayload,
+  RefreshTokenPayload,
+} from '../../modules/auth/adapters/types';
 
 export class JwtAdapter {
-  public async generateAccessToken({
-    userId,
-  }: AccessTokenPayload): Promise<string> {
+  public generateAccessToken({ userId }: AccessTokenPayload): string {
     return jwt.sign({ userId }, settings.AC_TOKEN_SECRET, {
       expiresIn: settings.AC_TOKEN_TIME,
     });
   }
 
-  public async generateRefreshToken({
+  public generateRefreshToken({
     userId,
     deviceId,
-  }: RefreshTokenPayload): Promise<string> {
+  }: RefreshTokenPayload): string {
     return jwt.sign({ userId, deviceId }, settings.RC_TOKEN_SECRET, {
       expiresIn: settings.RC_TOKEN_TIME,
     });
   }
 
-  public async verifyAccessToken(
+  public verifyAccessToken(
     token: string,
-  ): Promise<(JwtPayload & AccessTokenPayload) | null> {
+  ): (JwtPayload & AccessTokenPayload) | null {
     try {
       return jwt.verify(token, settings.AC_TOKEN_SECRET) as JwtPayload &
         AccessTokenPayload;
@@ -31,9 +32,9 @@ export class JwtAdapter {
     }
   }
 
-  public async verifyRefreshToken(
+  public verifyRefreshToken(
     token: string,
-  ): Promise<(JwtPayload & RefreshTokenPayload) | null> {
+  ): (JwtPayload & RefreshTokenPayload) | null {
     try {
       return jwt.verify(token, settings.RC_TOKEN_SECRET) as JwtPayload &
         RefreshTokenPayload;
@@ -42,5 +43,3 @@ export class JwtAdapter {
     }
   }
 }
-
-export const jwtAdapter = new JwtAdapter();

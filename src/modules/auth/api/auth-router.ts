@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { loginOrEmailValidation } from '../middlewares/login-or-email.validation';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
 import { createLoginHandler } from './handlers/login.handler';
-import { accessTokenGuard } from './guards/access-token-guard';
 import { createMeHandler } from './handlers/me.handler';
 import type { UserQueryRepository } from '../../user/infrastructure/user-query-repository';
 import { codeValidation } from '../middlewares/code.validation';

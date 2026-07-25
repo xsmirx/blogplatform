@@ -14,7 +14,7 @@ import {
   sortByValidation,
   sortDirectionValidation,
 } from '../middlewares/comment-validators';
-import { accessTokenGuard } from '../../auth/api/guards/access-token-guard';
+import { accessTokenGuard } from '../../../core/guards/access-token-guard';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
 
 export const createCommentByPostRouter = ({

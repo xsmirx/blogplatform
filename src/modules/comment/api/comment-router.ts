@@ -6,7 +6,7 @@ import {
   idValidation,
 } from '../middlewares/comment-validators';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
-import { accessTokenGuard } from '../../auth/api/guards/access-token-guard';
+import { accessTokenGuard } from '../../../core/guards/access-token-guard';
 import {
   createDeleteCommentHandler,
   createGetCommentHandler,

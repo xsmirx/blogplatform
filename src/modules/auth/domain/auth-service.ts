@@ -1,5 +1,5 @@
 import { BcryptAdapter } from '../../../core/adapters/bcrypt-adapter';
-import { JwtAdapter } from '../adapters/jwt-adapter';
+import { JwtAdapter } from '../../../core/adapters/jwt-adapter';
 import { User } from '../../user/domain/types';
 import { UserRepository } from '../../user/infrastructure/user-repository';
 import { Result } from '../../../core/result/result-type';
