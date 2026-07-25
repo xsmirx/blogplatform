@@ -2,7 +2,7 @@ import { ObjectId, type WithId } from 'mongodb';
 import { DatabaseConnection } from '../../../bd/mongo.db';
 import type { User } from '../domain/types';
 import type { UserDB } from './types';
-import type { UserRepository } from '../domain/user-repository.interface';
+import type { UserRepository } from '../domain/user-accessor.interface';
 
 export class MongoUserRepository implements UserRepository {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}

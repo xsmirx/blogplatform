@@ -17,6 +17,7 @@ import { createRefreshTokenHandler } from './handlers/refreshToken.handler';
 import { createLogoutHandler } from './handlers/logout.handler';
 import { createAccessTokenGuard } from '../../../core/guards/access-token-guard';
 import { JwtAdapter } from '../../../core/adapters/jwt-adapter';
+import { createRefreshTokenGuard } from '../../../core/guards/refresh-token-guard';
 
 export const createAuthRouter = ({
   authService,
@@ -63,7 +64,11 @@ export const createAuthRouter = ({
       createRegistrationEmailResendHandler({ authService }),
     )
     .post('/refresh-token', createRefreshTokenHandler({ authService }))
-    .post('/logout', createLogoutHandler({ authService }));
+    .post(
+      '/logout',
+      createRefreshTokenGuard({ jwtAdapter }),
+      createLogoutHandler({ authService }),
+    );
 
   return authRouter;
 };

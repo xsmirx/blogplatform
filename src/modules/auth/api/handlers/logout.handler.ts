@@ -7,16 +7,9 @@ export const createLogoutHandler = ({
   authService: AuthService;
 }): RequestHandler => {
   return async (req, res) => {
-    const refreshToken = req.cookies.refreshToken as string | undefined;
-    if (!refreshToken) {
-      return res.sendStatus(401);
-    }
+    const deviceId = req.appContext?.device?.deviceId as string;
 
-    const result = await authService.logout({ refreshToken });
-
-    if (result.status !== 'Success') {
-      return res.sendStatus(401);
-    }
+    await authService.logout({ deviceId });
 
     res.clearCookie('refreshToken', { httpOnly: true, secure: true });
     return res.sendStatus(204);

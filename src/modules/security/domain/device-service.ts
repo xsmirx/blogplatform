@@ -15,6 +15,14 @@ export class DeviceService {
     this.deviceRepository = deps.deviceRepository;
   }
 
+  public async terminateSession({
+    deviceId,
+  }: {
+    deviceId: string;
+  }): Promise<void> {
+    await this.deviceRepository.deleteById(deviceId);
+  }
+
   public async terminateDevice({ userId, deviceId }: TerminateDeviceInput) {
     const device = await this.deviceRepository.findById(deviceId);
     if (!device) throw new NotFoundError('Device not found');
