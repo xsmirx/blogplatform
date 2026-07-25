@@ -13,10 +13,10 @@ export class UserService {
 
   constructor(deps: {
     userRepository: UserRepository;
-    bcryptService: BcryptAdapter;
+    bcryptAdapter: BcryptAdapter;
   }) {
     this.userRepository = deps.userRepository;
-    this.bcryptService = deps.bcryptService;
+    this.bcryptService = deps.bcryptAdapter;
   }
 
   public async createUser(user: CreateUserInput): Promise<string> {

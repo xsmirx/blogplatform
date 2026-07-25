@@ -17,8 +17,14 @@ import { createCommentRouter } from './modules/comment/api/comment-router';
 import { createCommentByPostRouter } from './modules/comment/api/comment-by-post-router';
 import type { CommentQueryRepository } from './modules/comment/infrastucture/comment-query-repository';
 import type { CommentService } from './modules/comment/domain/comment-service';
+import { createSecurityRouter } from './modules/security/api/security-router';
+import { DeviceService } from './modules/security/domain/device-service';
+import { DeviceQueryRepository } from './modules/security/infrastructure/device-query-repository';
+import { JwtAdapter } from './core/adapters/jwt-adapter';
 
 type AppDependencies = {
+  deviceService: DeviceService;
+  deviceQueryRepository: DeviceQueryRepository;
   // authService: AuthService;
   userService: UserService;
   userQueryRepository: UserQueryRepository;
@@ -28,6 +34,9 @@ type AppDependencies = {
   postQueryRepository: PostQueryRepository;
   commentService: CommentService;
   commentQueryRepository: CommentQueryRepository;
+
+  jwtAdapter: JwtAdapter;
+
   databaseConnection: DatabaseConnection;
 };
 
@@ -40,7 +49,14 @@ export const setupApp = (app: Express, deps: AppDependencies) => {
     res.status(200).send('Hello world! h06');
   });
 
-  // app.use('/security', createSecurityRouter());
+  app.use(
+    '/security',
+    createSecurityRouter({
+      deviceService: deps.deviceService,
+      deviceQueryRepository: deps.deviceQueryRepository,
+      jwtAdapter: deps.jwtAdapter,
+    }),
+  );
   // app.use(
   //   '/auth',
   //   createAuthRouter({

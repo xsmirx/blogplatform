@@ -45,7 +45,10 @@ export const createTestApp = (): Express => {
   // Services
   const bcryptService = new BcryptAdapter();
 
-  const userService = new UserService({ bcryptService, userRepository });
+  const userService = new UserService({
+    bcryptAdapter: bcryptService,
+    userRepository,
+  });
   // const authService = new AuthService({
   //   bcryptService,
   //   jwtService,

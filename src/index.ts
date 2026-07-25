@@ -15,6 +15,10 @@ import { BcryptAdapter } from './core/adapters/bcrypt-adapter';
 import { CommentService } from './modules/comment/domain/comment-service';
 import { MongoCommentRepository } from './modules/comment/infrastucture/comment-repository';
 import { CommentQueryRepository } from './modules/comment/infrastucture/comment-query-repository';
+import { JwtAdapter } from './core/adapters/jwt-adapter';
+import { DeviceService } from './modules/security/domain/device-service';
+import { MongoDeviceRepository } from './modules/security/infrastructure/device-repository';
+import { DeviceQueryRepository } from './modules/security/infrastructure/device-query-repository';
 
 const bootstrap = async () => {
   // connect to DB
@@ -28,6 +32,8 @@ const bootstrap = async () => {
   const app = express();
 
   // Repositories
+  const deviceRepository = new MongoDeviceRepository(databaseConnection);
+  const deviceQueryRepository = new DeviceQueryRepository(databaseConnection);
   const userRepository = new MongoUserRepository(databaseConnection);
   const userQueryRepository = new UserQueryRepository(databaseConnection);
   const blogRepository = new MongoBlogRepository(databaseConnection);
@@ -37,10 +43,17 @@ const bootstrap = async () => {
   const commentRepository = new MongoCommentRepository(databaseConnection);
   const commentQueryRepository = new CommentQueryRepository(databaseConnection);
 
-  // Services
-  const bcryptService = new BcryptAdapter();
+  // Adapters
+  const bcryptAdapter = new BcryptAdapter();
+  const jwtAdapter = new JwtAdapter();
 
-  const userService = new UserService({ bcryptService, userRepository });
+  // Services
+
+  const userService = new UserService({
+    bcryptAdapter,
+    userRepository,
+  });
+  const deviceService = new DeviceService({ deviceRepository });
   // const authService = new AuthService({
   //   bcryptService,
   //   jwtService,
@@ -56,6 +69,8 @@ const bootstrap = async () => {
   });
 
   setupApp(app, {
+    deviceService,
+    deviceQueryRepository,
     // authService,
     userService,
     userQueryRepository,
@@ -65,6 +80,9 @@ const bootstrap = async () => {
     postQueryRepository,
     commentService,
     commentQueryRepository,
+
+    jwtAdapter,
+
     databaseConnection,
   });
 
