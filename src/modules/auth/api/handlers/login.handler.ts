@@ -2,7 +2,6 @@ import { RequestHandler } from 'express';
 import { LoginInputDTO, LoginOutputDTO } from '../types';
 import { matchedData } from 'express-validator';
 import { type AuthService } from '../../domain/auth-service';
-import { ResultStatus } from '../../../../core/result/result-status';
 import type { ValidationError } from '../../../../core/types/validation-error';
 
 export const createLoginHandler = ({
@@ -16,24 +15,20 @@ export const createLoginHandler = ({
 > => {
   return async (req, res) => {
     const body = matchedData<LoginInputDTO>(req);
+    const ip = req.ip as string;
+    const deviceName = req.headers['user-agent'] || 'unidentified device';
+
     const result = await authService.login({
       loginOrEmail: body.loginOrEmail,
       password: body.password,
+      ip,
+      deviceName,
     });
 
-    if (result.status !== ResultStatus.Success) {
-      return res.status(401).send({
-        erorrMessages: [
-          { field: 'loginOrEmail', message: 'Invalid credentials' },
-          { field: 'password', message: 'Invalid credentials' },
-        ],
-      });
-    }
-
-    res.cookie('refreshToken', result.data!.refreshToken, {
+    res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: true,
     });
-    return res.status(200).send({ accessToken: result.data!.accessToken });
+    return res.status(200).send({ accessToken: result.accessToken });
   };
 };

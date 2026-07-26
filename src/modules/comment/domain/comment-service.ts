@@ -3,7 +3,7 @@ import {
   NotFoundError,
 } from '../../../core/errors/domain-errors';
 import type { PostRepository } from '../../post/domain/post-repository.interface';
-import type { UserRepository } from '../../user/domain/user-accessor.interface';
+import type { UserRepository } from '../../user/domain/user-repository.interface';
 import type { CommentRepository } from './comment-repository.interface';
 import type { Comment, CreateCommentInput, UpdateCommentInput } from './types';
 

@@ -41,6 +41,7 @@ type AppDependencies = {
 };
 
 export const setupApp = (app: Express, deps: AppDependencies) => {
+  app.set('trust proxy', true);
   app.use(cookieParser());
   app.use(express.json()); // middleware для парсинга JSON в теле запроса
 

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { BcryptAdapter } from '../../../core/adapters/bcrypt-adapter';
-import type { UserRepository } from './user-accessor.interface';
+import type { UserRepository } from './user-repository.interface';
 import {
   NotFoundError,
   UniqueConstraintError,

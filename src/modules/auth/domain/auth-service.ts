@@ -9,6 +9,7 @@ import { emailExamples } from '../adapters/email-examples';
 import type { DeviceService } from '../../security/domain/device-service';
 import type { LoginInput, RefreshInput } from './types';
 import { AuthUserAccessor } from './ports/user-accessor.interface';
+import { UnauthorizedError } from '../../../core/errors/domain-errors';
 
 export class AuthService {
   private readonly userRepository: AuthUserAccessor;
@@ -36,46 +37,44 @@ export class AuthService {
     password,
     ip,
     deviceName,
-  }: LoginInput): Promise<
-    Result<{ accessToken: string; refreshToken: string } | null>
-  > {
-    const result = await this.checkCredentials({
-      loginOrEmail,
-      password,
-    });
+  }: LoginInput): Promise<{
+    accessToken: string;
+    refreshToken: string;
+  }> {
+    const user = await this.userRepository.findByLoginOrEmail(loginOrEmail);
 
-    if (result.status !== ResultStatus.Success) {
-      return {
-        status: ResultStatus.Unauthorized,
-        data: null,
-        extensions: [],
-      };
+    if (!user) {
+      throw new UnauthorizedError('Unauthorized');
     }
 
-    const userId = result.data!.id;
+    const isPassCorrect = await this.bcryptAdapter.checkPassword(
+      password,
+      user.passwordHash,
+    );
+
+    if (!isPassCorrect) {
+      throw new UnauthorizedError('Unauthorized');
+    }
+
+    const userId = user.id;
     const deviceId = randomUUID();
 
-    const accessToken = await this.jwtAdapter.generateAccessToken({
+    const accessToken = this.jwtAdapter.generateAccessToken({
       userId,
     });
-    const refreshToken = await this.jwtAdapter.generateRefreshToken({
+    const refreshToken = this.jwtAdapter.generateRefreshToken({
       userId,
       deviceId,
     });
 
     const refreshTokenPayload =
-      await this.jwtAdapter.verifyRefreshToken(refreshToken);
+      this.jwtAdapter.verifyRefreshToken(refreshToken);
 
     const iat = refreshTokenPayload!.iat;
     const exp = refreshTokenPayload!.exp;
 
     if (iat === undefined || exp === undefined) {
-      return {
-        status: ResultStatus.Unauthorized,
-        data: null,
-        extensions: [],
-        errorMessage: 'Invalid token payload',
-      };
+      throw new Error('Invalid token paypoad');
     }
 
     await this.deviceService.createDevice({
@@ -88,47 +87,8 @@ export class AuthService {
     });
 
     return {
-      status: ResultStatus.Success,
-      data: { accessToken, refreshToken },
-      extensions: [],
-    };
-  }
-
-  private async checkCredentials({
-    loginOrEmail,
-    password,
-  }: {
-    loginOrEmail: string;
-    password: string;
-  }): Promise<Result<User | null>> {
-    const user = await this.userRepository.findByLoginOrEmail(loginOrEmail);
-    if (!user) {
-      return {
-        status: ResultStatus.NotFound,
-        data: null,
-        extensions: [],
-        errorMessage: 'User not found',
-      };
-    }
-
-    const isPassCorrect = await this.bcryptAdapter.checkPassword(
-      password,
-      user.passwordHash,
-    );
-
-    if (!isPassCorrect) {
-      return {
-        status: ResultStatus.BadRequest,
-        data: null,
-        extensions: [],
-        errorMessage: 'Bad request',
-      };
-    }
-
-    return {
-      status: ResultStatus.Success,
-      data: user,
-      extensions: [],
+      accessToken,
+      refreshToken,
     };
   }
 

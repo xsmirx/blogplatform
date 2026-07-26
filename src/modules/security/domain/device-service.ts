@@ -4,6 +4,7 @@ import {
 } from '../../../core/errors/domain-errors';
 import { DeviceRepository } from './ports/device-repository.interface';
 import type {
+  CreateDeviceInput,
   TerminateAllDevicesExceptCurrentInput,
   TerminateDeviceInput,
 } from './types';
@@ -13,6 +14,18 @@ export class DeviceService {
 
   constructor(deps: { deviceRepository: DeviceRepository }) {
     this.deviceRepository = deps.deviceRepository;
+  }
+
+  public async createDevice(device: CreateDeviceInput): Promise<string> {
+    const deviceId = await this.deviceRepository.create({
+      id: device.deviceId,
+      userId: device.userId,
+      ip: device.ip,
+      deviceName: device.deviceName,
+      createdAt: device.createdAt,
+      expiresAt: device.expiresAt,
+    });
+    return deviceId;
   }
 
   public async terminateSession({
