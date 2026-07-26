@@ -1,7 +1,6 @@
 import type { RequestHandler } from 'express';
 import type { AuthService } from '../../domain/auth-service';
 import type { LoginOutputDTO } from '../types';
-import { ResultStatus } from '../../../../core/result/result-status';
 
 export const createRefreshTokenHandler = ({
   authService,
@@ -9,21 +8,23 @@ export const createRefreshTokenHandler = ({
   authService: AuthService;
 }): RequestHandler<object, LoginOutputDTO> => {
   return async (req, res) => {
-    const refreshToken = req.cookies.refreshToken as string | undefined;
-    if (!refreshToken) {
-      return res.sendStatus(401);
-    }
-    const result = await authService.refresh({ refreshToken });
+    const userId = req.appContext?.user?.userId as string;
+    const deviceId = req.appContext?.device?.deviceId as string;
+    const ip = req.ip as string;
+    const deviceName = req.headers['user-agent'] || 'unidentified device';
 
-    if (result.status !== ResultStatus.Success) {
-      return res.sendStatus(401);
-    }
+    const { accessToken, refreshToken } = await authService.refresh({
+      deviceId,
+      userId,
+      ip,
+      deviceName,
+    });
 
-    res.cookie('refreshToken', result.data!.refreshToken, {
+    res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: true,
     });
 
-    return res.status(200).send({ accessToken: result.data!.accessToken });
+    return res.status(200).send({ accessToken: accessToken });
   };
 };

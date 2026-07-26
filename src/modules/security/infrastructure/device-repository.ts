@@ -52,19 +52,26 @@ export class MongoDeviceRepository implements DeviceRepository {
     return result.insertedId;
   }
 
-  public async updateById(
-    deviceId: string,
-    device: Partial<Omit<DeviceDB, '_id'>>,
-  ) {
+  public async update(
+    id: string,
+    device: Omit<Device, 'id'>,
+  ): Promise<boolean> {
     const result = await this.collection.updateOne(
-      { _id: deviceId },
-      { $set: device },
+      { _id: id, userId: device.userId, createdAt: device.createdAt },
+      {
+        $set: {
+          ip: device.ip,
+          deviceName: device.deviceName,
+          createdAt: device.createdAt,
+          expiresAt: device.expiresAt,
+        },
+      },
     );
 
     return result.matchedCount > 0;
   }
 
-  public async deleteById(deviceId: string) {
+  public async delete(deviceId: string) {
     const result = await this.collection.deleteOne({
       _id: deviceId,
     });

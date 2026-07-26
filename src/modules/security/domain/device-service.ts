@@ -1,12 +1,14 @@
 import {
   ForbiddenError,
   NotFoundError,
+  UnauthorizedError,
 } from '../../../core/errors/domain-errors';
 import { DeviceRepository } from './ports/device-repository.interface';
 import type {
   CreateDeviceInput,
   TerminateAllDevicesExceptCurrentInput,
   TerminateDeviceInput,
+  UpdateDeviceInput,
 } from './types';
 
 export class DeviceService {
@@ -28,19 +30,29 @@ export class DeviceService {
     return deviceId;
   }
 
+  public async updateDevice(
+    id: string,
+    device: UpdateDeviceInput,
+  ): Promise<void> {
+    const result = await this.deviceRepository.update(id, device);
+    if (!result) {
+      throw new UnauthorizedError('Device not found');
+    }
+  }
+
   public async terminateSession({
     deviceId,
   }: {
     deviceId: string;
   }): Promise<void> {
-    await this.deviceRepository.deleteById(deviceId);
+    await this.deviceRepository.delete(deviceId);
   }
 
   public async terminateDevice({ userId, deviceId }: TerminateDeviceInput) {
     const device = await this.deviceRepository.findById(deviceId);
     if (!device) throw new NotFoundError('Device not found');
     if (device.userId !== userId) throw new ForbiddenError('Forbidden');
-    await this.deviceRepository.deleteById(deviceId);
+    await this.deviceRepository.delete(deviceId);
   }
 
   public async terminateAllDevicesExceptCurrent({
@@ -53,7 +65,7 @@ export class DeviceService {
     );
     await Promise.all(
       devicesToTerminate.map((device) =>
-        this.deviceRepository.deleteById(device.id),
+        this.deviceRepository.delete(device.id),
       ),
     );
   }

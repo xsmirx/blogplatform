@@ -16,14 +16,7 @@ export type CreateDeviceInput = {
   expiresAt: Date;
 };
 
-export type UpdateDeviceInput = {
-  deviceId: string;
-  userId: string;
-  ip?: string;
-  deviceName?: string;
-  iat?: Date;
-  exp?: Date;
-};
+export type UpdateDeviceInput = Omit<CreateDeviceInput, 'deviceId'>;
 
 export type TerminateDeviceInput = {
   userId: string;

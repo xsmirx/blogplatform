@@ -63,7 +63,11 @@ export const createAuthRouter = ({
       inputValidationResultMiddleware,
       createRegistrationEmailResendHandler({ authService }),
     )
-    .post('/refresh-token', createRefreshTokenHandler({ authService }))
+    .post(
+      '/refresh-token',
+      createRefreshTokenGuard({ jwtAdapter }),
+      createRefreshTokenHandler({ authService }),
+    )
     .post(
       '/logout',
       createRefreshTokenGuard({ jwtAdapter }),
