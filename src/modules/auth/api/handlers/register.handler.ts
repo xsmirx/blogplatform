@@ -1,30 +1,35 @@
 import { RequestHandler } from 'express';
 import { matchedData } from 'express-validator';
 import { RegistrationInputDTO } from '../types';
-import { ResultStatus } from '../../../../core/result/result-status';
-import type { AuthService } from '../../domain/auth-service';
+import { RegistrationService } from '../../../registration/domain/registrarion-service';
+import { UniqueConstraintError } from '../../../../core/errors/domain-errors';
+import { ValidationError } from '../../../../core/errors/api-errors';
 
 export const createRegistrationHandler = ({
-  authService,
+  registrationService,
 }: {
-  authService: AuthService;
-}): RequestHandler<
-  object,
-  object | { errorsMessages: { message: string; field: string | null }[] },
-  RegistrationInputDTO
-> => {
+  registrationService: RegistrationService;
+}): RequestHandler<object, object, RegistrationInputDTO> => {
   return async (req, res) => {
     const { email, login, password } = matchedData<RegistrationInputDTO>(req);
 
-    const result = await authService.registerUser({ email, login, password });
-
-    if (result.status === ResultStatus.BadRequest) {
-      return res.status(400).send({
-        errorsMessages: result.extensions.map((e) => ({
-          message: e.message,
-          field: e.field,
-        })),
-      });
+    try {
+      await registrationService.registerUser({ email, login, password });
+    } catch (e) {
+      if (e instanceof UniqueConstraintError) {
+        if (e.paramKey === 'login') {
+          throw new ValidationError([
+            { field: 'login', message: 'login already exist' },
+          ]);
+        }
+        if (e.paramKey === 'email') {
+          throw new ValidationError([
+            { field: 'email', message: 'email already exist' },
+          ]);
+        }
+      } else {
+        throw e;
+      }
     }
 
     return res.status(204).send();

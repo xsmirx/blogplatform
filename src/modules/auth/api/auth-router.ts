@@ -18,14 +18,17 @@ import { createLogoutHandler } from './handlers/logout.handler';
 import { createAccessTokenGuard } from '../../../core/guards/access-token-guard';
 import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
 import { createRefreshTokenGuard } from '../../../core/guards/refresh-token-guard';
+import { RegistrationService } from '../../registration/domain/registrarion-service';
 
 export const createAuthRouter = ({
   authService,
   userQueryRepository,
+  registrationService,
   jwtAdapter,
 }: {
   authService: AuthService;
   userQueryRepository: UserQueryRepository;
+  registrationService: RegistrationService;
   jwtAdapter: JwtAdapter;
 }) => {
   const authRouter: Router = Router();
@@ -38,10 +41,10 @@ export const createAuthRouter = ({
       inputValidationResultMiddleware,
       createLoginHandler({ authService }),
     )
-    .get(
-      '/me',
-      createAccessTokenGuard({ jwtAdapter }),
-      createMeHandler({ userQueryRepository }),
+    .post(
+      '/refresh-token',
+      createRefreshTokenGuard({ jwtAdapter }),
+      createRefreshTokenHandler({ authService }),
     )
     // .post(
     //   '/registration-confirmation',
@@ -49,14 +52,14 @@ export const createAuthRouter = ({
     //   inputValidationResultMiddleware,
     //   createRegistrationConfirmationHandler({ authService }),
     // )
-    // .post(
-    //   '/registration',
-    //   loginValidation,
-    //   emailValidation,
-    //   passwordValidationForRegistration,
-    //   inputValidationResultMiddleware,
-    //   createRegistrationHandler({ authService }),
-    // )
+    .post(
+      '/registration',
+      loginValidation,
+      emailValidation,
+      passwordValidationForRegistration,
+      inputValidationResultMiddleware,
+      createRegistrationHandler({ registrationService }),
+    )
     // .post(
     //   '/registration-email-resending',
     //   emailValidation,
@@ -64,14 +67,14 @@ export const createAuthRouter = ({
     //   createRegistrationEmailResendHandler({ authService }),
     // )
     .post(
-      '/refresh-token',
-      createRefreshTokenGuard({ jwtAdapter }),
-      createRefreshTokenHandler({ authService }),
-    )
-    .post(
       '/logout',
       createRefreshTokenGuard({ jwtAdapter }),
       createLogoutHandler({ authService }),
+    )
+    .get(
+      '/me',
+      createAccessTokenGuard({ jwtAdapter }),
+      createMeHandler({ userQueryRepository }),
     );
 
   return authRouter;

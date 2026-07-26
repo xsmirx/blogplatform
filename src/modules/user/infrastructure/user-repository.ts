@@ -4,8 +4,11 @@ import type { User } from '../domain/types';
 import type { UserDB } from './types';
 import type { UserRepository } from '../domain/user-repository.interface';
 import { AuthUserAccessor } from '../../auth/domain/ports/auth-user-accessor.interface';
+import { RegistrationUserAccessor } from '../../registration/domain/ports/reistration-user-accessor.interface';
 
-export class MongoUserRepository implements UserRepository, AuthUserAccessor {
+export class MongoUserRepository
+  implements UserRepository, AuthUserAccessor, RegistrationUserAccessor
+{
   constructor(protected readonly databaseConnection: DatabaseConnection) {}
 
   private get collection() {
