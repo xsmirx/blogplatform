@@ -15,7 +15,7 @@ import { BcryptAdapter } from './core/adapters/bcrypt-adapter';
 import { CommentService } from './modules/comment/domain/comment-service';
 import { MongoCommentRepository } from './modules/comment/infrastucture/comment-repository';
 import { CommentQueryRepository } from './modules/comment/infrastucture/comment-query-repository';
-import { JwtAdapter } from './core/adapters/jwt-adapter';
+import { JwtAdapter } from './core/adapters/jwt-adapter/jwt-adapter';
 import { DeviceService } from './modules/security/domain/device-service';
 import { MongoDeviceRepository } from './modules/security/infrastructure/device-repository';
 import { DeviceQueryRepository } from './modules/security/infrastructure/device-query-repository';

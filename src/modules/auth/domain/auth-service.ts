@@ -1,35 +1,31 @@
 import { BcryptAdapter } from '../../../core/adapters/bcrypt-adapter';
-import { JwtAdapter } from '../../../core/adapters/jwt-adapter';
-import { User } from '../../user/domain/types';
-import { Result } from '../../../core/result/result-type';
-import { ResultStatus } from '../../../core/result/result-status';
+import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
 import { randomUUID } from 'crypto';
 import { MailAdapter } from '../adapters/mail-adapter';
-import { emailExamples } from '../adapters/email-examples';
 import type { DeviceService } from '../../security/domain/device-service';
 import type { LoginInput, RefreshInput } from './types';
-import { AuthUserAccessor } from './ports/user-accessor.interface';
+import { AuthUserAccessor } from './ports/auth-user-accessor.interface';
 import { UnauthorizedError } from '../../../core/errors/domain-errors';
 
 export class AuthService {
-  private readonly userRepository: AuthUserAccessor;
+  private readonly userAccessor: AuthUserAccessor;
   private readonly deviceService: DeviceService;
   private readonly jwtAdapter: JwtAdapter;
   private readonly bcryptAdapter: BcryptAdapter;
   private readonly mailAdapter: MailAdapter;
 
   constructor(deps: {
-    userRepository: AuthUserAccessor;
+    userAccessor: AuthUserAccessor;
     deviceService: DeviceService;
-    jwtService: JwtAdapter;
-    bcryptService: BcryptAdapter;
-    mailService: MailAdapter;
+    jwtAdapter: JwtAdapter;
+    bcryptAdapter: BcryptAdapter;
+    mailAdapter: MailAdapter;
   }) {
-    this.userRepository = deps.userRepository;
+    this.userAccessor = deps.userAccessor;
     this.deviceService = deps.deviceService;
-    this.jwtAdapter = deps.jwtService;
-    this.bcryptAdapter = deps.bcryptService;
-    this.mailAdapter = deps.mailService;
+    this.jwtAdapter = deps.jwtAdapter;
+    this.bcryptAdapter = deps.bcryptAdapter;
+    this.mailAdapter = deps.mailAdapter;
   }
 
   public async login({
@@ -41,7 +37,7 @@ export class AuthService {
     accessToken: string;
     refreshToken: string;
   }> {
-    const user = await this.userRepository.findByLoginOrEmail(loginOrEmail);
+    const user = await this.userAccessor.findByLoginOrEmail(loginOrEmail);
 
     if (!user) {
       throw new UnauthorizedError('Unauthorized');
@@ -59,10 +55,7 @@ export class AuthService {
     const userId = user.id;
     const deviceId = randomUUID();
 
-    const accessToken = this.jwtAdapter.generateAccessToken({
-      userId,
-    });
-    const refreshToken = this.jwtAdapter.generateRefreshToken({
+    const { accessToken, refreshToken } = this.jwtAdapter.generateTokenPair({
       userId,
       deviceId,
     });
@@ -70,11 +63,8 @@ export class AuthService {
     const refreshTokenPayload =
       this.jwtAdapter.verifyRefreshToken(refreshToken);
 
-    const iat = refreshTokenPayload!.iat;
-    const exp = refreshTokenPayload!.exp;
-
-    if (iat === undefined || exp === undefined) {
-      throw new Error('Invalid token paypoad');
+    if (refreshTokenPayload === null) {
+      throw new Error('Invalid token payload');
     }
 
     await this.deviceService.createDevice({
@@ -82,8 +72,8 @@ export class AuthService {
       userId,
       ip,
       deviceName,
-      createdAt: new Date(iat * 1000),
-      expiresAt: new Date(exp * 1000),
+      createdAt: new Date(refreshTokenPayload.iat * 1000),
+      expiresAt: new Date(refreshTokenPayload.exp * 1000),
     });
 
     return {

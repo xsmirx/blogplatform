@@ -4,7 +4,7 @@ import { createDeleteAllDevicesHandler } from './handlers/deleteAllDevicesHandle
 import { createDeleteDeviceHandler } from './handlers/deleteDeviceHandler';
 import { DeviceQueryRepository } from '../infrastructure/device-query-repository';
 import { createRefreshTokenGuard } from '../../../core/guards/refresh-token-guard';
-import { JwtAdapter } from '../../../core/adapters/jwt-adapter';
+import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
 import { DeviceService } from '../domain/device-service';
 import { deviceIdValidationParam } from '../middlewares/device-id.validation';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';

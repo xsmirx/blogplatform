@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import { JwtAdapter } from '../adapters/jwt-adapter';
+import { JwtAdapter } from '../adapters/jwt-adapter/jwt-adapter';
 import { UnauthorizedError } from '../errors/domain-errors';
 
 export const createAccessTokenGuard =

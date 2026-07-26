@@ -20,7 +20,7 @@ import type { CommentService } from './modules/comment/domain/comment-service';
 import { createSecurityRouter } from './modules/security/api/security-router';
 import { DeviceService } from './modules/security/domain/device-service';
 import { DeviceQueryRepository } from './modules/security/infrastructure/device-query-repository';
-import { JwtAdapter } from './core/adapters/jwt-adapter';
+import { JwtAdapter } from './core/adapters/jwt-adapter/jwt-adapter';
 
 type AppDependencies = {
   deviceService: DeviceService;

@@ -1,9 +1,12 @@
 import jwt, { type JwtPayload } from 'jsonwebtoken';
-import { settings } from '../settings/settings';
-import type {
+import { settings } from '../../settings/settings';
+import {
   AccessTokenPayload,
   RefreshTokenPayload,
-} from '../../modules/auth/adapters/types';
+  TokenPair,
+  VerifiedAccessTokenPayload,
+  VerifiedRefreshTokenPayload,
+} from './types';
 
 export class JwtAdapter {
   public generateAccessToken({ userId }: AccessTokenPayload): string {
@@ -21,23 +24,38 @@ export class JwtAdapter {
     });
   }
 
+  public generateTokenPair({
+    userId,
+    deviceId,
+  }: {
+    userId: string;
+    deviceId: string;
+  }): TokenPair {
+    return {
+      accessToken: this.generateAccessToken({ userId }),
+      refreshToken: this.generateRefreshToken({ userId, deviceId }),
+    };
+  }
+
   public verifyAccessToken(
     token: string,
   ): (JwtPayload & AccessTokenPayload) | null {
     try {
-      return jwt.verify(token, settings.AC_TOKEN_SECRET) as JwtPayload &
-        AccessTokenPayload;
+      return jwt.verify(
+        token,
+        settings.AC_TOKEN_SECRET,
+      ) as VerifiedAccessTokenPayload;
     } catch {
       return null;
     }
   }
 
-  public verifyRefreshToken(
-    token: string,
-  ): (JwtPayload & RefreshTokenPayload) | null {
+  public verifyRefreshToken(token: string) {
     try {
-      return jwt.verify(token, settings.RC_TOKEN_SECRET) as JwtPayload &
-        RefreshTokenPayload;
+      return jwt.verify(
+        token,
+        settings.RC_TOKEN_SECRET,
+      ) as VerifiedRefreshTokenPayload;
     } catch {
       return null;
     }

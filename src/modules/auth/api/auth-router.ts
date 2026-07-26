@@ -16,7 +16,7 @@ import type { AuthService } from '../domain/auth-service';
 import { createRefreshTokenHandler } from './handlers/refreshToken.handler';
 import { createLogoutHandler } from './handlers/logout.handler';
 import { createAccessTokenGuard } from '../../../core/guards/access-token-guard';
-import { JwtAdapter } from '../../../core/adapters/jwt-adapter';
+import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
 import { createRefreshTokenGuard } from '../../../core/guards/refresh-token-guard';
 
 export const createAuthRouter = ({

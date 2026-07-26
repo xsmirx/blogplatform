@@ -3,8 +3,9 @@ import { DatabaseConnection } from '../../../bd/mongo.db';
 import type { User } from '../domain/types';
 import type { UserDB } from './types';
 import type { UserRepository } from '../domain/user-repository.interface';
+import { AuthUserAccessor } from '../../auth/domain/ports/auth-user-accessor.interface';
 
-export class MongoUserRepository implements UserRepository {
+export class MongoUserRepository implements UserRepository, AuthUserAccessor {
   constructor(protected readonly databaseConnection: DatabaseConnection) {}
 
   private get collection() {
@@ -44,6 +45,16 @@ export class MongoUserRepository implements UserRepository {
 
   public async findByEmail(email: string): Promise<User | null> {
     const user = await this.collection.findOne({ email });
+    if (!user) {
+      return null;
+    }
+    return this.mapToDomainModel(user);
+  }
+
+  public async findByLoginOrEmail(loginOrEmail: string): Promise<User | null> {
+    const user = await this.collection.findOne({
+      $or: [{ login: loginOrEmail }, { email: loginOrEmail }],
+    });
     if (!user) {
       return null;
     }
