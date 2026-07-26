@@ -31,10 +31,10 @@ export class DeviceService {
   }
 
   public async updateDevice(
-    id: string,
+    { id, iat }: { id: string; iat: number },
     device: UpdateDeviceInput,
   ): Promise<void> {
-    const result = await this.deviceRepository.update(id, device);
+    const result = await this.deviceRepository.update({ id, iat }, device);
     if (!result) {
       throw new UnauthorizedError('Device not found');
     }

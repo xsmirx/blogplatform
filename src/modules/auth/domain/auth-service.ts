@@ -1,32 +1,27 @@
 import { BcryptAdapter } from '../../../core/adapters/bcrypt-adapter';
 import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
 import { randomUUID } from 'crypto';
-import { MailAdapter } from '../adapters/mail-adapter';
 import type { DeviceService } from '../../security/domain/device-service';
 import type { LoginInput, RefreshInput } from './types';
 import { AuthUserAccessor } from './ports/auth-user-accessor.interface';
 import { UnauthorizedError } from '../../../core/errors/domain-errors';
-import { VerifiedRefreshTokenPayload } from '../../../core/adapters/jwt-adapter/types';
 
 export class AuthService {
   private readonly userAccessor: AuthUserAccessor;
   private readonly deviceService: DeviceService;
   private readonly jwtAdapter: JwtAdapter;
   private readonly bcryptAdapter: BcryptAdapter;
-  private readonly mailAdapter: MailAdapter;
 
   constructor(deps: {
     userAccessor: AuthUserAccessor;
     deviceService: DeviceService;
     jwtAdapter: JwtAdapter;
     bcryptAdapter: BcryptAdapter;
-    mailAdapter: MailAdapter;
   }) {
     this.userAccessor = deps.userAccessor;
     this.deviceService = deps.deviceService;
     this.jwtAdapter = deps.jwtAdapter;
     this.bcryptAdapter = deps.bcryptAdapter;
-    this.mailAdapter = deps.mailAdapter;
   }
 
   public async login({
@@ -56,25 +51,25 @@ export class AuthService {
     const userId = user.id;
     const deviceId = randomUUID();
 
-    const { accessToken, refreshToken } = this.jwtAdapter.generateTokenPair({
+    const {
+      accessToken: { token: accessToken },
+      refreshToken: {
+        token: refreshToken,
+        iat: generatedIat,
+        exp: generatedExp,
+      },
+    } = this.jwtAdapter.generateTokenPair({
       userId,
       deviceId,
     });
-
-    const refreshTokenPayload =
-      this.jwtAdapter.verifyRefreshToken(refreshToken);
-
-    if (refreshTokenPayload === null) {
-      throw new Error('Invalid token payload');
-    }
 
     await this.deviceService.createDevice({
       deviceId,
       userId,
       ip,
       deviceName,
-      createdAt: new Date(refreshTokenPayload.iat * 1000),
-      expiresAt: new Date(refreshTokenPayload.exp * 1000),
+      createdAt: new Date(generatedIat * 1000),
+      expiresAt: new Date(generatedExp * 1000),
     });
 
     return {
@@ -228,6 +223,7 @@ export class AuthService {
 
   public async refresh({
     deviceId,
+    iat,
     userId,
     ip,
     deviceName,
@@ -235,22 +231,28 @@ export class AuthService {
     accessToken: string;
     refreshToken: string;
   }> {
-    const { accessToken, refreshToken } = this.jwtAdapter.generateTokenPair({
+    const {
+      accessToken: { token: accessToken },
+      refreshToken: {
+        token: refreshToken,
+        iat: generatedIat,
+        exp: generatedExp,
+      },
+    } = this.jwtAdapter.generateTokenPair({
       userId,
       deviceId,
     });
 
-    const refreshTokenPayload = this.jwtAdapter.verifyRefreshToken(
-      refreshToken,
-    ) as VerifiedRefreshTokenPayload;
-
-    await this.deviceService.updateDevice(deviceId, {
-      userId,
-      ip,
-      deviceName,
-      createdAt: new Date(refreshTokenPayload.iat * 1000),
-      expiresAt: new Date(refreshTokenPayload.exp * 1000),
-    });
+    await this.deviceService.updateDevice(
+      { id: deviceId, iat },
+      {
+        userId,
+        ip,
+        deviceName,
+        createdAt: new Date(generatedIat * 1000),
+        expiresAt: new Date(generatedExp * 1000),
+      },
+    );
 
     return { accessToken, refreshToken };
   }

@@ -9,14 +9,21 @@ export type RefreshTokenPayload = {
   deviceId: string;
 };
 
-export type VerifiedAccessTokenPayload = Required<
-  Pick<JwtPayload, 'iat' | 'exp'>
-> &
+export type VerifiedAccessTokenPayload = Pick<JwtPayload, 'iat' | 'exp'> &
   AccessTokenPayload;
 
-export type VerifiedRefreshTokenPayload = Required<
-  Pick<JwtPayload, 'iat' | 'exp'>
-> &
+export type VerifiedRefreshTokenPayload = Pick<JwtPayload, 'iat' | 'exp'> &
   RefreshTokenPayload;
 
-export type TokenPair = { accessToken: string; refreshToken: string };
+export type TokenPair = {
+  accessToken: {
+    token: string;
+    iat: number;
+    exp: number;
+  };
+  refreshToken: {
+    token: string;
+    iat: number;
+    exp: number;
+  };
+};

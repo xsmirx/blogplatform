@@ -17,16 +17,16 @@ export const createRefreshTokenGuard =
       throw new UnauthorizedError('bad refreshToken');
     }
 
-    const { userId, deviceId } = payload;
+    const { userId, deviceId, iat } = payload;
 
-    if (!deviceId) {
+    if (!userId || !deviceId || !iat) {
       throw new UnauthorizedError('bad refreshToken');
     }
 
     req.appContext = {
       ...req.appContext,
       user: { userId },
-      device: { deviceId },
+      device: { deviceId, iat },
     };
 
     next();

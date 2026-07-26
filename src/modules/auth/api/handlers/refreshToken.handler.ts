@@ -10,11 +10,13 @@ export const createRefreshTokenHandler = ({
   return async (req, res) => {
     const userId = req.appContext?.user?.userId as string;
     const deviceId = req.appContext?.device?.deviceId as string;
+    const iat = req.appContext?.device?.iat as number;
     const ip = req.ip as string;
     const deviceName = req.headers['user-agent'] || 'unidentified device';
 
     const { accessToken, refreshToken } = await authService.refresh({
       deviceId,
+      iat,
       userId,
       ip,
       deviceName,

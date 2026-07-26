@@ -53,13 +53,18 @@ export class MongoDeviceRepository implements DeviceRepository {
   }
 
   public async update(
-    id: string,
+    filter: { id: string; iat: number },
     device: Omit<Device, 'id'>,
   ): Promise<boolean> {
     const result = await this.collection.updateOne(
-      { _id: id, userId: device.userId, createdAt: device.createdAt },
+      {
+        _id: filter.id,
+        userId: device.userId,
+        createdAt: new Date(filter.iat * 1000),
+      },
       {
         $set: {
+          userId: device.userId,
           ip: device.ip,
           deviceName: device.deviceName,
           createdAt: device.createdAt,

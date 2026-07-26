@@ -3,7 +3,7 @@ declare global {
     export interface Request {
       appContext?: {
         user?: { userId: string };
-        device?: { deviceId: string };
+        device?: { deviceId: string; iat: number };
       };
     }
   }

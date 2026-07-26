@@ -31,9 +31,26 @@ export class JwtAdapter {
     userId: string;
     deviceId: string;
   }): TokenPair {
+    const accessToken = this.generateAccessToken({ userId });
+    const refreshToken = this.generateRefreshToken({ userId, deviceId });
+    const accessTokenPayload = this.verifyAccessToken(
+      accessToken,
+    ) as Required<VerifiedAccessTokenPayload>;
+    const refreshTokenPayload = this.verifyRefreshToken(
+      refreshToken,
+    ) as Required<VerifiedRefreshTokenPayload>;
+
     return {
-      accessToken: this.generateAccessToken({ userId }),
-      refreshToken: this.generateRefreshToken({ userId, deviceId }),
+      accessToken: {
+        token: accessToken,
+        iat: accessTokenPayload.iat,
+        exp: accessTokenPayload.exp,
+      },
+      refreshToken: {
+        token: refreshToken,
+        iat: refreshTokenPayload.iat,
+        exp: refreshTokenPayload.exp,
+      },
     };
   }
 
