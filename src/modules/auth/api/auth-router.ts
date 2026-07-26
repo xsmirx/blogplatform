@@ -43,26 +43,26 @@ export const createAuthRouter = ({
       createAccessTokenGuard({ jwtAdapter }),
       createMeHandler({ userQueryRepository }),
     )
-    .post(
-      '/registration-confirmation',
-      codeValidation,
-      inputValidationResultMiddleware,
-      createRegistrationConfirmationHandler({ authService }),
-    )
-    .post(
-      '/registration',
-      loginValidation,
-      emailValidation,
-      passwordValidationForRegistration,
-      inputValidationResultMiddleware,
-      createRegistrationHandler({ authService }),
-    )
-    .post(
-      '/registration-email-resending',
-      emailValidation,
-      inputValidationResultMiddleware,
-      createRegistrationEmailResendHandler({ authService }),
-    )
+    // .post(
+    //   '/registration-confirmation',
+    //   codeValidation,
+    //   inputValidationResultMiddleware,
+    //   createRegistrationConfirmationHandler({ authService }),
+    // )
+    // .post(
+    //   '/registration',
+    //   loginValidation,
+    //   emailValidation,
+    //   passwordValidationForRegistration,
+    //   inputValidationResultMiddleware,
+    //   createRegistrationHandler({ authService }),
+    // )
+    // .post(
+    //   '/registration-email-resending',
+    //   emailValidation,
+    //   inputValidationResultMiddleware,
+    //   createRegistrationEmailResendHandler({ authService }),
+    // )
     .post(
       '/refresh-token',
       createRefreshTokenGuard({ jwtAdapter }),

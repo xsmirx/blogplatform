@@ -21,11 +21,13 @@ import { createSecurityRouter } from './modules/security/api/security-router';
 import { DeviceService } from './modules/security/domain/device-service';
 import { DeviceQueryRepository } from './modules/security/infrastructure/device-query-repository';
 import { JwtAdapter } from './core/adapters/jwt-adapter/jwt-adapter';
+import { AuthService } from './modules/auth/domain/auth-service';
+import { createAuthRouter } from './modules/auth/api/auth-router';
 
 type AppDependencies = {
+  authService: AuthService;
   deviceService: DeviceService;
   deviceQueryRepository: DeviceQueryRepository;
-  // authService: AuthService;
   userService: UserService;
   userQueryRepository: UserQueryRepository;
   blogService: BlogService;
@@ -58,13 +60,14 @@ export const setupApp = (app: Express, deps: AppDependencies) => {
       jwtAdapter: deps.jwtAdapter,
     }),
   );
-  // app.use(
-  //   '/auth',
-  //   createAuthRouter({
-  //     authService: deps.authService,
-  //     userQueryRepository: deps.userQueryRepository,
-  //   }),
-  // );
+  app.use(
+    '/auth',
+    createAuthRouter({
+      authService: deps.authService,
+      userQueryRepository: deps.userQueryRepository,
+      jwtAdapter: deps.jwtAdapter,
+    }),
+  );
   app.use(
     '/users',
     createUserRouter({
