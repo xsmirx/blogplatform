@@ -12,16 +12,16 @@ import { emailExamples } from '../adapters/email-examples';
 
 export class RegistrationService {
   private readonly registrationUserAccessor: RegistrationUserAccessor;
-  private readonly bcriptAdapter: BcryptAdapter;
+  private readonly bcryptAdapter: BcryptAdapter;
   private readonly mailAdapter: MailAdapter;
 
   constructor(deps: {
     userAccessor: RegistrationUserAccessor;
-    bcriptAdapter: BcryptAdapter;
+    bcryptAdapter: BcryptAdapter;
     mailAdapter: MailAdapter;
   }) {
     this.registrationUserAccessor = deps.userAccessor;
-    this.bcriptAdapter = deps.bcriptAdapter;
+    this.bcryptAdapter = deps.bcryptAdapter;
     this.mailAdapter = deps.mailAdapter;
   }
 
@@ -47,7 +47,7 @@ export class RegistrationService {
       );
     }
 
-    const passwordHash = await this.bcriptAdapter.generateHash(password);
+    const passwordHash = await this.bcryptAdapter.generateHash(password);
 
     const confirmationCode = randomUUID();
 
@@ -95,5 +95,32 @@ export class RegistrationService {
     });
   }
 
-  public async resendEmailConfirmationCode() {}
+  public async resendEmailConfirmationCode(email: string): Promise<void> {
+    const user = await this.registrationUserAccessor.findByEmail(email);
+
+    if (!user) {
+      throw new NotFoundError('user with email not found');
+    }
+    if (user.emailConfirmation.isConfirmed) {
+      throw new DomainValidationError<{ email: string }>(
+        'email',
+        email,
+        'email is already confirmed',
+      );
+    }
+
+    const newConfirmationCode = randomUUID();
+    const newExpirationDate = new Date(Date.now() + 60 * 60 * 1000);
+
+    await this.registrationUserAccessor.updateEmailConfirmation(user.id, {
+      confirmationCode: newConfirmationCode,
+      expirationDate: newExpirationDate,
+    });
+
+    await this.mailAdapter.sendEmail(
+      email,
+      newConfirmationCode,
+      emailExamples.registrationEmail,
+    );
+  }
 }

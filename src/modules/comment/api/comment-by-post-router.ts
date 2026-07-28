@@ -14,17 +14,20 @@ import {
   sortByValidation,
   sortDirectionValidation,
 } from '../middlewares/comment-validators';
-import { accessTokenGuard } from '../../../core/guards/access-token-guard';
+import { createAccessTokenGuard } from '../../../core/guards/access-token-guard';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
+import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
 
 export const createCommentByPostRouter = ({
   commentService,
   commentQueryRepository,
   postQueryRepository,
+  jwtAdapter,
 }: {
   commentService: CommentService;
   commentQueryRepository: CommentQueryRepository;
   postQueryRepository: PostQueryRepository;
+  jwtAdapter: JwtAdapter;
 }) => {
   const commentByPostRouter: Router = Router({ mergeParams: true });
 
@@ -44,7 +47,7 @@ export const createCommentByPostRouter = ({
     )
     .post(
       '/',
-      accessTokenGuard,
+      createAccessTokenGuard({ jwtAdapter }),
       postIdValidation,
       commentContentValidation,
       inputValidationResultMiddleware,

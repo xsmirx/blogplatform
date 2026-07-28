@@ -6,19 +6,22 @@ import {
   idValidation,
 } from '../middlewares/comment-validators';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
-import { accessTokenGuard } from '../../../core/guards/access-token-guard';
+import { createAccessTokenGuard } from '../../../core/guards/access-token-guard';
 import {
   createDeleteCommentHandler,
   createGetCommentHandler,
   createUpdateCommentHandler,
 } from './comment-handlers';
+import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
 
 export const createCommentRouter = ({
   commentService,
   commentQueryRepository,
+  jwtAdapter,
 }: {
   commentService: CommentService;
   commentQueryRepository: CommentQueryRepository;
+  jwtAdapter: JwtAdapter;
 }) => {
   const commentRouter: Router = Router();
 
@@ -31,7 +34,7 @@ export const createCommentRouter = ({
     )
     .put(
       '/:id',
-      accessTokenGuard,
+      createAccessTokenGuard({ jwtAdapter }),
       idValidation,
       commentContentValidation,
       inputValidationResultMiddleware,
@@ -39,7 +42,7 @@ export const createCommentRouter = ({
     )
     .delete(
       '/:id',
-      accessTokenGuard,
+      createAccessTokenGuard({ jwtAdapter }),
       idValidation,
       inputValidationResultMiddleware,
       createDeleteCommentHandler({ commentService }),

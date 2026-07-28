@@ -19,6 +19,9 @@ import { JwtAdapter } from './core/adapters/jwt-adapter/jwt-adapter';
 import { DeviceService } from './modules/security/domain/device-service';
 import { MongoDeviceRepository } from './modules/security/infrastructure/device-repository';
 import { DeviceQueryRepository } from './modules/security/infrastructure/device-query-repository';
+import { AuthService } from './modules/auth/domain/auth-service';
+import { RegistrationService } from './modules/registration/domain/registrarion-service';
+import { mailAdapter } from './modules/registration/adapters/mail-adapter';
 
 const bootstrap = async () => {
   // connect to DB
@@ -49,17 +52,6 @@ const bootstrap = async () => {
 
   // Services
 
-  const userService = new UserService({
-    bcryptAdapter,
-    userRepository,
-  });
-  const deviceService = new DeviceService({ deviceRepository });
-  // const authService = new AuthService({
-  //   bcryptService,
-  //   jwtService,
-  //   mailService,
-  //   userRepository,
-  // });
   const blogService = new BlogService(blogRepository);
   const postService = new PostService({ blogRepository, postRepository });
   const commentService = new CommentService({
@@ -67,11 +59,28 @@ const bootstrap = async () => {
     postRepository,
     commentRepository,
   });
+  const deviceService = new DeviceService({ deviceRepository });
+  const userService = new UserService({
+    bcryptAdapter,
+    userRepository,
+  });
+  const registrationService = new RegistrationService({
+    userAccessor: userRepository,
+    bcryptAdapter,
+    mailAdapter,
+  });
+  const authService = new AuthService({
+    userAccessor: userRepository,
+    deviceService: deviceService,
+    bcryptAdapter: bcryptAdapter,
+    jwtAdapter: jwtAdapter,
+  });
 
   setupApp(app, {
+    authService,
+    registrationService,
     deviceService,
     deviceQueryRepository,
-    // authService,
     userService,
     userQueryRepository,
     blogService,

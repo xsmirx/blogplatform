@@ -60,12 +60,12 @@ export const createAuthRouter = ({
       inputValidationResultMiddleware,
       createRegistrationHandler({ registrationService }),
     )
-    // .post(
-    //   '/registration-email-resending',
-    //   emailValidation,
-    //   inputValidationResultMiddleware,
-    //   createRegistrationEmailResendHandler({ authService }),
-    // )
+    .post(
+      '/registration-email-resending',
+      emailValidation,
+      inputValidationResultMiddleware,
+      createRegistrationEmailResendHandler({ registrationService }),
+    )
     .post(
       '/logout',
       createRefreshTokenGuard({ jwtAdapter }),

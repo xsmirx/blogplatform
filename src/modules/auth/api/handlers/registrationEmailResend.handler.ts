@@ -1,13 +1,17 @@
 import { RequestHandler } from 'express';
 import { matchedData } from 'express-validator';
 import { type RegistrationEmailResendingInputDTO } from '../types';
-import { type AuthService } from '../../domain/auth-service';
-import { ResultStatus } from '../../../../core/result/result-status';
+import { RegistrationService } from '../../../registration/domain/registrarion-service';
+import { ValidationError } from '../../../../core/errors/api-errors';
+import {
+  DomainValidationError,
+  NotFoundError,
+} from '../../../../core/errors/domain-errors';
 
 export const createRegistrationEmailResendHandler = ({
-  authService,
+  registrationService,
 }: {
-  authService: AuthService;
+  registrationService: RegistrationService;
 }): RequestHandler<
   object,
   object | { errorsMessages: { message: string; field: string | null }[] },
@@ -16,28 +20,16 @@ export const createRegistrationEmailResendHandler = ({
   return async (req, res) => {
     const { email } = matchedData<RegistrationEmailResendingInputDTO>(req);
 
-    const result = await authService.resendEmailConfirmationCode(email);
-
-    if (result.status === ResultStatus.BadRequest) {
-      return res.status(400).send({
-        errorsMessages: [
-          {
-            field: 'email',
-            message: 'User with this email is already confirmed',
-          },
-        ],
-      });
-    }
-
-    if (result.status === ResultStatus.NotFound) {
-      return res.status(400).send({
-        errorsMessages: [
-          {
-            field: 'email',
-            message: 'User with this email not found',
-          },
-        ],
-      });
+    try {
+      await registrationService.resendEmailConfirmationCode(email);
+    } catch (e) {
+      if (e instanceof NotFoundError) {
+        return res.status(204).send();
+      }
+      if (e instanceof DomainValidationError) {
+        throw new ValidationError([{ field: 'email', message: e.message }]);
+      }
+      throw e;
     }
 
     return res.status(204).send();
