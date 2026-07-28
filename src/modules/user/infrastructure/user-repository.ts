@@ -64,26 +64,15 @@ export class MongoUserRepository
     return this.mapToDomainModel(user);
   }
 
-  // public async findByConfirmationCode(code: string): Promise<User | null> {
-  //   const user = await this.collection.findOne({
-  //     'emailConfirmation.confirmationCode': code,
-  //   });
-  //   if (!user) {
-  //     return null;
-  //   }
-  //   return {
-  //     id: user._id.toString(),
-  //     login: user.login,
-  //     email: user.email,
-  //     passwordHash: user.passwordHash,
-  //     createdAt: user.createdAt,
-  //     emailConfirmation: {
-  //       confirmationCode: user.emailConfirmation.confirmationCode,
-  //       expirationDate: user.emailConfirmation.expirationDate,
-  //       isConfirmed: user.emailConfirmation.isConfirmed,
-  //     },
-  //   };
-  // }
+  public async findByCode(code: string): Promise<User | null> {
+    const user = await this.collection.findOne({
+      emailConfirmation: { confirmationCode: code },
+    });
+    if (!user) {
+      return null;
+    }
+    return this.mapToDomainModel(user);
+  }
 
   public async create(user: Omit<User, 'id'>): Promise<string> {
     const result = await this.collection.insertOne({
@@ -98,6 +87,31 @@ export class MongoUserRepository
       },
     });
     return result.insertedId.toString();
+  }
+
+  public async updateEmailConfirmation(
+    userId: string,
+    confirmation: Partial<User['emailConfirmation']>,
+  ): Promise<boolean> {
+    const setFields: Record<string, unknown> = {};
+
+    if (confirmation.confirmationCode !== undefined)
+      setFields['emailConfirmation.confirmationCode'] =
+        confirmation.confirmationCode;
+    if (confirmation.expirationDate !== undefined)
+      setFields['emailConfirmation.expirationDate'] =
+        confirmation.expirationDate;
+    if (confirmation.isConfirmed !== undefined)
+      setFields['emailConfirmation.isConfirmed'] = confirmation.isConfirmed;
+
+    const result = await this.collection.updateOne(
+      { _id: new ObjectId(userId) },
+      {
+        $set: setFields,
+      },
+    );
+
+    return result.matchedCount > 0;
   }
 
   // public async updateEmailConfirmation({
