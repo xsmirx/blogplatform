@@ -1,8 +1,12 @@
 import { randomUUID } from 'crypto';
 import { BcryptAdapter } from '../../../core/adapters/bcrypt-adapter';
 import { RegistrationUserAccessor } from './ports/reistration-user-accessor.interface';
-import { UniqueConstraintError } from '../../../core/errors/domain-errors';
-import { RegisterUserInput } from './types';
+import {
+  DomainValidationError,
+  NotFoundError,
+  UniqueConstraintError,
+} from '../../../core/errors/domain-errors';
+import { RegisterUserInput, RegistrationConfirmationInput } from './types';
 import { MailAdapter } from '../adapters/mail-adapter';
 import { emailExamples } from '../adapters/email-examples';
 
@@ -64,7 +68,32 @@ export class RegistrationService {
       .catch((e) => console.error('error is send email:', e));
   }
 
-  public async confirmRegistration() {}
+  public async confirmRegistration({
+    code,
+  }: RegistrationConfirmationInput): Promise<void> {
+    const user = await this.registrationUserAccessor.findByCode(code);
+    if (!user) {
+      throw new NotFoundError('user thith confirmation code not found');
+    }
+    if (user.emailConfirmation.isConfirmed) {
+      throw new DomainValidationError<RegistrationConfirmationInput>(
+        'code',
+        code,
+        'code already confirmed',
+      );
+    }
+    if (user.emailConfirmation.expirationDate < new Date()) {
+      throw new DomainValidationError<RegistrationConfirmationInput>(
+        'code',
+        code,
+        'code is expired',
+      );
+    }
+
+    await this.registrationUserAccessor.updateEmailConfirmation(user.id, {
+      isConfirmed: true,
+    });
+  }
 
   public async resendEmailConfirmationCode() {}
 }

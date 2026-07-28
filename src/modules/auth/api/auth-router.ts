@@ -46,12 +46,12 @@ export const createAuthRouter = ({
       createRefreshTokenGuard({ jwtAdapter }),
       createRefreshTokenHandler({ authService }),
     )
-    // .post(
-    //   '/registration-confirmation',
-    //   codeValidation,
-    //   inputValidationResultMiddleware,
-    //   createRegistrationConfirmationHandler({ authService }),
-    // )
+    .post(
+      '/registration-confirmation',
+      codeValidation,
+      inputValidationResultMiddleware,
+      createRegistrationConfirmationHandler({ registrationService }),
+    )
     .post(
       '/registration',
       loginValidation,

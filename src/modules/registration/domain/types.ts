@@ -3,3 +3,7 @@ export type RegisterUserInput = {
   login: string;
   password: string;
 };
+
+export type RegistrationConfirmationInput = {
+  code: string;
+};
