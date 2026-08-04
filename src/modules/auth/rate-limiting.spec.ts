@@ -230,6 +230,8 @@ describe('Rate Limiting (429 Too Many Requests)', () => {
   });
 
   describe('POST /auth/registration-email-resending rate limiting', () => {
+    // Per api.json: valid email that doesn't exist returns 204 (not 400).
+    // 400 is only for an invalid inputModel (malformed email).
     it('should return 429 after 5 attempts from same IP within 10 seconds', async () => {
       for (let i = 0; i < 5; i++) {
         await request(app)
@@ -237,7 +239,7 @@ describe('Rate Limiting (429 Too Many Requests)', () => {
           .send({
             email: `nonexistent${i}@example.dev`,
           })
-          .expect(400);
+          .expect(204);
       }
 
       const response = await request(app)
@@ -257,7 +259,7 @@ describe('Rate Limiting (429 Too Many Requests)', () => {
           .send({
             email: `nonexistent${i}@example.dev`,
           })
-          .expect(400);
+          .expect(204);
       }
 
       // Registration endpoint should still work
@@ -272,10 +274,11 @@ describe('Rate Limiting (429 Too Many Requests)', () => {
     });
   });
 
-  describe('Security Devices rate limiting', () => {
-    let refreshToken: string;
-
-    beforeEach(async () => {
+  describe('Rate limiting - edge cases', () => {
+    // /security/devices* endpoints are NOT rate limited per api.json (they only
+    // define 200/204/401/403/404). This test guards that exhausting the login
+    // rate limit does not leak into the device endpoints.
+    it('auth rate limiting does not affect device endpoints', async () => {
       await request(app)
         .post('/users')
         .set('authorization', VALID_AUTH_HEADER)
@@ -292,100 +295,37 @@ describe('Rate Limiting (429 Too Many Requests)', () => {
 
       const cookies = loginResponse.headers['set-cookie'];
       const arr = Array.isArray(cookies) ? cookies : [cookies];
-      for (const cookie of arr) {
-        const match = cookie.match(/^refreshToken=([^;]+)/);
-        if (match) {
-          refreshToken = match[1];
-          break;
-        }
-      }
-    });
+      const refreshToken = arr
+        .map((cookie) => cookie.match(/^refreshToken=([^;]+)/)?.[1])
+        .find(Boolean);
 
-    it('GET /security/devices should return 429 after 5 failed attempts', async () => {
-      // Make 5 failed attempts with invalid tokens
-      for (let i = 0; i < 5; i++) {
-        await request(app)
-          .get('/security/devices')
-          .set('Cookie', 'refreshToken=invalid.token.value')
-          .expect(401);
-      }
-
-      // 6th attempt should return 429
-      const response = await request(app)
-        .get('/security/devices')
-        .set('Cookie', 'refreshToken=invalid.token.value');
-
-      expect(response.status).toBe(429);
-    });
-
-    it('DELETE /security/devices should return 429 after 5 failed attempts', async () => {
-      // Make 5 failed attempts with invalid tokens
-      for (let i = 0; i < 5; i++) {
-        await request(app)
-          .delete('/security/devices')
-          .set('Cookie', 'refreshToken=invalid.token.value')
-          .expect(401);
-      }
-
-      // 6th attempt should return 429
-      const response = await request(app)
-        .delete('/security/devices')
-        .set('Cookie', 'refreshToken=invalid.token.value');
-
-      expect(response.status).toBe(429);
-    });
-
-    it('DELETE /security/devices/{deviceId} should return 429 after 5 failed attempts', async () => {
-      const fakeDeviceId = 'non-existent-device-id';
-
-      // Make 5 failed attempts
-      for (let i = 0; i < 5; i++) {
-        await request(app)
-          .delete(`/security/devices/${fakeDeviceId}`)
-          .set('Cookie', 'refreshToken=invalid.token.value')
-          .expect(401);
-      }
-
-      // 6th attempt should return 429
-      const response = await request(app)
-        .delete(`/security/devices/${fakeDeviceId}`)
-        .set('Cookie', 'refreshToken=invalid.token.value');
-
-      expect(response.status).toBe(429);
-    });
-
-    it('should track device endpoints separately from auth endpoints', async () => {
-      // 5 login attempts with wrong password
-      await request(app)
-        .post('/users')
-        .set('authorization', VALID_AUTH_HEADER)
-        .send({
-          login: 'anotheruser',
-          password: 'password123',
-          email: 'another@example.dev',
-        })
-        .expect(201);
-
-      for (let i = 0; i < 5; i++) {
+      // The successful login above already consumed 1 of the 5 allowed requests
+      // against POST /auth/login for this IP, so 4 more remain before the limit.
+      for (let i = 0; i < 4; i++) {
         await request(app)
           .post('/auth/login')
           .send({
-            loginOrEmail: 'anotheruser',
+            loginOrEmail: testUser.login,
             password: 'wrongpassword',
           })
           .expect(401);
       }
+      // 6th request overall against POST /auth/login -> rate limited.
+      await request(app)
+        .post('/auth/login')
+        .send({
+          loginOrEmail: testUser.login,
+          password: 'wrongpassword',
+        })
+        .expect(429);
 
-      // GET /security/devices should still work
-      const devicesResponse = await request(app)
+      // GET /security/devices should still work with a valid refresh token.
+      await request(app)
         .get('/security/devices')
-        .set('Cookie', `refreshToken=${refreshToken}`);
-
-      expect(devicesResponse.status).toBe(200);
+        .set('Cookie', `refreshToken=${refreshToken}`)
+        .expect(200);
     });
-  });
 
-  describe('Rate limiting - edge cases', () => {
     it('should allow request after rate limit window expires (simulated by waiting)', async () => {
       // This test demonstrates the concept - in practice, the 10-second window
       // would need to actually pass. For CI/CD, we can make assumptions about timing

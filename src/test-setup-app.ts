@@ -21,6 +21,8 @@ import { MongoDeviceRepository } from './modules/security/infrastructure/device-
 import { RegistrationService } from './modules/registration/domain/registrarion-service';
 import { MailAdapter } from './modules/registration/adapters/mail-adapter';
 import { DeviceQueryRepository } from './modules/security/infrastructure/device-query-repository';
+import { RateLimitingService } from './modules/rateLimiting/domain/rate-limiting-service';
+import { MongoLogRepository } from './modules/rateLimiting/infrastructure/log-repository';
 
 export const mockMailService: jest.Mocked<MailAdapter> = {
   sendEmail: jest.fn().mockResolvedValue(true),
@@ -49,6 +51,7 @@ export const createTestApp = (): Express => {
   const deviceQueryRepository = new DeviceQueryRepository(
     testDatabaseConnection,
   );
+  const logRepository = new MongoLogRepository(testDatabaseConnection);
 
   // Services
   const bcryptAdapter = new BcryptAdapter();
@@ -80,8 +83,10 @@ export const createTestApp = (): Express => {
     postRepository,
     commentRepository,
   });
+  const rateLimitingService = new RateLimitingService({ logRepository });
 
   setupApp(app, {
+    rateLimitingService,
     authService,
     registrationService,
     deviceService,
