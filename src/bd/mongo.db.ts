@@ -4,6 +4,7 @@ import {
   COMMENTS_COLLECTION_NAME,
   DEVICES_COLLECTION_NAME,
   POSTS_COLLECTION_NAME,
+  LOG_COLLECTION_NAME,
   USERS_COLLECTION_NAME,
 } from './collections';
 import { UserDB } from '../modules/user/infrastructure/types';
@@ -11,6 +12,7 @@ import type { DeviceDB } from '../modules/security/infrastructure/types';
 import type { BlogDB } from '../modules/blog/infrastucture/types';
 import type { PostDB } from '../modules/post/infrastructure/types';
 import type { CommentDB } from '../modules/comment/infrastucture/types';
+import { LogDB } from '../modules/rateLimiting/infrastructure/types';
 
 export class DatabaseConnection {
   constructor({ mongoURL, dbName }: { mongoURL: string; dbName: string }) {
@@ -59,6 +61,7 @@ export class DatabaseConnection {
       devicesCollection: this.getDb().collection<DeviceDB>(
         DEVICES_COLLECTION_NAME,
       ),
+      logCollection: this.getDb().collection<LogDB>(LOG_COLLECTION_NAME),
     };
   }
 

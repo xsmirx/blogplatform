@@ -10,3 +10,9 @@ export class ValidationError extends ApiError {
     super(errors.map((e) => `${e.field}: ${e.message}`).join(', '));
   }
 }
+
+export class RateLimitError extends ApiError {
+  constructor(message: string) {
+    super(message);
+  }
+}

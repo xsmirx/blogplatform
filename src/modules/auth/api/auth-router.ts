@@ -19,13 +19,17 @@ import { createAccessTokenGuard } from '../../../core/guards/access-token-guard'
 import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
 import { createRefreshTokenGuard } from '../../../core/guards/refresh-token-guard';
 import { RegistrationService } from '../../registration/domain/registrarion-service';
+import { createRateLimiter } from '../../rateLimiting/api/guargs/rate-limiter';
+import { RateLimitingService } from '../../rateLimiting/domain/rate-limiting-service';
 
 export const createAuthRouter = ({
+  rateLimitingService,
   authService,
   userQueryRepository,
   registrationService,
   jwtAdapter,
 }: {
+  rateLimitingService: RateLimitingService;
   authService: AuthService;
   userQueryRepository: UserQueryRepository;
   registrationService: RegistrationService;
@@ -36,6 +40,10 @@ export const createAuthRouter = ({
   authRouter
     .post(
       '/login',
+      createRateLimiter(
+        { rateLimitingService },
+        { maxRequests: 5, windowMs: 10000 },
+      ),
       loginOrEmailValidation,
       passwordLoginValidation,
       inputValidationResultMiddleware,
@@ -48,12 +56,20 @@ export const createAuthRouter = ({
     )
     .post(
       '/registration-confirmation',
+      createRateLimiter(
+        { rateLimitingService },
+        { maxRequests: 5, windowMs: 10000 },
+      ),
       codeValidation,
       inputValidationResultMiddleware,
       createRegistrationConfirmationHandler({ registrationService }),
     )
     .post(
       '/registration',
+      createRateLimiter(
+        { rateLimitingService },
+        { maxRequests: 5, windowMs: 10000 },
+      ),
       loginValidation,
       emailValidation,
       passwordValidationForRegistration,
@@ -62,6 +78,10 @@ export const createAuthRouter = ({
     )
     .post(
       '/registration-email-resending',
+      createRateLimiter(
+        { rateLimitingService },
+        { maxRequests: 5, windowMs: 10000 },
+      ),
       emailValidation,
       inputValidationResultMiddleware,
       createRegistrationEmailResendHandler({ registrationService }),
