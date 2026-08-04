@@ -24,6 +24,7 @@ import { JwtAdapter } from './core/adapters/jwt-adapter/jwt-adapter';
 import { AuthService } from './modules/auth/domain/auth-service';
 import { createAuthRouter } from './modules/auth/api/auth-router';
 import { RegistrationService } from './modules/registration/domain/registrarion-service';
+import { RateLimitingService } from './modules/rateLimiting/domain/rate-limiting-service';
 
 type AppDependencies = {
   authService: AuthService;
@@ -38,6 +39,7 @@ type AppDependencies = {
   postQueryRepository: PostQueryRepository;
   commentService: CommentService;
   commentQueryRepository: CommentQueryRepository;
+  rateLimitingService: RateLimitingService;
 
   jwtAdapter: JwtAdapter;
 
@@ -65,6 +67,7 @@ export const setupApp = (app: Express, deps: AppDependencies) => {
   app.use(
     '/auth',
     createAuthRouter({
+      rateLimitingService: deps.rateLimitingService,
       authService: deps.authService,
       userQueryRepository: deps.userQueryRepository,
       registrationService: deps.registrationService,

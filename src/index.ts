@@ -22,6 +22,8 @@ import { DeviceQueryRepository } from './modules/security/infrastructure/device-
 import { AuthService } from './modules/auth/domain/auth-service';
 import { RegistrationService } from './modules/registration/domain/registrarion-service';
 import { mailAdapter } from './modules/registration/adapters/mail-adapter';
+import { RateLimitingService } from './modules/rateLimiting/domain/rate-limiting-service';
+import { MongoLogRepository } from './modules/rateLimiting/infrastructure/log-repository';
 
 const bootstrap = async () => {
   // connect to DB
@@ -45,6 +47,7 @@ const bootstrap = async () => {
   const postQueryRepository = new PostQueryRepository(databaseConnection);
   const commentRepository = new MongoCommentRepository(databaseConnection);
   const commentQueryRepository = new CommentQueryRepository(databaseConnection);
+  const logRepository = new MongoLogRepository(databaseConnection);
 
   // Adapters
   const bcryptAdapter = new BcryptAdapter();
@@ -75,6 +78,7 @@ const bootstrap = async () => {
     bcryptAdapter: bcryptAdapter,
     jwtAdapter: jwtAdapter,
   });
+  const rateLimitingService = new RateLimitingService({ logRepository });
 
   setupApp(app, {
     authService,
@@ -89,6 +93,7 @@ const bootstrap = async () => {
     postQueryRepository,
     commentService,
     commentQueryRepository,
+    rateLimitingService,
 
     jwtAdapter,
 
