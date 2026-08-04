@@ -1,5 +1,6 @@
 export type Device = {
   id: string;
+  version: string;
   userId: string;
   ip: string;
   deviceName: string;
@@ -9,6 +10,7 @@ export type Device = {
 
 export type CreateDeviceInput = {
   deviceId: string;
+  version: string;
   userId: string;
   ip: string;
   deviceName: string;

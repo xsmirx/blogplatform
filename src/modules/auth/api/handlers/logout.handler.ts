@@ -8,8 +8,9 @@ export const createLogoutHandler = ({
 }): RequestHandler => {
   return async (req, res) => {
     const deviceId = req.appContext?.device?.deviceId as string;
+    const version = req.appContext?.device?.version as string;
 
-    await authService.logout({ deviceId });
+    await authService.logout({ deviceId, version });
 
     res.clearCookie('refreshToken', { httpOnly: true, secure: true });
     return res.sendStatus(204);

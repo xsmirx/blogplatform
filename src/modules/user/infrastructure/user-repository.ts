@@ -66,7 +66,7 @@ export class MongoUserRepository
 
   public async findByCode(code: string): Promise<User | null> {
     const user = await this.collection.findOne({
-      emailConfirmation: { confirmationCode: code },
+      'emailConfirmation.confirmationCode': code,
     });
     if (!user) {
       return null;

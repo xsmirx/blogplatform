@@ -7,7 +7,7 @@ export type LoginInput = {
 
 export type RefreshInput = {
   deviceId: string;
-  iat: number;
+  version: string;
   userId: string;
   ip: string;
   deviceName: string;

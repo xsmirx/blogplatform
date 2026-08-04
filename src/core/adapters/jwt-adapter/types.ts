@@ -7,6 +7,7 @@ export type AccessTokenPayload = {
 export type RefreshTokenPayload = {
   userId: string;
   deviceId: string;
+  version: string;
 };
 
 export type VerifiedAccessTokenPayload = Pick<JwtPayload, 'iat' | 'exp'> &
@@ -23,6 +24,7 @@ export type TokenPair = {
   };
   refreshToken: {
     token: string;
+    version: string;
     iat: number;
     exp: number;
   };

@@ -10,7 +10,13 @@ export const createDeleteDeviceHandler =
   async (req, res) => {
     const userId = req.appContext?.user?.userId as string;
     const deviceId = req.params.deviceId;
+    const currentDeviceId = req.appContext?.device?.deviceId as string;
+    const version = req.appContext?.device?.version as string;
 
+    await deviceService.ensureActiveSession({
+      deviceId: currentDeviceId,
+      version,
+    });
     await deviceService.terminateDevice({ userId, deviceId });
 
     return res.status(204).send();

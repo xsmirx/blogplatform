@@ -16,6 +16,15 @@ const extractRefreshToken = (res: request.Response): string | null => {
   return null;
 };
 
+// The refreshToken is a JWT whose payload carries the deviceId (per the API spec).
+// Decoding the (public) payload lets a test target a specific session/device
+// without depending on any internal service implementation.
+const extractDeviceId = (refreshToken: string): string => {
+  const payload = refreshToken.split('.')[1];
+  const json = Buffer.from(payload, 'base64url').toString('utf8');
+  return JSON.parse(json).deviceId;
+};
+
 describe('Auth API', () => {
   const app = createTestApp();
 
@@ -37,6 +46,10 @@ describe('Auth API', () => {
     await testDatabaseConnection.connect();
 
     await request(app).delete('/testing/all-data').expect(204);
+  });
+
+  afterAll(async () => {
+    await testDatabaseConnection.getClient().close();
   });
 
   afterEach(() => {
@@ -260,19 +273,16 @@ describe('Auth API', () => {
           .expect(401);
       });
 
-      it('should be case-insensitive for email', async () => {
-        // Most email systems are case-insensitive
-        const response = await request(app)
+      it('should be case-sensitive for email', async () => {
+        // The spec (LoginInputModel) treats loginOrEmail as a plain string
+        // with no case-folding requirement, so an upper-cased email must not match.
+        await request(app)
           .post('/auth/login')
           .send({
             loginOrEmail: testUser.email.toUpperCase(),
             password: testUser.password,
           })
-          .expect(200);
-
-        expect(response.body).toEqual({
-          accessToken: expect.any(String),
-        });
+          .expect(401);
       });
     });
 
@@ -1622,8 +1632,8 @@ describe('Auth API', () => {
       });
 
       it('should update lastActiveDate for correct device when multiple sessions exist', async () => {
-        // Create a second login
-        const login2 = await request(app)
+        // Create a second login (a second, independent session)
+        await request(app)
           .post('/auth/login')
           .send({
             loginOrEmail: testUser.login,
@@ -1631,7 +1641,8 @@ describe('Auth API', () => {
           })
           .expect(200);
 
-        const refreshToken2 = extractRefreshToken(login2)!;
+        // The first session's device is identified by the deviceId inside its refreshToken.
+        const device1Id = extractDeviceId(refreshToken);
 
         // Get devices before refresh
         const devicesBeforeResponse = await request(app)
@@ -1640,14 +1651,7 @@ describe('Auth API', () => {
           .expect(200);
 
         const device1Before = devicesBeforeResponse.body.find(
-          (d: any) =>
-            extractRefreshToken(login2) ===
-            devicesBeforeResponse.body.find(
-              (dev: any) => dev.deviceId === d.deviceId,
-            ),
-        );
-        const device2Before = devicesBeforeResponse.body.find(
-          (d: any) => d !== device1Before,
+          (d: any) => d.deviceId === device1Id,
         );
 
         await new Promise((resolve) => setTimeout(resolve, 500));

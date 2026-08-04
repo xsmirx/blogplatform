@@ -19,6 +19,10 @@ describe('User API', () => {
     await request(app).delete('/testing/all-data').expect(204);
   });
 
+  afterAll(async () => {
+    await testDatabaseConnection.getClient().close();
+  });
+
   describe('GET /users', () => {
     it('should return 401 when unauthorized', async () => {
       await request(app).get('/users').expect(401);

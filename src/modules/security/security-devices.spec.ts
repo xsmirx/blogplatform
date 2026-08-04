@@ -46,6 +46,10 @@ describe('Security Devices API', () => {
     await request(app).delete('/testing/all-data').expect(204);
   });
 
+  afterAll(async () => {
+    await testDatabaseConnection.getClient().close();
+  });
+
   describe('Integration scenario (4 logins → refresh → delete → logout → delete all)', () => {
     let refreshTokens: string[] = [];
     let deviceIds: string[] = [];
@@ -129,9 +133,11 @@ describe('Security Devices API', () => {
 
       expect(afterRefresh.body.length).toBe(4);
 
-      // All deviceIds should remain the same
-      const deviceIdsAfter = afterRefresh.body.map((d: any) => d.deviceId);
-      expect(deviceIdsAfter.sort()).toEqual(deviceIds.sort());
+      // All deviceIds should remain the same (compare as sets, do not mutate)
+      const deviceIdsAfter = afterRefresh.body
+        .map((d: any) => d.deviceId)
+        .sort();
+      expect(deviceIdsAfter).toEqual([...deviceIds].sort());
 
       // Only device 1's lastActiveDate should change
       const device1After = afterRefresh.body.find(
@@ -380,7 +386,7 @@ describe('Security Devices API', () => {
           })
           .expect(200);
 
-        const login2 = await request(app)
+        await request(app)
           .post('/auth/login')
           .set('User-Agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6)')
           .send({
@@ -390,7 +396,6 @@ describe('Security Devices API', () => {
           .expect(200);
 
         const refreshToken1 = extractRefreshToken(login1)!;
-        const refreshToken2 = extractRefreshToken(login2)!;
 
         // Get devices
         const devicesResponse = await request(app)
@@ -403,7 +408,7 @@ describe('Security Devices API', () => {
 
       it('should show correct number of devices (including old device from beforeEach)', async () => {
         // Login once more
-        const login2 = await request(app)
+        await request(app)
           .post('/auth/login')
           .send({
             loginOrEmail: testUser.login,
@@ -718,17 +723,8 @@ describe('Security Devices API', () => {
         .expect(200);
       refreshToken2 = extractRefreshToken(login2)!;
 
-      // Get deviceId of second device
-      const devicesResponse = await request(app)
-        .get('/security/devices')
-        .set('Cookie', `refreshToken=${refreshToken2}`)
-        .expect(200);
-
-      deviceId2 = devicesResponse.body.find(
-        (d: any) =>
-          devicesResponse.body.indexOf(d) ===
-          devicesResponse.body.length - 1,
-      )?.deviceId;
+      // Get deviceId of second device from its own refresh token
+      deviceId2 = decodeToken(refreshToken2).deviceId;
     });
 
     it('should return 204 when terminate specific device session', async () => {
@@ -828,17 +824,8 @@ describe('Security Devices API', () => {
     });
 
     it('should allow user to delete their own device', async () => {
-      // Get deviceId of first device
-      const devicesResponse = await request(app)
-        .get('/security/devices')
-        .set('Cookie', `refreshToken=${refreshToken1}`)
-        .expect(200);
-
-      const deviceId1 = devicesResponse.body.find(
-        (d: any) =>
-          devicesResponse.body.indexOf(d) ===
-          devicesResponse.body.length - 1,
-      )?.deviceId;
+      // Get deviceId of first device from its own refresh token
+      const deviceId1 = decodeToken(refreshToken1).deviceId;
 
       // Delete own device
       await request(app)

@@ -14,6 +14,7 @@ export class MongoDeviceRepository implements DeviceRepository {
   private mapToDomain(doc: WithId<DeviceDB>): Device {
     return {
       id: doc._id,
+      version: doc.version,
       userId: doc.userId,
       ip: doc.ip,
       deviceName: doc.deviceName,
@@ -39,9 +40,25 @@ export class MongoDeviceRepository implements DeviceRepository {
     return results.map((doc) => this.mapToDomain(doc));
   }
 
+  public async findByIdAndVersion(input: {
+    id: string;
+    version: string;
+  }): Promise<Device | null> {
+    const result = await this.collection.findOne({
+      _id: input.id,
+      version: input.version,
+    });
+    if (!result) {
+      return null;
+    } else {
+      return this.mapToDomain(result);
+    }
+  }
+
   public async create(device: Device) {
     const result = await this.collection.insertOne({
       _id: device.id,
+      version: device.version,
       userId: device.userId,
       ip: device.ip,
       deviceName: device.deviceName,
@@ -53,19 +70,20 @@ export class MongoDeviceRepository implements DeviceRepository {
   }
 
   public async update(
-    filter: { id: string; iat: number },
+    filter: { id: string; version: string },
     device: Omit<Device, 'id'>,
   ): Promise<boolean> {
     const result = await this.collection.updateOne(
       {
         _id: filter.id,
         userId: device.userId,
-        createdAt: new Date(filter.iat * 1000),
+        version: filter.version,
       },
       {
         $set: {
           userId: device.userId,
           ip: device.ip,
+          version: device.version,
           deviceName: device.deviceName,
           createdAt: device.createdAt,
           expiresAt: device.expiresAt,

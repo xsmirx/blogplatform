@@ -29,6 +29,10 @@ describe('Blog API', () => {
     await request(app).delete('/testing/all-data').expect(204);
   });
 
+  afterAll(async () => {
+    await testDatabaseConnection.getClient().close();
+  });
+
   describe('GET /blogs', () => {
     it('should return 200 and paginator with empty items when no blogs exist', async () => {
       const response = await request(app).get('/blogs').expect(200);

@@ -93,6 +93,10 @@ describe('Comment API', () => {
     accessToken2 = await getAccessToken(testUser2.login, testUser2.password);
   });
 
+  afterAll(async () => {
+    await testDatabaseConnection.getClient().close();
+  });
+
   describe('POST /posts/{postId}/comments', () => {
     beforeEach(async () => {
       // Clean comments before each test

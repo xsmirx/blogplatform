@@ -50,25 +50,24 @@ export class AuthService {
 
     const userId = user.id;
     const deviceId = randomUUID();
+    const version = randomUUID();
 
     const {
       accessToken: { token: accessToken },
-      refreshToken: {
-        token: refreshToken,
-        iat: generatedIat,
-        exp: generatedExp,
-      },
+      refreshToken: { token: refreshToken, exp: generatedExp },
     } = this.jwtAdapter.generateTokenPair({
       userId,
       deviceId,
+      version,
     });
 
     await this.deviceService.createDevice({
       deviceId,
+      version,
       userId,
       ip,
       deviceName,
-      createdAt: new Date(generatedIat * 1000),
+      createdAt: new Date(),
       expiresAt: new Date(generatedExp * 1000),
     });
 
@@ -80,7 +79,7 @@ export class AuthService {
 
   public async refresh({
     deviceId,
-    iat,
+    version: oldVersion,
     userId,
     ip,
     deviceName,
@@ -88,25 +87,24 @@ export class AuthService {
     accessToken: string;
     refreshToken: string;
   }> {
+    const newVersion = randomUUID();
     const {
       accessToken: { token: accessToken },
-      refreshToken: {
-        token: refreshToken,
-        iat: generatedIat,
-        exp: generatedExp,
-      },
+      refreshToken: { token: refreshToken, exp: generatedExp },
     } = this.jwtAdapter.generateTokenPair({
       userId,
       deviceId,
+      version: newVersion,
     });
 
     await this.deviceService.updateDevice(
-      { id: deviceId, iat },
+      { id: deviceId, version: oldVersion },
       {
         userId,
+        version: newVersion,
         ip,
         deviceName,
-        createdAt: new Date(generatedIat * 1000),
+        createdAt: new Date(),
         expiresAt: new Date(generatedExp * 1000),
       },
     );
@@ -114,7 +112,14 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  public async logout({ deviceId }: { deviceId: string }) {
+  public async logout({
+    deviceId,
+    version,
+  }: {
+    deviceId: string;
+    version: string;
+  }) {
+    await this.deviceService.ensureActiveSession({ deviceId, version });
     await this.deviceService.terminateSession({ deviceId });
   }
 }

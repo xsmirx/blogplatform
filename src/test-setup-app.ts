@@ -14,10 +14,17 @@ import { PostService } from './modules/post/domain/post-service';
 import { CommentService } from './modules/comment/domain/comment-service';
 import { MongoCommentRepository } from './modules/comment/infrastucture/comment-repository';
 import { CommentQueryRepository } from './modules/comment/infrastucture/comment-query-repository';
+import { AuthService } from './modules/auth/domain/auth-service';
+import { JwtAdapter } from './core/adapters/jwt-adapter/jwt-adapter';
+import { DeviceService } from './modules/security/domain/device-service';
+import { MongoDeviceRepository } from './modules/security/infrastructure/device-repository';
+import { RegistrationService } from './modules/registration/domain/registrarion-service';
+import { MailAdapter } from './modules/registration/adapters/mail-adapter';
+import { DeviceQueryRepository } from './modules/security/infrastructure/device-query-repository';
 
-// export const mockMailService: jest.Mocked<MailService> = {
-//   sendEmail: jest.fn().mockResolvedValue(true),
-// } as unknown as jest.Mocked<MailService>;
+export const mockMailService: jest.Mocked<MailAdapter> = {
+  sendEmail: jest.fn().mockResolvedValue(true),
+} as unknown as jest.Mocked<MailAdapter>;
 
 export const testDatabaseConnection = new DatabaseConnection({
   mongoURL: 'mongodb://admin:admin@localhost:27017',
@@ -38,24 +45,34 @@ export const createTestApp = (): Express => {
   const commentQueryRepository = new CommentQueryRepository(
     testDatabaseConnection,
   );
-  // const blackListRefreshTokenRepository = new BlackListRefreshTokenRepository(
-  //   testDatabaseConnection,
-  // );
+  const deviceRepository = new MongoDeviceRepository(testDatabaseConnection);
+  const deviceQueryRepository = new DeviceQueryRepository(
+    testDatabaseConnection,
+  );
 
   // Services
-  const bcryptService = new BcryptAdapter();
+  const bcryptAdapter = new BcryptAdapter();
+  const jwtAdapter = new JwtAdapter();
+  const mailAdapter = mockMailService;
 
   const userService = new UserService({
-    bcryptAdapter: bcryptService,
+    bcryptAdapter: bcryptAdapter,
     userRepository,
   });
-  // const authService = new AuthService({
-  //   bcryptService,
-  //   jwtService,
-  //   mailService: mockMailService,
-  //   userRepository,
-  //   blackListRefreshTokenRepository,
-  // });
+  const deviceService = new DeviceService({
+    deviceRepository,
+  });
+  const authService = new AuthService({
+    bcryptAdapter,
+    jwtAdapter,
+    userAccessor: userRepository,
+    deviceService,
+  });
+  const registrationService = new RegistrationService({
+    bcryptAdapter,
+    mailAdapter,
+    userAccessor: userRepository,
+  });
   const blogService = new BlogService(blogRepository);
   const postService = new PostService({ blogRepository, postRepository });
   const commentService = new CommentService({
@@ -65,7 +82,10 @@ export const createTestApp = (): Express => {
   });
 
   setupApp(app, {
-    // authService,
+    authService,
+    registrationService,
+    deviceService,
+    deviceQueryRepository,
     userService,
     userQueryRepository,
     blogService,
@@ -74,6 +94,7 @@ export const createTestApp = (): Express => {
     postQueryRepository,
     commentService,
     commentQueryRepository,
+    jwtAdapter,
     databaseConnection: testDatabaseConnection,
   });
 

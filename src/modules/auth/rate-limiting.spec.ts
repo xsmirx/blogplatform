@@ -19,6 +19,10 @@ describe('Rate Limiting (429 Too Many Requests)', () => {
     await testDatabaseConnection.connect();
   });
 
+  afterAll(async () => {
+    await testDatabaseConnection.getClient().close();
+  });
+
   beforeEach(async () => {
     await request(app).delete('/testing/all-data').expect(204);
   });

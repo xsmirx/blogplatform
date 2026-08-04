@@ -24,7 +24,7 @@ export const createSecurityRouter = ({
     .get(
       '/devices',
       createRefreshTokenGuard({ jwtAdapter }),
-      createGetDeviceListHandler({ deviceQueryRepository }),
+      createGetDeviceListHandler({ deviceService, deviceQueryRepository }),
     )
     .delete(
       '/devices',

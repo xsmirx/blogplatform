@@ -24,7 +24,7 @@ export const createRegistrationConfirmationHandler = ({
       await registrationService.confirmRegistration({ code });
     } catch (e) {
       if (e instanceof NotFoundError) {
-        throw new ValidationError([{ field: code, message: e.message }]);
+        throw new ValidationError([{ field: 'code', message: e.message }]);
       }
       if (e instanceof DomainValidationError) {
         throw new ValidationError([

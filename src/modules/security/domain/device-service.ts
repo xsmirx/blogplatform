@@ -6,6 +6,7 @@ import {
 import { DeviceRepository } from './ports/device-repository.interface';
 import type {
   CreateDeviceInput,
+  Device,
   TerminateAllDevicesExceptCurrentInput,
   TerminateDeviceInput,
   UpdateDeviceInput,
@@ -18,9 +19,28 @@ export class DeviceService {
     this.deviceRepository = deps.deviceRepository;
   }
 
+  public async ensureActiveSession({
+    deviceId,
+    version,
+  }: {
+    deviceId: string;
+    version: string;
+  }): Promise<Device> {
+    const result = await this.deviceRepository.findByIdAndVersion({
+      id: deviceId,
+      version,
+    });
+    if (!result) {
+      throw new UnauthorizedError('Unauthorized');
+    } else {
+      return result;
+    }
+  }
+
   public async createDevice(device: CreateDeviceInput): Promise<string> {
     const deviceId = await this.deviceRepository.create({
       id: device.deviceId,
+      version: device.version,
       userId: device.userId,
       ip: device.ip,
       deviceName: device.deviceName,
@@ -31,10 +51,10 @@ export class DeviceService {
   }
 
   public async updateDevice(
-    { id, iat }: { id: string; iat: number },
+    { id, version }: { id: string; version: string },
     device: UpdateDeviceInput,
   ): Promise<void> {
-    const result = await this.deviceRepository.update({ id, iat }, device);
+    const result = await this.deviceRepository.update({ id, version }, device);
     if (!result) {
       throw new UnauthorizedError('Device not found');
     }
@@ -69,50 +89,4 @@ export class DeviceService {
       ),
     );
   }
-
-  // public async createDevice({
-  //   deviceId,
-  //   userId,
-  //   ip,
-  //   deviceName,
-  //   createdAt,
-  //   expiresAt,
-  // }: CreateDeviceInput) {
-  //   await this.deviceRepository.create({
-  //     id: deviceId,
-  //     userId,
-  //     ip,
-  //     deviceName,
-  //     createdAt,
-  //     expiresAt,
-  //   });
-  // }
-
-  // public async updateDevice({
-  //   deviceId,
-  //   userId,
-  //   ip,
-  //   deviceName,
-  //   iat,
-  //   exp,
-  // }: UpdateDeviceInput) {
-  //   const device = await this.deviceRepository.findById(deviceId);
-  //   if (!device) throw new NotFoundError('Device not found');
-  //   if (device.userId !== userId) throw new ForbiddenError('Forbidden');
-
-  //   if (device.ip !== ip) {
-  //     // throw location error
-  //   }
-
-  //   if (device.deviceName !== deviceName) {
-  //     // throw device name error
-  //   }
-
-  //   await this.deviceRepository.updateById(deviceId, {
-  //     ip,
-  //     deviceName,
-  //     createdAt,
-  //     expiresAt,
-  //   });
-  // }
 }

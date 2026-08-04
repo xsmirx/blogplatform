@@ -18,8 +18,9 @@ export class JwtAdapter {
   public generateRefreshToken({
     userId,
     deviceId,
+    version,
   }: RefreshTokenPayload): string {
-    return jwt.sign({ userId, deviceId }, settings.RC_TOKEN_SECRET, {
+    return jwt.sign({ userId, deviceId, version }, settings.RC_TOKEN_SECRET, {
       expiresIn: settings.RC_TOKEN_TIME,
     });
   }
@@ -27,12 +28,18 @@ export class JwtAdapter {
   public generateTokenPair({
     userId,
     deviceId,
+    version,
   }: {
     userId: string;
     deviceId: string;
+    version: string;
   }): TokenPair {
     const accessToken = this.generateAccessToken({ userId });
-    const refreshToken = this.generateRefreshToken({ userId, deviceId });
+    const refreshToken = this.generateRefreshToken({
+      userId,
+      deviceId,
+      version,
+    });
     const accessTokenPayload = this.verifyAccessToken(
       accessToken,
     ) as Required<VerifiedAccessTokenPayload>;
@@ -48,6 +55,7 @@ export class JwtAdapter {
       },
       refreshToken: {
         token: refreshToken,
+        version: refreshTokenPayload.version,
         iat: refreshTokenPayload.iat,
         exp: refreshTokenPayload.exp,
       },
@@ -69,10 +77,11 @@ export class JwtAdapter {
 
   public verifyRefreshToken(token: string) {
     try {
-      return jwt.verify(
+      const data = jwt.verify(
         token,
         settings.RC_TOKEN_SECRET,
       ) as VerifiedRefreshTokenPayload;
+      return data;
     } catch {
       return null;
     }

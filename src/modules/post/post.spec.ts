@@ -33,6 +33,10 @@ describe('Post API', () => {
   let blogId: string;
   let postId: string;
 
+  afterAll(async () => {
+    await testDatabaseConnection.getClient().close();
+  });
+
   beforeAll(async () => {
     await testDatabaseConnection.connect();
 
@@ -1244,7 +1248,7 @@ describe('Post API', () => {
     });
   });
 
-  describe.skip('GET /posts/{postId}/comments', () => {
+  describe('GET /posts/{postId}/comments', () => {
     let testPostId: string;
     let accessToken: string;
 
@@ -1401,7 +1405,7 @@ describe('Post API', () => {
     });
   });
 
-  describe.skip('POST /posts/{postId}/comments', () => {
+  describe('POST /posts/{postId}/comments', () => {
     let testPostId: string;
     let accessToken: string;
 
