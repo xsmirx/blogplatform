@@ -53,7 +53,7 @@ export const setupApp = (app: Express, deps: AppDependencies) => {
 
   // основной роут
   app.get('/', (req, res) => {
-    res.status(200).send('Hello world! h06');
+    res.status(200).send('Hello world! h09');
   });
 
   app.use(
