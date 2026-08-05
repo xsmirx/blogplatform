@@ -117,10 +117,8 @@ export class RegistrationService {
       expirationDate: newExpirationDate,
     });
 
-    await this.mailAdapter.sendEmail(
-      email,
-      newConfirmationCode,
-      emailExamples.registrationEmail,
-    );
+    this.mailAdapter
+      .sendEmail(email, newConfirmationCode, emailExamples.registrationEmail)
+      .catch((e) => console.error('error is send email:', e));
   }
 }
