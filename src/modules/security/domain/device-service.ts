@@ -1,9 +1,13 @@
+import { inject, injectable } from 'inversify';
 import {
   ForbiddenError,
   NotFoundError,
   UnauthorizedError,
 } from '../../../core/errors/domain-errors';
-import { DeviceRepository } from './ports/device-repository.interface';
+import {
+  DEVICE_REPOSITORY,
+  type DeviceRepository,
+} from './ports/device-repository.interface';
 import type {
   CreateDeviceInput,
   Device,
@@ -12,12 +16,12 @@ import type {
   UpdateDeviceInput,
 } from './types';
 
+@injectable()
 export class DeviceService {
-  private readonly deviceRepository: DeviceRepository;
-
-  constructor(deps: { deviceRepository: DeviceRepository }) {
-    this.deviceRepository = deps.deviceRepository;
-  }
+  constructor(
+    @inject(DEVICE_REPOSITORY)
+    protected readonly deviceRepository: DeviceRepository,
+  ) {}
 
   public async ensureActiveSession({
     deviceId,

@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+import { Container } from 'inversify';
 import express from 'express';
 import { DatabaseConnection } from './bd/mongo.db';
 import { settings } from './core/settings/settings';
@@ -24,6 +26,7 @@ import { RegistrationService } from './modules/registration/domain/registrarion-
 import { mailAdapter } from './modules/registration/adapters/mail-adapter';
 import { RateLimitingService } from './modules/rateLimiting/domain/rate-limiting-service';
 import { MongoLogRepository } from './modules/rateLimiting/infrastructure/log-repository';
+import { DEVICE_REPOSITORY } from './modules/security/domain/ports/device-repository.interface';
 
 const bootstrap = async () => {
   // connect to DB
@@ -33,11 +36,17 @@ const bootstrap = async () => {
   });
   await databaseConnection.connect();
 
+  const container = new Container({
+    autobind: true,
+    defaultScope: 'Singleton',
+  });
+  container.bind(DatabaseConnection).toConstantValue(databaseConnection);
+  container.bind(DEVICE_REPOSITORY).to(MongoDeviceRepository);
+
   // создание приложения
   const app = express();
 
   // Repositories
-  const deviceRepository = new MongoDeviceRepository(databaseConnection);
   const deviceQueryRepository = new DeviceQueryRepository(databaseConnection);
   const userRepository = new MongoUserRepository(databaseConnection);
   const userQueryRepository = new UserQueryRepository(databaseConnection);
@@ -62,7 +71,6 @@ const bootstrap = async () => {
     postRepository,
     commentRepository,
   });
-  const deviceService = new DeviceService({ deviceRepository });
   const userService = new UserService({
     bcryptAdapter,
     userRepository,
@@ -74,16 +82,16 @@ const bootstrap = async () => {
   });
   const authService = new AuthService({
     userAccessor: userRepository,
-    deviceService: deviceService,
+    deviceService: container.get(DeviceService),
     bcryptAdapter: bcryptAdapter,
     jwtAdapter: jwtAdapter,
   });
   const rateLimitingService = new RateLimitingService({ logRepository });
 
-  setupApp(app, {
+  setupApp(app, container, {
     authService,
     registrationService,
-    deviceService,
+    deviceService: container.get(DeviceService),
     deviceQueryRepository,
     userService,
     userQueryRepository,

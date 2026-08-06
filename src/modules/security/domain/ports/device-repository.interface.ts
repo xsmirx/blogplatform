@@ -1,3 +1,4 @@
+import { ServiceIdentifier } from 'inversify';
 import { Device } from '../types';
 
 export interface DeviceRepository {
@@ -14,3 +15,6 @@ export interface DeviceRepository {
   ): Promise<boolean>;
   delete(id: string): Promise<boolean>;
 }
+
+export const DEVICE_REPOSITORY: ServiceIdentifier<DeviceRepository> =
+  Symbol('DeviceRepository');

@@ -7,7 +7,9 @@ import {
   VerifiedAccessTokenPayload,
   VerifiedRefreshTokenPayload,
 } from './types';
+import { injectable } from 'inversify';
 
+@injectable()
 export class JwtAdapter {
   public generateAccessToken({ userId }: AccessTokenPayload): string {
     return jwt.sign({ userId }, settings.AC_TOKEN_SECRET, {

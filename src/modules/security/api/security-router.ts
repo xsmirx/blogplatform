@@ -1,42 +1,32 @@
 import { Router } from 'express';
-import { createGetDeviceListHandler } from './handlers/getDeviceListHandler';
-import { createDeleteAllDevicesHandler } from './handlers/deleteAllDevicesHandler';
-import { createDeleteDeviceHandler } from './handlers/deleteDeviceHandler';
-import { DeviceQueryRepository } from '../infrastructure/device-query-repository';
 import { createRefreshTokenGuard } from '../../../core/guards/refresh-token-guard';
-import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
-import { DeviceService } from '../domain/device-service';
 import { deviceIdValidationParam } from '../middlewares/device-id.validation';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
+import { Container } from 'inversify';
+import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
+import { SecurityController } from './security-controller';
 
-export const createSecurityRouter = ({
-  deviceService,
-  deviceQueryRepository,
-  jwtAdapter,
-}: {
-  deviceService: DeviceService;
-  deviceQueryRepository: DeviceQueryRepository;
-  jwtAdapter: JwtAdapter;
-}) => {
+export const createSecurityRouter = (container: Container) => {
+  const securityController = container.get(SecurityController);
   const securityRouter: Router = Router();
 
   securityRouter
     .get(
       '/devices',
-      createRefreshTokenGuard({ jwtAdapter }),
-      createGetDeviceListHandler({ deviceService, deviceQueryRepository }),
+      createRefreshTokenGuard({ jwtAdapter: container.get(JwtAdapter) }),
+      securityController.getDeviceList,
     )
     .delete(
       '/devices',
-      createRefreshTokenGuard({ jwtAdapter }),
-      createDeleteAllDevicesHandler({ deviceService }),
+      createRefreshTokenGuard({ jwtAdapter: container.get(JwtAdapter) }),
+      securityController.deleteAllDevices,
     )
     .delete(
       '/devices/:deviceId',
       deviceIdValidationParam,
       inputValidationResultMiddleware,
-      createRefreshTokenGuard({ jwtAdapter }),
-      createDeleteDeviceHandler({ deviceService }),
+      createRefreshTokenGuard({ jwtAdapter: container.get(JwtAdapter) }),
+      securityController.deleteDevice,
     );
 
   return securityRouter;

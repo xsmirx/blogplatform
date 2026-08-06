@@ -1,9 +1,14 @@
+import { inject, injectable } from 'inversify';
 import { DatabaseConnection } from '../../../bd/mongo.db';
-import { DeviceOutputDTO } from '../api/handlers/types';
+import { DeviceOutputDTO } from '../api/types';
 import { DeviceDB } from './types';
 
+@injectable()
 export class DeviceQueryRepository {
-  constructor(protected readonly databaseConnection: DatabaseConnection) {}
+  constructor(
+    @inject(DatabaseConnection)
+    protected readonly databaseConnection: DatabaseConnection,
+  ) {}
 
   private get collection() {
     return this.databaseConnection.getCollections().devicesCollection;

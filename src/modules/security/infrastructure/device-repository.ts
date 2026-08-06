@@ -1,11 +1,16 @@
 import { type WithId } from 'mongodb';
-import type { DatabaseConnection } from '../../../bd/mongo.db';
+import { DatabaseConnection } from '../../../bd/mongo.db';
 import type { DeviceDB } from './types';
 import type { Device } from '../domain/types';
 import { DeviceRepository } from '../domain/ports/device-repository.interface';
+import { injectable, inject } from 'inversify';
 
+@injectable()
 export class MongoDeviceRepository implements DeviceRepository {
-  constructor(protected readonly databaseConnection: DatabaseConnection) {}
+  constructor(
+    @inject(DatabaseConnection)
+    protected readonly databaseConnection: DatabaseConnection,
+  ) {}
 
   private get collection() {
     return this.databaseConnection.getCollections().devicesCollection;

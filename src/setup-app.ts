@@ -25,6 +25,7 @@ import { AuthService } from './modules/auth/domain/auth-service';
 import { createAuthRouter } from './modules/auth/api/auth-router';
 import { RegistrationService } from './modules/registration/domain/registrarion-service';
 import { RateLimitingService } from './modules/rateLimiting/domain/rate-limiting-service';
+import { Container } from 'inversify';
 
 type AppDependencies = {
   authService: AuthService;
@@ -46,24 +47,21 @@ type AppDependencies = {
   databaseConnection: DatabaseConnection;
 };
 
-export const setupApp = (app: Express, deps: AppDependencies) => {
+export const setupApp = (
+  app: Express,
+  container: Container,
+  deps: AppDependencies,
+) => {
   app.set('trust proxy', true);
   app.use(cookieParser());
   app.use(express.json()); // middleware для парсинга JSON в теле запроса
 
   // основной роут
   app.get('/', (req, res) => {
-    res.status(200).send('Hello world! h09');
+    res.status(200).send('Hello world! h10');
   });
 
-  app.use(
-    '/security',
-    createSecurityRouter({
-      deviceService: deps.deviceService,
-      deviceQueryRepository: deps.deviceQueryRepository,
-      jwtAdapter: deps.jwtAdapter,
-    }),
-  );
+  app.use('/security', createSecurityRouter(container));
   app.use(
     '/auth',
     createAuthRouter({
