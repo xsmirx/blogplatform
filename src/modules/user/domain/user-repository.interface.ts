@@ -1,3 +1,4 @@
+import { ServiceIdentifier } from 'inversify';
 import type { User } from './types';
 
 export interface UserRepository {
@@ -7,3 +8,6 @@ export interface UserRepository {
   create(user: Omit<User, 'id'>): Promise<string>;
   delete(userId: string): Promise<boolean>;
 }
+
+export const USER_REPOSITORY: ServiceIdentifier<UserRepository> =
+  Symbol('UseerRepository');

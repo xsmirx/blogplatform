@@ -1,15 +1,20 @@
 import { randomUUID } from 'node:crypto';
-import type { BcryptAdapter } from '../../../core/adapters/bcrypt-adapter';
-import type { UserRepository } from './user-repository.interface';
+import { BcryptAdapter } from '../../../core/adapters/bcrypt-adapter';
+import {
+  USER_REPOSITORY,
+  type UserRepository,
+} from './user-repository.interface';
 import {
   NotFoundError,
   UniqueConstraintError,
 } from '../../../core/errors/domain-errors';
 import type { CreateUserInput } from './types';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class UserService {
-  private readonly userRepository: UserRepository;
-  private readonly bcryptService: BcryptAdapter;
+  @inject(USER_REPOSITORY) private readonly userRepository: UserRepository;
+  @inject(BcryptAdapter) private readonly bcryptService: BcryptAdapter;
 
   constructor(deps: {
     userRepository: UserRepository;

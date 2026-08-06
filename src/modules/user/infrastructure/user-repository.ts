@@ -5,11 +5,16 @@ import type { UserDB } from './types';
 import type { UserRepository } from '../domain/user-repository.interface';
 import { AuthUserAccessor } from '../../auth/domain/ports/auth-user-accessor.interface';
 import { RegistrationUserAccessor } from '../../registration/domain/ports/reistration-user-accessor.interface';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class MongoUserRepository
   implements UserRepository, AuthUserAccessor, RegistrationUserAccessor
 {
-  constructor(protected readonly databaseConnection: DatabaseConnection) {}
+  constructor(
+    @inject(DatabaseConnection)
+    protected readonly databaseConnection: DatabaseConnection,
+  ) {}
 
   private get collection() {
     return this.databaseConnection.getCollections().usersCollection;

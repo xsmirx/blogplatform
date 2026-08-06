@@ -72,13 +72,7 @@ export const setupApp = (
       jwtAdapter: deps.jwtAdapter,
     }),
   );
-  app.use(
-    '/users',
-    createUserRouter({
-      userService: deps.userService,
-      userQueryRepository: deps.userQueryRepository,
-    }),
-  );
+  app.use('/users', createUserRouter(container));
   app.use(
     '/blogs',
     createBlogRouter({

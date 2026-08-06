@@ -7,9 +7,14 @@ import {
   UserOutputDTO,
   type UserListQueryInput,
 } from '../api/types';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class UserQueryRepository {
-  constructor(protected readonly databaseConnection: DatabaseConnection) {}
+  constructor(
+    @inject(DatabaseConnection)
+    protected readonly databaseConnection: DatabaseConnection,
+  ) {}
 
   private get collection() {
     return this.databaseConnection.getCollections().usersCollection;

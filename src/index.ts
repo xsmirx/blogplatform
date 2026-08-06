@@ -27,6 +27,7 @@ import { mailAdapter } from './modules/registration/adapters/mail-adapter';
 import { RateLimitingService } from './modules/rateLimiting/domain/rate-limiting-service';
 import { MongoLogRepository } from './modules/rateLimiting/infrastructure/log-repository';
 import { DEVICE_REPOSITORY } from './modules/security/domain/ports/device-repository.interface';
+import { USER_REPOSITORY } from './modules/user/domain/user-repository.interface';
 
 const bootstrap = async () => {
   // connect to DB
@@ -41,6 +42,7 @@ const bootstrap = async () => {
     defaultScope: 'Singleton',
   });
   container.bind(DatabaseConnection).toConstantValue(databaseConnection);
+  container.bind(USER_REPOSITORY).to(MongoUserRepository);
   container.bind(DEVICE_REPOSITORY).to(MongoDeviceRepository);
 
   // создание приложения
