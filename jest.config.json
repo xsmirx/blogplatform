@@ -8,8 +8,24 @@
       {
         "tsconfig": "tsconfig.spec.json"
       }
+    ],
+    "^.+\\.jsx?$": [
+      "ts-jest",
+      {
+        "tsconfig": {
+          "allowJs": true,
+          "module": "CommonJS",
+          "moduleResolution": "node",
+          "target": "es2022",
+          "esModuleInterop": true,
+          "isolatedModules": false
+        }
+      }
     ]
   },
+  "transformIgnorePatterns": [
+    "^(?:.*/)?node_modules/(?!(?:.*/)?(?:inversify|@inversifyjs)/).*"
+  ],
   "testMatch": ["**/src/**/*.spec.ts", "**/src/**/*.test.ts"],
   "verbose": true,
   "maxWorkers": 1,

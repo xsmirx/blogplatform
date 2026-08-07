@@ -1,16 +1,12 @@
+import 'reflect-metadata';
 import express, { Express } from 'express';
+import { Container } from 'inversify';
 import { setupApp } from './setup-app';
 import { DatabaseConnection } from './bd/mongo.db';
 import { BcryptAdapter } from './core/adapters/bcrypt-adapter';
 import { MongoUserRepository } from './modules/user/infrastructure/user-repository';
-import { UserQueryRepository } from './modules/user/infrastructure/user-query-repository';
-import { UserService } from './modules/user/domain/user-service';
 import { MongoBlogRepository } from './modules/blog/infrastucture/blog-repository';
-import { BlogQueryRepository } from './modules/blog/infrastucture/blog-query-repository';
-import { BlogService } from './modules/blog/domain/blog-service';
 import { MongoPostRepository } from './modules/post/infrastructure/post-repository';
-import { PostQueryRepository } from './modules/post/infrastructure/post-query-repository';
-import { PostService } from './modules/post/domain/post-service';
 import { CommentService } from './modules/comment/domain/comment-service';
 import { MongoCommentRepository } from './modules/comment/infrastucture/comment-repository';
 import { CommentQueryRepository } from './modules/comment/infrastucture/comment-query-repository';
@@ -20,9 +16,12 @@ import { DeviceService } from './modules/security/domain/device-service';
 import { MongoDeviceRepository } from './modules/security/infrastructure/device-repository';
 import { RegistrationService } from './modules/registration/domain/registrarion-service';
 import { MailAdapter } from './modules/registration/adapters/mail-adapter';
-import { DeviceQueryRepository } from './modules/security/infrastructure/device-query-repository';
 import { RateLimitingService } from './modules/rateLimiting/domain/rate-limiting-service';
 import { MongoLogRepository } from './modules/rateLimiting/infrastructure/log-repository';
+import { DEVICE_REPOSITORY } from './modules/security/domain/ports/device-repository.interface';
+import { USER_REPOSITORY } from './modules/user/domain/user-repository.interface';
+import { BLOG_REPOSITORY } from './modules/blog/domain/blog-repository.interface';
+import { POST_REPOSITORY } from './modules/post/domain/post-repository.interface';
 
 export const mockMailService: jest.Mocked<MailAdapter> = {
   sendEmail: jest.fn().mockResolvedValue(true),
@@ -36,70 +35,59 @@ export const testDatabaseConnection = new DatabaseConnection({
 export const createTestApp = (): Express => {
   const app = express();
 
-  // Repositories
+  const container = new Container({
+    autobind: true,
+    defaultScope: 'Singleton',
+  });
+  container.bind(DatabaseConnection).toConstantValue(testDatabaseConnection);
+  container.bind(USER_REPOSITORY).to(MongoUserRepository);
+  container.bind(DEVICE_REPOSITORY).to(MongoDeviceRepository);
+  container.bind(BLOG_REPOSITORY).to(MongoBlogRepository);
+  container.bind(POST_REPOSITORY).to(MongoPostRepository);
+
+  // Repositories built manually for services not resolved through the container
   const userRepository = new MongoUserRepository(testDatabaseConnection);
-  const userQueryRepository = new UserQueryRepository(testDatabaseConnection);
-  const blogRepository = new MongoBlogRepository(testDatabaseConnection);
-  const blogQueryRepository = new BlogQueryRepository(testDatabaseConnection);
   const postRepository = new MongoPostRepository(testDatabaseConnection);
-  const postQueryRepository = new PostQueryRepository(testDatabaseConnection);
   const commentRepository = new MongoCommentRepository(testDatabaseConnection);
   const commentQueryRepository = new CommentQueryRepository(
     testDatabaseConnection,
   );
-  const deviceRepository = new MongoDeviceRepository(testDatabaseConnection);
-  const deviceQueryRepository = new DeviceQueryRepository(
-    testDatabaseConnection,
-  );
   const logRepository = new MongoLogRepository(testDatabaseConnection);
 
-  // Services
+  // Adapters
   const bcryptAdapter = new BcryptAdapter();
   const jwtAdapter = new JwtAdapter();
   const mailAdapter = mockMailService;
 
-  const userService = new UserService({
-    bcryptAdapter: bcryptAdapter,
-    userRepository,
-  });
-  const deviceService = new DeviceService({
-    deviceRepository,
-  });
-  const authService = new AuthService({
-    bcryptAdapter,
-    jwtAdapter,
-    userAccessor: userRepository,
-    deviceService,
-  });
-  const registrationService = new RegistrationService({
-    bcryptAdapter,
-    mailAdapter,
-    userAccessor: userRepository,
-  });
-  const blogService = new BlogService(blogRepository);
-  const postService = new PostService({ blogRepository, postRepository });
+  // Services
   const commentService = new CommentService({
     userRepository,
     postRepository,
     commentRepository,
   });
+  const registrationService = new RegistrationService({
+    userAccessor: userRepository,
+    bcryptAdapter,
+    mailAdapter,
+  });
+  const authService = new AuthService({
+    userAccessor: userRepository,
+    deviceService: container.get(DeviceService),
+    bcryptAdapter,
+    jwtAdapter,
+  });
   const rateLimitingService = new RateLimitingService({ logRepository });
 
-  setupApp(app, {
-    rateLimitingService,
+  setupApp(app, container, {
     authService,
     registrationService,
-    deviceService,
-    deviceQueryRepository,
-    userService,
-    userQueryRepository,
-    blogService,
-    blogQueryRepository,
-    postService,
-    postQueryRepository,
+
     commentService,
     commentQueryRepository,
+    rateLimitingService,
+
     jwtAdapter,
+
     databaseConnection: testDatabaseConnection,
   });
 
