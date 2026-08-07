@@ -1,8 +1,13 @@
+import { inject, injectable } from 'inversify';
 import { DatabaseConnection } from '../../../bd/mongo.db';
 import { LogRepository } from '../domain/log-repository.interface';
 
+@injectable()
 export class MongoLogRepository implements LogRepository {
-  constructor(protected readonly databaseConnection: DatabaseConnection) {}
+  constructor(
+    @inject(DatabaseConnection)
+    protected readonly databaseConnection: DatabaseConnection,
+  ) {}
 
   private get collection() {
     return this.databaseConnection.getCollections().logCollection;

@@ -14,13 +14,13 @@ import { DeviceService } from './modules/security/domain/device-service';
 import { MongoDeviceRepository } from './modules/security/infrastructure/device-repository';
 import { RegistrationService } from './modules/registration/domain/registrarion-service';
 import { MailAdapter } from './modules/registration/adapters/mail-adapter';
-import { RateLimitingService } from './modules/rateLimiting/domain/rate-limiting-service';
 import { MongoLogRepository } from './modules/rateLimiting/infrastructure/log-repository';
 import { DEVICE_REPOSITORY } from './modules/security/domain/ports/device-repository.interface';
 import { USER_REPOSITORY } from './modules/user/domain/user-repository.interface';
 import { BLOG_REPOSITORY } from './modules/blog/domain/blog-repository.interface';
 import { POST_REPOSITORY } from './modules/post/domain/post-repository.interface';
 import { COMMENT_REPOSITORY } from './modules/comment/domain/comment-repository.interface';
+import { LOG_ROPOSITORY } from './modules/rateLimiting/domain/log-repository.interface';
 
 export const mockMailService: jest.Mocked<MailAdapter> = {
   sendEmail: jest.fn().mockResolvedValue(true),
@@ -44,10 +44,10 @@ export const createTestApp = (): Express => {
   container.bind(BLOG_REPOSITORY).to(MongoBlogRepository);
   container.bind(POST_REPOSITORY).to(MongoPostRepository);
   container.bind(COMMENT_REPOSITORY).to(MongoCommentRepository);
+  container.bind(LOG_ROPOSITORY).to(MongoLogRepository);
 
   // Repositories built manually for services not resolved through the container
   const userRepository = new MongoUserRepository(testDatabaseConnection);
-  const logRepository = new MongoLogRepository(testDatabaseConnection);
 
   // Adapters
   const bcryptAdapter = new BcryptAdapter();
@@ -67,13 +67,10 @@ export const createTestApp = (): Express => {
     bcryptAdapter,
     jwtAdapter,
   });
-  const rateLimitingService = new RateLimitingService({ logRepository });
 
   setupApp(app, container, {
     authService,
     registrationService,
-
-    rateLimitingService,
 
     jwtAdapter,
 

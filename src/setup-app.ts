@@ -15,14 +15,12 @@ import { JwtAdapter } from './core/adapters/jwt-adapter/jwt-adapter';
 import { AuthService } from './modules/auth/domain/auth-service';
 import { createAuthRouter } from './modules/auth/api/auth-router';
 import { RegistrationService } from './modules/registration/domain/registrarion-service';
-import { RateLimitingService } from './modules/rateLimiting/domain/rate-limiting-service';
 import { Container } from 'inversify';
+import { RateLimitingService } from './modules/rateLimiting/domain/rate-limiting-service';
 
 type AppDependencies = {
   authService: AuthService;
   registrationService: RegistrationService;
-
-  rateLimitingService: RateLimitingService;
 
   jwtAdapter: JwtAdapter;
 
@@ -47,11 +45,11 @@ export const setupApp = (
   app.use(
     '/auth',
     createAuthRouter({
-      rateLimitingService: deps.rateLimitingService,
+      rateLimitingService: container.get(RateLimitingService),
       authService: deps.authService,
       userQueryRepository: container.get(UserQueryRepository),
       registrationService: deps.registrationService,
-      jwtAdapter: deps.jwtAdapter,
+      jwtAdapter: container.get(JwtAdapter),
     }),
   );
   app.use('/users', createUserRouter(container));

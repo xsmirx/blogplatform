@@ -1,12 +1,13 @@
+import { inject, injectable } from 'inversify';
 import { RateLimitError } from '../../../core/errors/api-errors';
-import { LogRepository } from './log-repository.interface';
+import { LOG_ROPOSITORY, type LogRepository } from './log-repository.interface';
 import { CheckAndRegisterRequestInput } from './types';
 
+@injectable()
 export class RateLimitingService {
-  private readonly logRepository: LogRepository;
-  constructor(deps: { logRepository: LogRepository }) {
-    this.logRepository = deps.logRepository;
-  }
+  constructor(
+    @inject(LOG_ROPOSITORY) protected readonly logRepository: LogRepository,
+  ) {}
 
   public async checkAndRegisterRequest({
     ip,
