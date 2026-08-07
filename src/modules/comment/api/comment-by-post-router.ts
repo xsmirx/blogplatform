@@ -1,12 +1,5 @@
 import { Router } from 'express';
 import {
-  createCreateCommentHandler,
-  createGetCommentListHandler,
-} from './comment-handlers';
-import type { CommentQueryRepository } from '../infrastucture/comment-query-repository';
-import type { PostQueryRepository } from '../../post/infrastructure/post-query-repository';
-import type { CommentService } from '../domain/comment-service';
-import {
   commentContentValidation,
   pageNumberValidation,
   pageSizeValidation,
@@ -16,19 +9,15 @@ import {
 } from '../middlewares/comment-validators';
 import { createAccessTokenGuard } from '../../../core/guards/access-token-guard';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
+
+import { Container } from 'inversify';
+import { CommentController } from './comment-controller';
 import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
 
-export const createCommentByPostRouter = ({
-  commentService,
-  commentQueryRepository,
-  postQueryRepository,
-  jwtAdapter,
-}: {
-  commentService: CommentService;
-  commentQueryRepository: CommentQueryRepository;
-  postQueryRepository: PostQueryRepository;
-  jwtAdapter: JwtAdapter;
-}) => {
+export const createCommentByPostRouter = (container: Container) => {
+  const commentController = container.get(CommentController);
+  const jwtAdapter = container.get(JwtAdapter);
+
   const commentByPostRouter: Router = Router({ mergeParams: true });
 
   commentByPostRouter
@@ -40,10 +29,7 @@ export const createCommentByPostRouter = ({
       sortByValidation,
       sortDirectionValidation,
       inputValidationResultMiddleware,
-      createGetCommentListHandler({
-        commentQueryRepository,
-        postQueryRepository,
-      }),
+      commentController.getCommentList,
     )
     .post(
       '/',
@@ -51,7 +37,7 @@ export const createCommentByPostRouter = ({
       postIdValidation,
       commentContentValidation,
       inputValidationResultMiddleware,
-      createCreateCommentHandler({ commentService, commentQueryRepository }),
+      commentController.createComment,
     );
 
   return commentByPostRouter;

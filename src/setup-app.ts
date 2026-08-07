@@ -6,13 +6,10 @@ import cookieParser from 'cookie-parser';
 import { createPostByBlogRouter } from './modules/post/api/post-by-blog-router';
 import { createBlogRouter } from './modules/blog/api/blog-router';
 import { createPostRouter } from './modules/post/api/post-router';
-import { PostQueryRepository } from './modules/post/infrastructure/post-query-repository';
 import { UserQueryRepository } from './modules/user/infrastructure/user-query-repository';
 import { createUserRouter } from './modules/user/api/user-router';
 import { createCommentRouter } from './modules/comment/api/comment-router';
 import { createCommentByPostRouter } from './modules/comment/api/comment-by-post-router';
-import type { CommentQueryRepository } from './modules/comment/infrastucture/comment-query-repository';
-import type { CommentService } from './modules/comment/domain/comment-service';
 import { createSecurityRouter } from './modules/security/api/security-router';
 import { JwtAdapter } from './core/adapters/jwt-adapter/jwt-adapter';
 import { AuthService } from './modules/auth/domain/auth-service';
@@ -25,8 +22,6 @@ type AppDependencies = {
   authService: AuthService;
   registrationService: RegistrationService;
 
-  commentService: CommentService;
-  commentQueryRepository: CommentQueryRepository;
   rateLimitingService: RateLimitingService;
 
   jwtAdapter: JwtAdapter;
@@ -63,23 +58,8 @@ export const setupApp = (
   app.use('/blogs', createBlogRouter(container));
   app.use('/posts', createPostRouter(container));
   app.use('/blogs/:blogId/posts', createPostByBlogRouter(container));
-  app.use(
-    '/comments',
-    createCommentRouter({
-      commentService: deps.commentService,
-      commentQueryRepository: deps.commentQueryRepository,
-      jwtAdapter: deps.jwtAdapter,
-    }),
-  );
-  app.use(
-    '/posts/:postId/comments',
-    createCommentByPostRouter({
-      commentService: deps.commentService,
-      commentQueryRepository: deps.commentQueryRepository,
-      postQueryRepository: container.get(PostQueryRepository),
-      jwtAdapter: deps.jwtAdapter,
-    }),
-  );
+  app.use('/comments', createCommentRouter(container));
+  app.use('/posts/:postId/comments', createCommentByPostRouter(container));
 
   app.use(
     '/testing/all-data',

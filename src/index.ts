@@ -8,9 +8,7 @@ import { MongoUserRepository } from './modules/user/infrastructure/user-reposito
 import { MongoBlogRepository } from './modules/blog/infrastucture/blog-repository';
 import { MongoPostRepository } from './modules/post/infrastructure/post-repository';
 import { BcryptAdapter } from './core/adapters/bcrypt-adapter';
-import { CommentService } from './modules/comment/domain/comment-service';
 import { MongoCommentRepository } from './modules/comment/infrastucture/comment-repository';
-import { CommentQueryRepository } from './modules/comment/infrastucture/comment-query-repository';
 import { JwtAdapter } from './core/adapters/jwt-adapter/jwt-adapter';
 import { DeviceService } from './modules/security/domain/device-service';
 import { MongoDeviceRepository } from './modules/security/infrastructure/device-repository';
@@ -23,6 +21,7 @@ import { DEVICE_REPOSITORY } from './modules/security/domain/ports/device-reposi
 import { USER_REPOSITORY } from './modules/user/domain/user-repository.interface';
 import { BLOG_REPOSITORY } from './modules/blog/domain/blog-repository.interface';
 import { POST_REPOSITORY } from './modules/post/domain/post-repository.interface';
+import { COMMENT_REPOSITORY } from './modules/comment/domain/comment-repository.interface';
 
 const bootstrap = async () => {
   // connect to DB
@@ -41,15 +40,13 @@ const bootstrap = async () => {
   container.bind(DEVICE_REPOSITORY).to(MongoDeviceRepository);
   container.bind(BLOG_REPOSITORY).to(MongoBlogRepository);
   container.bind(POST_REPOSITORY).to(MongoPostRepository);
+  container.bind(COMMENT_REPOSITORY).to(MongoCommentRepository);
 
   // создание приложения
   const app = express();
 
   // Repositories
   const userRepository = new MongoUserRepository(databaseConnection);
-  const postRepository = new MongoPostRepository(databaseConnection);
-  const commentRepository = new MongoCommentRepository(databaseConnection);
-  const commentQueryRepository = new CommentQueryRepository(databaseConnection);
   const logRepository = new MongoLogRepository(databaseConnection);
 
   // Adapters
@@ -58,11 +55,6 @@ const bootstrap = async () => {
 
   // Services
 
-  const commentService = new CommentService({
-    userRepository,
-    postRepository,
-    commentRepository,
-  });
   const registrationService = new RegistrationService({
     userAccessor: userRepository,
     bcryptAdapter,
@@ -80,8 +72,6 @@ const bootstrap = async () => {
     authService,
     registrationService,
 
-    commentService,
-    commentQueryRepository,
     rateLimitingService,
 
     jwtAdapter,

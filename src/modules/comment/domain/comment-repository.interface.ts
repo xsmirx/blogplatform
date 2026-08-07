@@ -1,3 +1,4 @@
+import { ServiceIdentifier } from 'inversify';
 import type { Comment, NewComment, UpdateComment } from './types';
 
 export interface CommentRepository {
@@ -6,3 +7,6 @@ export interface CommentRepository {
   update(id: string, comment: UpdateComment): Promise<boolean>;
   delete(id: string): Promise<boolean>;
 }
+
+export const COMMENT_REPOSITORY: ServiceIdentifier<CommentRepository> =
+  Symbol('ServiceIdentifier');

@@ -7,9 +7,7 @@ import { BcryptAdapter } from './core/adapters/bcrypt-adapter';
 import { MongoUserRepository } from './modules/user/infrastructure/user-repository';
 import { MongoBlogRepository } from './modules/blog/infrastucture/blog-repository';
 import { MongoPostRepository } from './modules/post/infrastructure/post-repository';
-import { CommentService } from './modules/comment/domain/comment-service';
 import { MongoCommentRepository } from './modules/comment/infrastucture/comment-repository';
-import { CommentQueryRepository } from './modules/comment/infrastucture/comment-query-repository';
 import { AuthService } from './modules/auth/domain/auth-service';
 import { JwtAdapter } from './core/adapters/jwt-adapter/jwt-adapter';
 import { DeviceService } from './modules/security/domain/device-service';
@@ -22,6 +20,7 @@ import { DEVICE_REPOSITORY } from './modules/security/domain/ports/device-reposi
 import { USER_REPOSITORY } from './modules/user/domain/user-repository.interface';
 import { BLOG_REPOSITORY } from './modules/blog/domain/blog-repository.interface';
 import { POST_REPOSITORY } from './modules/post/domain/post-repository.interface';
+import { COMMENT_REPOSITORY } from './modules/comment/domain/comment-repository.interface';
 
 export const mockMailService: jest.Mocked<MailAdapter> = {
   sendEmail: jest.fn().mockResolvedValue(true),
@@ -44,14 +43,10 @@ export const createTestApp = (): Express => {
   container.bind(DEVICE_REPOSITORY).to(MongoDeviceRepository);
   container.bind(BLOG_REPOSITORY).to(MongoBlogRepository);
   container.bind(POST_REPOSITORY).to(MongoPostRepository);
+  container.bind(COMMENT_REPOSITORY).to(MongoCommentRepository);
 
   // Repositories built manually for services not resolved through the container
   const userRepository = new MongoUserRepository(testDatabaseConnection);
-  const postRepository = new MongoPostRepository(testDatabaseConnection);
-  const commentRepository = new MongoCommentRepository(testDatabaseConnection);
-  const commentQueryRepository = new CommentQueryRepository(
-    testDatabaseConnection,
-  );
   const logRepository = new MongoLogRepository(testDatabaseConnection);
 
   // Adapters
@@ -60,11 +55,7 @@ export const createTestApp = (): Express => {
   const mailAdapter = mockMailService;
 
   // Services
-  const commentService = new CommentService({
-    userRepository,
-    postRepository,
-    commentRepository,
-  });
+
   const registrationService = new RegistrationService({
     userAccessor: userRepository,
     bcryptAdapter,
@@ -82,8 +73,6 @@ export const createTestApp = (): Express => {
     authService,
     registrationService,
 
-    commentService,
-    commentQueryRepository,
     rateLimitingService,
 
     jwtAdapter,

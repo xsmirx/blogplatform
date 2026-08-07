@@ -1,11 +1,16 @@
 import { ObjectId, type WithId } from 'mongodb';
-import type { DatabaseConnection } from '../../../bd/mongo.db';
+import { DatabaseConnection } from '../../../bd/mongo.db';
 import type { CommentRepository } from '../domain/comment-repository.interface';
 import type { CommentDB } from './types';
 import type { Comment, NewComment, UpdateComment } from '../domain/types';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class MongoCommentRepository implements CommentRepository {
-  constructor(protected readonly databaseConnection: DatabaseConnection) {}
+  constructor(
+    @inject(DatabaseConnection)
+    protected readonly databaseConnection: DatabaseConnection,
+  ) {}
 
   private get collection() {
     return this.databaseConnection.getCollections().commentsCollection;

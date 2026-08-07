@@ -1,26 +1,30 @@
+import { inject, injectable } from 'inversify';
 import {
   ForbiddenError,
   NotFoundError,
 } from '../../../core/errors/domain-errors';
-import type { PostRepository } from '../../post/domain/post-repository.interface';
-import type { UserRepository } from '../../user/domain/user-repository.interface';
-import type { CommentRepository } from './comment-repository.interface';
+import {
+  POST_REPOSITORY,
+  type PostRepository,
+} from '../../post/domain/post-repository.interface';
+import {
+  USER_REPOSITORY,
+  type UserRepository,
+} from '../../user/domain/user-repository.interface';
+import {
+  COMMENT_REPOSITORY,
+  type CommentRepository,
+} from './comment-repository.interface';
 import type { Comment, CreateCommentInput, UpdateCommentInput } from './types';
 
+@injectable()
 export class CommentService {
-  private readonly userRepository: UserRepository;
-  private readonly postRepository: PostRepository;
-  private readonly commentRepository: CommentRepository;
-
-  constructor(deps: {
-    userRepository: UserRepository;
-    postRepository: PostRepository;
-    commentRepository: CommentRepository;
-  }) {
-    this.userRepository = deps.userRepository;
-    this.commentRepository = deps.commentRepository;
-    this.postRepository = deps.postRepository;
-  }
+  constructor(
+    @inject(USER_REPOSITORY) protected readonly userRepository: UserRepository,
+    @inject(POST_REPOSITORY) protected readonly postRepository: PostRepository,
+    @inject(COMMENT_REPOSITORY)
+    protected readonly commentRepository: CommentRepository,
+  ) {}
 
   private async getCommentForOwner(
     commentId: string,
