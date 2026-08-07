@@ -11,23 +11,11 @@ import {
   sortDirectionValidation,
   titleValidation,
 } from '../middlewares/post-validators';
-import {
-  createCreatePostHandler,
-  createGetPostListHandler,
-} from './post-handlers';
-import type { PostQueryRepository } from '../infrastructure/post-query-repository';
-import type { PostService } from '../domain/post-service';
-import type { BlogQueryRepository } from '../../blog/infrastucture/blog-query-repository';
+import { Container } from 'inversify';
+import { PostController } from './post-controller';
 
-export const createPostByBlogRouter = ({
-  postService,
-  blogQueryRepository,
-  postQueryRepository,
-}: {
-  postService: PostService;
-  blogQueryRepository: BlogQueryRepository;
-  postQueryRepository: PostQueryRepository;
-}) => {
+export const createPostByBlogRouter = (container: Container) => {
+  const postController = container.get(PostController);
   const postByBlogRouter: Router = Router({ mergeParams: true });
 
   postByBlogRouter
@@ -39,7 +27,7 @@ export const createPostByBlogRouter = ({
       sortByValidation,
       sortDirectionValidation,
       inputValidationResultMiddleware,
-      createGetPostListHandler({ blogQueryRepository, postQueryRepository }),
+      postController.getPostList,
     )
     .post(
       '/',
@@ -49,7 +37,7 @@ export const createPostByBlogRouter = ({
       shortDescriptionValidation,
       contentValidation,
       inputValidationResultMiddleware,
-      createCreatePostHandler({ postService, postQueryRepository }),
+      postController.createPost,
     );
 
   return postByBlogRouter;

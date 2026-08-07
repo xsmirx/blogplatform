@@ -1,19 +1,21 @@
+import { inject, injectable } from 'inversify';
 import { NotFoundError } from '../../../core/errors/domain-errors';
-import type { BlogRepository } from '../../blog/domain/blog-repository.interface';
-import type { PostRepository } from './post-repository.interface';
+import {
+  BLOG_REPOSITORY,
+  type BlogRepository,
+} from '../../blog/domain/blog-repository.interface';
+import {
+  POST_REPOSITORY,
+  type PostRepository,
+} from './post-repository.interface';
 import type { CreatePostInput, NewPost, UpdatePostInput } from './types';
 
+@injectable()
 export class PostService {
-  private readonly blogRepository: BlogRepository;
-  private readonly postRepository: PostRepository;
-
-  constructor(deps: {
-    blogRepository: BlogRepository;
-    postRepository: PostRepository;
-  }) {
-    this.blogRepository = deps.blogRepository;
-    this.postRepository = deps.postRepository;
-  }
+  constructor(
+    @inject(BLOG_REPOSITORY) protected readonly blogRepository: BlogRepository,
+    @inject(POST_REPOSITORY) protected readonly postRepository: PostRepository,
+  ) {}
 
   public async create(input: CreatePostInput): Promise<string> {
     const { blogId, content, shortDescription, title } = input;

@@ -1,3 +1,4 @@
+import { ServiceIdentifier } from 'inversify';
 import type { NewPost, Post } from './types';
 
 export interface PostRepository {
@@ -6,3 +7,6 @@ export interface PostRepository {
   update(id: string, post: Omit<Post, 'id' | 'createdAt'>): Promise<boolean>;
   delete(id: string): Promise<boolean>;
 }
+
+export const POST_REPOSITORY: ServiceIdentifier<PostRepository> =
+  Symbol('PostRepository');

@@ -1,11 +1,16 @@
 import { ObjectId, type WithId } from 'mongodb';
-import type { DatabaseConnection } from '../../../bd/mongo.db';
+import { DatabaseConnection } from '../../../bd/mongo.db';
 import type { PostRepository } from '../domain/post-repository.interface';
 import type { NewPost, Post } from '../domain/types';
 import type { PostDB } from './types';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class MongoPostRepository implements PostRepository {
-  constructor(protected readonly databaseConnection: DatabaseConnection) {}
+  constructor(
+    @inject(DatabaseConnection)
+    protected readonly databaseConnection: DatabaseConnection,
+  ) {}
 
   private get collection() {
     return this.databaseConnection.getCollections().postsCollection;

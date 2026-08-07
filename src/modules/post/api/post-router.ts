@@ -1,13 +1,4 @@
 import { Router } from 'express';
-import type { PostQueryRepository } from '../infrastructure/post-query-repository';
-import type { PostService } from '../domain/post-service';
-import {
-  createCreatePostHandler,
-  createDeletePostHandler,
-  createGetPostHandler,
-  createGetPostListHandler,
-  createUpdatePostHandler,
-} from './post-handlers';
 import { superAdminGuard } from '../../auth/api/guards/super-admin-guard';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
 import {
@@ -18,17 +9,12 @@ import {
   sortByValidation,
   sortDirectionValidation,
 } from '../middlewares/post-validators';
-import type { BlogQueryRepository } from '../../blog/infrastucture/blog-query-repository';
 
-export const createPostRouter = ({
-  postService,
-  postQueryRepository,
-  blogQueryRepository,
-}: {
-  postService: PostService;
-  postQueryRepository: PostQueryRepository;
-  blogQueryRepository: BlogQueryRepository;
-}) => {
+import { Container } from 'inversify';
+import { PostController } from './post-controller';
+
+export const createPostRouter = (container: Container) => {
+  const postController = container.get(PostController);
   const postRouter: Router = Router();
 
   postRouter
@@ -39,20 +25,20 @@ export const createPostRouter = ({
       sortByValidation,
       sortDirectionValidation,
       inputValidationResultMiddleware,
-      createGetPostListHandler({ postQueryRepository, blogQueryRepository }),
+      postController.getPostList,
     )
     .get(
       '/:id',
       idValidation,
       inputValidationResultMiddleware,
-      createGetPostHandler({ postQueryRepository }),
+      postController.getPost,
     )
     .post(
       '/',
       superAdminGuard,
       postDTOValidation,
       inputValidationResultMiddleware,
-      createCreatePostHandler({ postService, postQueryRepository }),
+      postController.createPost,
     )
     .put(
       '/:id',
@@ -60,14 +46,14 @@ export const createPostRouter = ({
       idValidation,
       postDTOValidation,
       inputValidationResultMiddleware,
-      createUpdatePostHandler({ postService }),
+      postController.updatePost,
     )
     .delete(
       '/:id',
       superAdminGuard,
       idValidation,
       inputValidationResultMiddleware,
-      createDeletePostHandler({ postService }),
+      postController.deletePost,
     );
 
   return postRouter;

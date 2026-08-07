@@ -6,8 +6,6 @@ import { settings } from './core/settings/settings';
 import { setupApp } from './setup-app';
 import { MongoUserRepository } from './modules/user/infrastructure/user-repository';
 import { MongoBlogRepository } from './modules/blog/infrastucture/blog-repository';
-import { PostService } from './modules/post/domain/post-service';
-import { PostQueryRepository } from './modules/post/infrastructure/post-query-repository';
 import { MongoPostRepository } from './modules/post/infrastructure/post-repository';
 import { BcryptAdapter } from './core/adapters/bcrypt-adapter';
 import { CommentService } from './modules/comment/domain/comment-service';
@@ -24,6 +22,7 @@ import { MongoLogRepository } from './modules/rateLimiting/infrastructure/log-re
 import { DEVICE_REPOSITORY } from './modules/security/domain/ports/device-repository.interface';
 import { USER_REPOSITORY } from './modules/user/domain/user-repository.interface';
 import { BLOG_REPOSITORY } from './modules/blog/domain/blog-repository.interface';
+import { POST_REPOSITORY } from './modules/post/domain/post-repository.interface';
 
 const bootstrap = async () => {
   // connect to DB
@@ -41,15 +40,14 @@ const bootstrap = async () => {
   container.bind(USER_REPOSITORY).to(MongoUserRepository);
   container.bind(DEVICE_REPOSITORY).to(MongoDeviceRepository);
   container.bind(BLOG_REPOSITORY).to(MongoBlogRepository);
+  container.bind(POST_REPOSITORY).to(MongoPostRepository);
 
   // создание приложения
   const app = express();
 
   // Repositories
   const userRepository = new MongoUserRepository(databaseConnection);
-  const blogRepository = new MongoBlogRepository(databaseConnection);
   const postRepository = new MongoPostRepository(databaseConnection);
-  const postQueryRepository = new PostQueryRepository(databaseConnection);
   const commentRepository = new MongoCommentRepository(databaseConnection);
   const commentQueryRepository = new CommentQueryRepository(databaseConnection);
   const logRepository = new MongoLogRepository(databaseConnection);
@@ -60,7 +58,6 @@ const bootstrap = async () => {
 
   // Services
 
-  const postService = new PostService({ blogRepository, postRepository });
   const commentService = new CommentService({
     userRepository,
     postRepository,
@@ -82,8 +79,7 @@ const bootstrap = async () => {
   setupApp(app, container, {
     authService,
     registrationService,
-    postService,
-    postQueryRepository,
+
     commentService,
     commentQueryRepository,
     rateLimitingService,

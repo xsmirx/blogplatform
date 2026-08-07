@@ -1,11 +1,16 @@
 import { ObjectId, type Filter, type WithId } from 'mongodb';
-import type { DatabaseConnection } from '../../../bd/mongo.db';
+import { DatabaseConnection } from '../../../bd/mongo.db';
 import type { PostListQueryInput, PostOutputDTO } from '../api/types';
 import type { PostDB } from './types';
 import type { ListResponse } from '../../../core/types/list-response';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class PostQueryRepository {
-  constructor(protected readonly databaseConnection: DatabaseConnection) {}
+  constructor(
+    @inject(DatabaseConnection)
+    protected readonly databaseConnection: DatabaseConnection,
+  ) {}
 
   private get collection() {
     return this.databaseConnection.getCollections().postsCollection;

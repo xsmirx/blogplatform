@@ -1,14 +1,12 @@
 import express, { Express } from 'express';
 import { createTestingRouter } from './modules/testing/testing-router';
 import { errorHandler } from './core/errors/error.handler';
-import type { PostService } from './modules/post/domain/post-service';
 import type { DatabaseConnection } from './bd/mongo.db';
 import cookieParser from 'cookie-parser';
 import { createPostByBlogRouter } from './modules/post/api/post-by-blog-router';
 import { createBlogRouter } from './modules/blog/api/blog-router';
-import { BlogQueryRepository } from './modules/blog/infrastucture/blog-query-repository';
 import { createPostRouter } from './modules/post/api/post-router';
-import type { PostQueryRepository } from './modules/post/infrastructure/post-query-repository';
+import { PostQueryRepository } from './modules/post/infrastructure/post-query-repository';
 import { UserQueryRepository } from './modules/user/infrastructure/user-query-repository';
 import { createUserRouter } from './modules/user/api/user-router';
 import { createCommentRouter } from './modules/comment/api/comment-router';
@@ -27,8 +25,6 @@ type AppDependencies = {
   authService: AuthService;
   registrationService: RegistrationService;
 
-  postService: PostService;
-  postQueryRepository: PostQueryRepository;
   commentService: CommentService;
   commentQueryRepository: CommentQueryRepository;
   rateLimitingService: RateLimitingService;
@@ -65,22 +61,8 @@ export const setupApp = (
   );
   app.use('/users', createUserRouter(container));
   app.use('/blogs', createBlogRouter(container));
-  app.use(
-    '/posts',
-    createPostRouter({
-      postService: deps.postService,
-      postQueryRepository: deps.postQueryRepository,
-      blogQueryRepository: container.get(BlogQueryRepository),
-    }),
-  );
-  app.use(
-    '/blogs/:blogId/posts',
-    createPostByBlogRouter({
-      postService: deps.postService,
-      postQueryRepository: deps.postQueryRepository,
-      blogQueryRepository: container.get(BlogQueryRepository),
-    }),
-  );
+  app.use('/posts', createPostRouter(container));
+  app.use('/blogs/:blogId/posts', createPostByBlogRouter(container));
   app.use(
     '/comments',
     createCommentRouter({
@@ -94,7 +76,7 @@ export const setupApp = (
     createCommentByPostRouter({
       commentService: deps.commentService,
       commentQueryRepository: deps.commentQueryRepository,
-      postQueryRepository: deps.postQueryRepository,
+      postQueryRepository: container.get(PostQueryRepository),
       jwtAdapter: deps.jwtAdapter,
     }),
   );
