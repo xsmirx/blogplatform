@@ -1,28 +1,24 @@
 import { BcryptAdapter } from '../../../core/adapters/bcrypt-adapter';
 import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
 import { randomUUID } from 'crypto';
-import type { DeviceService } from '../../security/domain/device-service';
+import { DeviceService } from '../../security/domain/device-service';
 import type { LoginInput, RefreshInput } from './types';
-import { AuthUserAccessor } from './ports/auth-user-accessor.interface';
+import {
+  AUTH_USER_ACCESSOR,
+  type AuthUserAccessor,
+} from './ports/auth-user-accessor.interface';
 import { UnauthorizedError } from '../../../core/errors/domain-errors';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class AuthService {
-  private readonly userAccessor: AuthUserAccessor;
-  private readonly deviceService: DeviceService;
-  private readonly jwtAdapter: JwtAdapter;
-  private readonly bcryptAdapter: BcryptAdapter;
-
-  constructor(deps: {
-    userAccessor: AuthUserAccessor;
-    deviceService: DeviceService;
-    jwtAdapter: JwtAdapter;
-    bcryptAdapter: BcryptAdapter;
-  }) {
-    this.userAccessor = deps.userAccessor;
-    this.deviceService = deps.deviceService;
-    this.jwtAdapter = deps.jwtAdapter;
-    this.bcryptAdapter = deps.bcryptAdapter;
-  }
+  constructor(
+    @inject(AUTH_USER_ACCESSOR)
+    protected readonly userAccessor: AuthUserAccessor,
+    @inject(DeviceService) protected readonly deviceService: DeviceService,
+    @inject(JwtAdapter) protected readonly jwtAdapter: JwtAdapter,
+    @inject(BcryptAdapter) protected readonly bcryptAdapter: BcryptAdapter,
+  ) {}
 
   public async login({
     loginOrEmail,

@@ -1,11 +1,9 @@
 import { Router } from 'express';
-import type { DatabaseConnection } from '../../bd/mongo.db';
+import { DatabaseConnection } from '../../bd/mongo.db';
+import { Container } from 'inversify';
 
-export const createTestingRouter = ({
-  databaseConnection,
-}: {
-  databaseConnection: DatabaseConnection;
-}) => {
+export const createTestingRouter = (container: Container) => {
+  const databaseConnection = container.get(DatabaseConnection);
   const testingRouter: Router = Router();
 
   testingRouter.delete('/', async (req, res) => {

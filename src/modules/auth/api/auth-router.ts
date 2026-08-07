@@ -1,40 +1,24 @@
 import { Router } from 'express';
 import { loginOrEmailValidation } from '../middlewares/login-or-email.validation';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
-import { createLoginHandler } from './handlers/login.handler';
-import { createMeHandler } from './handlers/me.handler';
-import type { UserQueryRepository } from '../../user/infrastructure/user-query-repository';
 import { codeValidation } from '../middlewares/code.validation';
 import { loginValidation } from '../../user/middlewares/user-login.validation';
 import { emailValidation } from '../../user/middlewares/user-email.validation';
 import { passwordValidationForRegistration } from '../middlewares/password-registration.validation';
 import { passwordLoginValidation } from '../middlewares/password-login.validation';
-import { createRegistrationHandler } from './handlers/register.handler';
-import { createRegistrationEmailResendHandler } from './handlers/registrationEmailResend.handler';
-import { createRegistrationConfirmationHandler } from './handlers/registrationConfirmation.handler';
-import type { AuthService } from '../domain/auth-service';
-import { createRefreshTokenHandler } from './handlers/refreshToken.handler';
-import { createLogoutHandler } from './handlers/logout.handler';
 import { createAccessTokenGuard } from '../../../core/guards/access-token-guard';
-import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
 import { createRefreshTokenGuard } from '../../../core/guards/refresh-token-guard';
-import { RegistrationService } from '../../registration/domain/registrarion-service';
 import { createRateLimiter } from '../../rateLimiting/api/guargs/rate-limiter';
+import { Container } from 'inversify';
+import { AuthController } from './auth-controller';
+import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
 import { RateLimitingService } from '../../rateLimiting/domain/rate-limiting-service';
 
-export const createAuthRouter = ({
-  rateLimitingService,
-  authService,
-  userQueryRepository,
-  registrationService,
-  jwtAdapter,
-}: {
-  rateLimitingService: RateLimitingService;
-  authService: AuthService;
-  userQueryRepository: UserQueryRepository;
-  registrationService: RegistrationService;
-  jwtAdapter: JwtAdapter;
-}) => {
+export const createAuthRouter = (container: Container) => {
+  const authController = container.get(AuthController);
+  const rateLimitingService = container.get(RateLimitingService);
+  const jwtAdapter = container.get(JwtAdapter);
+
   const authRouter: Router = Router();
 
   authRouter
@@ -47,12 +31,12 @@ export const createAuthRouter = ({
       loginOrEmailValidation,
       passwordLoginValidation,
       inputValidationResultMiddleware,
-      createLoginHandler({ authService }),
+      authController.login,
     )
     .post(
       '/refresh-token',
       createRefreshTokenGuard({ jwtAdapter }),
-      createRefreshTokenHandler({ authService }),
+      authController.refreshToken,
     )
     .post(
       '/registration-confirmation',
@@ -62,7 +46,7 @@ export const createAuthRouter = ({
       ),
       codeValidation,
       inputValidationResultMiddleware,
-      createRegistrationConfirmationHandler({ registrationService }),
+      authController.confirmRegistration,
     )
     .post(
       '/registration',
@@ -74,7 +58,7 @@ export const createAuthRouter = ({
       emailValidation,
       passwordValidationForRegistration,
       inputValidationResultMiddleware,
-      createRegistrationHandler({ registrationService }),
+      authController.registration,
     )
     .post(
       '/registration-email-resending',
@@ -84,18 +68,14 @@ export const createAuthRouter = ({
       ),
       emailValidation,
       inputValidationResultMiddleware,
-      createRegistrationEmailResendHandler({ registrationService }),
+      authController.resendRegistrationEmail,
     )
     .post(
       '/logout',
       createRefreshTokenGuard({ jwtAdapter }),
-      createLogoutHandler({ authService }),
+      authController.logout,
     )
-    .get(
-      '/me',
-      createAccessTokenGuard({ jwtAdapter }),
-      createMeHandler({ userQueryRepository }),
-    );
+    .get('/me', createAccessTokenGuard({ jwtAdapter }), authController.me);
 
   return authRouter;
 };
