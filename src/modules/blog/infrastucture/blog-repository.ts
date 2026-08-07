@@ -3,9 +3,14 @@ import { DatabaseConnection } from '../../../bd/mongo.db';
 import type { BlogDB } from './types';
 import type { Blog, NewBlog } from '../domain/types';
 import type { BlogRepository } from '../domain/blog-repository.interface';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class MongoBlogRepository implements BlogRepository {
-  constructor(protected readonly databaseConnection: DatabaseConnection) {}
+  constructor(
+    @inject(DatabaseConnection)
+    protected readonly databaseConnection: DatabaseConnection,
+  ) {}
 
   private get collection() {
     return this.databaseConnection.getCollections().blogCollection;

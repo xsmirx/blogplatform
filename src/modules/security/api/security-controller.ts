@@ -12,7 +12,7 @@ export class SecurityController {
     protected readonly deviceQueryRepository: DeviceQueryRepository,
   ) {}
 
-  getDeviceList: RequestHandler<object, DeviceOutputDTO[]> = async (
+  public getDeviceList: RequestHandler<object, DeviceOutputDTO[]> = async (
     req,
     res,
   ) => {
@@ -34,7 +34,10 @@ export class SecurityController {
     return;
   };
 
-  deleteDevice: RequestHandler<{ deviceId: string }> = async (req, res) => {
+  public deleteDevice: RequestHandler<{ deviceId: string }> = async (
+    req,
+    res,
+  ) => {
     const userId = req.appContext?.user?.userId as string;
     const deviceId = req.params.deviceId;
     const currentDeviceId = req.appContext?.device?.deviceId as string;
@@ -49,7 +52,7 @@ export class SecurityController {
     return res.status(204).send();
   };
 
-  deleteAllDevices: RequestHandler = async (req, res) => {
+  public deleteAllDevices: RequestHandler = async (req, res) => {
     const userId = req.appContext?.user?.userId as string;
     const currentDeviceId = req.appContext?.device?.deviceId as string;
     const version = req.appContext?.device?.version as string;

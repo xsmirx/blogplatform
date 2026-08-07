@@ -1,12 +1,5 @@
 import { Router } from 'express';
 import {
-  createCreateBlogHandler,
-  createDeleteBlogHandler,
-  createGetBlogHandler,
-  createGetBlogListHandler,
-  createUpdateBlogHandler,
-} from './blog-handlers';
-import {
   blogDTOValidation,
   idValidation,
   pageNumberValidation,
@@ -15,18 +8,13 @@ import {
   sortByValidation,
   sortDirectionValidation,
 } from '../middlewares/blog-validators';
-import type { BlogService } from '../domain/blog-service';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
 import { superAdminGuard } from '../../auth/api/guards/super-admin-guard';
-import type { BlogQueryRepository } from '../infrastucture/blog-query-repository';
+import { Container } from 'inversify';
+import { BlogController } from './blog-controller';
 
-export const createBlogRouter = ({
-  blogService,
-  blogQueryRepository,
-}: {
-  blogService: BlogService;
-  blogQueryRepository: BlogQueryRepository;
-}) => {
+export const createBlogRouter = (container: Container) => {
+  const blogController = container.get(BlogController);
   const blogRouter: Router = Router();
 
   blogRouter
@@ -38,20 +26,20 @@ export const createBlogRouter = ({
       sortByValidation,
       sortDirectionValidation,
       inputValidationResultMiddleware,
-      createGetBlogListHandler({ blogQueryRepository }),
+      blogController.getBlogList,
     )
     .get(
       '/:id',
       idValidation,
       inputValidationResultMiddleware,
-      createGetBlogHandler({ blogQueryRepository }),
+      blogController.getBlog,
     )
     .post(
       '/',
       superAdminGuard,
       blogDTOValidation,
       inputValidationResultMiddleware,
-      createCreateBlogHandler({ blogService, blogQueryRepository }),
+      blogController.createBlog,
     )
     .put(
       '/:id',
@@ -59,14 +47,14 @@ export const createBlogRouter = ({
       idValidation,
       blogDTOValidation,
       inputValidationResultMiddleware,
-      createUpdateBlogHandler({ blogService }),
+      blogController.updateBlog,
     )
     .delete(
       '/:id',
       superAdminGuard,
       idValidation,
       inputValidationResultMiddleware,
-      createDeleteBlogHandler({ blogService }),
+      blogController.deleteBlog,
     );
 
   return blogRouter;

@@ -1,9 +1,16 @@
 import { NotFoundError } from '../../../core/errors/domain-errors';
 import type { CreateBlogInput, NewBlog, UpdateBlogInput } from './types';
-import type { BlogRepository } from './blog-repository.interface';
+import {
+  BLOG_REPOSITORY,
+  type BlogRepository,
+} from './blog-repository.interface';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class BlogService {
-  constructor(private readonly blogRepository: BlogRepository) {}
+  constructor(
+    @inject(BLOG_REPOSITORY) private readonly blogRepository: BlogRepository,
+  ) {}
 
   public async create(input: CreateBlogInput): Promise<string> {
     const { name, description, websiteUrl } = input;

@@ -13,16 +13,10 @@ import { inject, injectable } from 'inversify';
 
 @injectable()
 export class UserService {
-  @inject(USER_REPOSITORY) private readonly userRepository: UserRepository;
-  @inject(BcryptAdapter) private readonly bcryptService: BcryptAdapter;
-
-  constructor(deps: {
-    userRepository: UserRepository;
-    bcryptAdapter: BcryptAdapter;
-  }) {
-    this.userRepository = deps.userRepository;
-    this.bcryptService = deps.bcryptAdapter;
-  }
+  constructor(
+    @inject(USER_REPOSITORY) private readonly userRepository: UserRepository,
+    @inject(BcryptAdapter) private readonly bcryptService: BcryptAdapter,
+  ) {}
 
   public async createUser(user: CreateUserInput): Promise<string> {
     const byLoginResult = await this.userRepository.findByLogin(user.login);

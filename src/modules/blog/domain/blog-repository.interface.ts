@@ -1,3 +1,4 @@
+import { ServiceIdentifier } from 'inversify';
 import type { Blog, NewBlog } from './types';
 
 export interface BlogRepository {
@@ -6,3 +7,6 @@ export interface BlogRepository {
   update(id: string, blog: Omit<Blog, 'id' | 'createdAt'>): Promise<boolean>;
   delete(id: string): Promise<boolean>;
 }
+
+export const BLOG_REPOSITORY: ServiceIdentifier<BlogRepository> =
+  Symbol('BlogRepository');
