@@ -1,6 +1,9 @@
 import { randomUUID } from 'crypto';
 import { BcryptAdapter } from '../../../core/adapters/bcrypt-adapter';
-import { RegistrationUserAccessor } from './ports/reistration-user-accessor.interface';
+import {
+  REGISTATION_USER_ACESSOR,
+  type RegistrationUserAccessor,
+} from './ports/reistration-user-accessor.interface';
 import {
   DomainValidationError,
   NotFoundError,
@@ -9,21 +12,18 @@ import {
 import { RegisterUserInput, RegistrationConfirmationInput } from './types';
 import { MailAdapter } from '../adapters/mail-adapter';
 import { emailExamples } from '../adapters/email-examples';
+import { inject, injectable } from 'inversify';
 
+@injectable()
 export class RegistrationService {
-  private readonly registrationUserAccessor: RegistrationUserAccessor;
-  private readonly bcryptAdapter: BcryptAdapter;
-  private readonly mailAdapter: MailAdapter;
-
-  constructor(deps: {
-    userAccessor: RegistrationUserAccessor;
-    bcryptAdapter: BcryptAdapter;
-    mailAdapter: MailAdapter;
-  }) {
-    this.registrationUserAccessor = deps.userAccessor;
-    this.bcryptAdapter = deps.bcryptAdapter;
-    this.mailAdapter = deps.mailAdapter;
-  }
+  constructor(
+    @inject(REGISTATION_USER_ACESSOR)
+    protected readonly registrationUserAccessor: RegistrationUserAccessor,
+    @inject(BcryptAdapter)
+    protected readonly bcryptAdapter: BcryptAdapter,
+    @inject(MailAdapter)
+    protected readonly mailAdapter: MailAdapter,
+  ) {}
 
   public async registerUser({
     email,

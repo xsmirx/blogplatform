@@ -1,6 +1,8 @@
 import nodemailer from 'nodemailer';
 import { settings } from '../../../core/settings/settings';
+import { injectable } from 'inversify';
 
+@injectable()
 export class MailAdapter {
   async sendEmail(
     email: string,

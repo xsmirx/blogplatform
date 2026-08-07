@@ -1,7 +1,7 @@
 import express, { Express } from 'express';
 import { createTestingRouter } from './modules/testing/testing-router';
 import { errorHandler } from './core/errors/error.handler';
-import type { DatabaseConnection } from './bd/mongo.db';
+import { DatabaseConnection } from './bd/mongo.db';
 import cookieParser from 'cookie-parser';
 import { createPostByBlogRouter } from './modules/post/api/post-by-blog-router';
 import { createBlogRouter } from './modules/blog/api/blog-router';
@@ -14,17 +14,12 @@ import { createSecurityRouter } from './modules/security/api/security-router';
 import { JwtAdapter } from './core/adapters/jwt-adapter/jwt-adapter';
 import { AuthService } from './modules/auth/domain/auth-service';
 import { createAuthRouter } from './modules/auth/api/auth-router';
-import { RegistrationService } from './modules/registration/domain/registrarion-service';
 import { Container } from 'inversify';
 import { RateLimitingService } from './modules/rateLimiting/domain/rate-limiting-service';
+import { RegistrationService } from './modules/registration/domain/registrarion-service';
 
 type AppDependencies = {
   authService: AuthService;
-  registrationService: RegistrationService;
-
-  jwtAdapter: JwtAdapter;
-
-  databaseConnection: DatabaseConnection;
 };
 
 export const setupApp = (
@@ -48,7 +43,7 @@ export const setupApp = (
       rateLimitingService: container.get(RateLimitingService),
       authService: deps.authService,
       userQueryRepository: container.get(UserQueryRepository),
-      registrationService: deps.registrationService,
+      registrationService: container.get(RegistrationService),
       jwtAdapter: container.get(JwtAdapter),
     }),
   );
@@ -61,7 +56,9 @@ export const setupApp = (
 
   app.use(
     '/testing/all-data',
-    createTestingRouter({ databaseConnection: deps.databaseConnection }),
+    createTestingRouter({
+      databaseConnection: container.get(DatabaseConnection),
+    }),
   );
 
   app.use(errorHandler);

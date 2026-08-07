@@ -13,8 +13,6 @@ import { JwtAdapter } from './core/adapters/jwt-adapter/jwt-adapter';
 import { DeviceService } from './modules/security/domain/device-service';
 import { MongoDeviceRepository } from './modules/security/infrastructure/device-repository';
 import { AuthService } from './modules/auth/domain/auth-service';
-import { RegistrationService } from './modules/registration/domain/registrarion-service';
-import { mailAdapter } from './modules/registration/adapters/mail-adapter';
 import { MongoLogRepository } from './modules/rateLimiting/infrastructure/log-repository';
 import { DEVICE_REPOSITORY } from './modules/security/domain/ports/device-repository.interface';
 import { USER_REPOSITORY } from './modules/user/domain/user-repository.interface';
@@ -22,6 +20,7 @@ import { BLOG_REPOSITORY } from './modules/blog/domain/blog-repository.interface
 import { POST_REPOSITORY } from './modules/post/domain/post-repository.interface';
 import { COMMENT_REPOSITORY } from './modules/comment/domain/comment-repository.interface';
 import { LOG_ROPOSITORY } from './modules/rateLimiting/domain/log-repository.interface';
+import { REGISTATION_USER_ACESSOR } from './modules/registration/domain/ports/reistration-user-accessor.interface';
 
 const bootstrap = async () => {
   // connect to DB
@@ -42,38 +41,21 @@ const bootstrap = async () => {
   container.bind(POST_REPOSITORY).to(MongoPostRepository);
   container.bind(COMMENT_REPOSITORY).to(MongoCommentRepository);
   container.bind(LOG_ROPOSITORY).to(MongoLogRepository);
+  container.bind(REGISTATION_USER_ACESSOR).to(MongoUserRepository);
 
   // создание приложения
   const app = express();
 
-  // Repositories
-  const userRepository = new MongoUserRepository(databaseConnection);
-
-  // Adapters
-  const bcryptAdapter = new BcryptAdapter();
-  const jwtAdapter = new JwtAdapter();
-
   // Services
-
-  const registrationService = new RegistrationService({
-    userAccessor: userRepository,
-    bcryptAdapter,
-    mailAdapter,
-  });
   const authService = new AuthService({
-    userAccessor: userRepository,
+    userAccessor: container.get(MongoUserRepository),
     deviceService: container.get(DeviceService),
-    bcryptAdapter: bcryptAdapter,
-    jwtAdapter: jwtAdapter,
+    bcryptAdapter: container.get(BcryptAdapter),
+    jwtAdapter: container.get(JwtAdapter),
   });
 
   setupApp(app, container, {
     authService,
-    registrationService,
-
-    jwtAdapter,
-
-    databaseConnection,
   });
 
   // запуск приложения

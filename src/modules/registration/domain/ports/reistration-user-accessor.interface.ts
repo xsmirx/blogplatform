@@ -1,3 +1,4 @@
+import { ServiceIdentifier } from 'inversify';
 import { User } from '../../../user/domain/types';
 
 export interface RegistrationUserAccessor {
@@ -10,3 +11,6 @@ export interface RegistrationUserAccessor {
     confirmation: Partial<User['emailConfirmation']>,
   ): Promise<boolean>;
 }
+
+export const REGISTATION_USER_ACESSOR: ServiceIdentifier<RegistrationUserAccessor> =
+  Symbol('RegistrationUserAccessor');

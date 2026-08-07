@@ -65,11 +65,11 @@ describe('RegistrationService (integration with mocks)', () => {
       sendEmail: jest.fn().mockResolvedValue(true),
     };
 
-    service = new RegistrationService({
+    service = new RegistrationService(
       userAccessor,
-      bcryptAdapter: bcryptAdapter as unknown as BcryptAdapter,
-      mailAdapter: mailAdapter as unknown as MailAdapter,
-    });
+      bcryptAdapter as unknown as BcryptAdapter,
+      mailAdapter as unknown as MailAdapter,
+    );
   });
 
   describe('registerUser (POST /auth/registration)', () => {
@@ -118,9 +118,9 @@ describe('RegistrationService (integration with mocks)', () => {
       expect(typeof createdUser.emailConfirmation.confirmationCode).toBe(
         'string',
       );
-      expect(createdUser.emailConfirmation.confirmationCode.length).toBeGreaterThan(
-        0,
-      );
+      expect(
+        createdUser.emailConfirmation.confirmationCode.length,
+      ).toBeGreaterThan(0);
       expect(
         createdUser.emailConfirmation.expirationDate.getTime(),
       ).toBeGreaterThan(before);
