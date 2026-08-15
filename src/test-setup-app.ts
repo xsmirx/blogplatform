@@ -8,7 +8,7 @@ import { MongoBlogRepository } from './modules/blog/infrastucture/blog-repositor
 import { MongoPostRepository } from './modules/post/infrastructure/post-repository';
 import { MongoCommentRepository } from './modules/comment/infrastucture/comment-repository';
 import { MongoDeviceRepository } from './modules/security/infrastructure/device-repository';
-import { MailAdapter } from './modules/registration/adapters/mail-adapter';
+import { MailAdapter } from './core/adapters/email-adapter/mail-adapter';
 import { MongoLogRepository } from './modules/rateLimiting/infrastructure/log-repository';
 import { DEVICE_REPOSITORY } from './modules/security/domain/ports/device-repository.interface';
 import { USER_REPOSITORY } from './modules/user/domain/user-repository.interface';

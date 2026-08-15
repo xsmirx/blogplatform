@@ -20,3 +20,7 @@ export type RegistrationInputDTO = {
 export type RegistrationEmailResendingInputDTO = {
   email: string;
 };
+
+export type RecoveryPasswordInputDTO = {
+  email: string;
+};

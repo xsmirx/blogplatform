@@ -10,8 +10,8 @@ import {
   UniqueConstraintError,
 } from '../../../core/errors/domain-errors';
 import { RegisterUserInput, RegistrationConfirmationInput } from './types';
-import { MailAdapter } from '../adapters/mail-adapter';
-import { emailExamples } from '../adapters/email-examples';
+import { MailAdapter } from '../../../core/adapters/email-adapter/mail-adapter';
+import { emailExamples } from '../../../core/adapters/email-adapter/email-examples';
 import { inject, injectable } from 'inversify';
 
 @injectable()

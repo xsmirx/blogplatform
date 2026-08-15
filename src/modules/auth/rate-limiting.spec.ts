@@ -274,6 +274,97 @@ describe('Rate Limiting (429 Too Many Requests)', () => {
     });
   });
 
+  describe('POST /auth/password-recovery rate limiting', () => {
+    // Per api-h10.json: password-recovery returns 204 for any syntactically valid
+    // email (even if it is not registered), so 5 requests succeed and the 6th is 429.
+    it('should return 429 after 5 attempts from same IP within 10 seconds', async () => {
+      for (let i = 0; i < 5; i++) {
+        await request(app)
+          .post('/auth/password-recovery')
+          .send({
+            email: `recovery${i}@example.dev`,
+          })
+          .expect(204);
+      }
+
+      const response = await request(app)
+        .post('/auth/password-recovery')
+        .send({
+          email: 'recovery6@example.dev',
+        });
+
+      expect(response.status).toBe(429);
+    });
+
+    it('should track password-recovery attempts separately from other endpoints', async () => {
+      for (let i = 0; i < 5; i++) {
+        await request(app)
+          .post('/auth/password-recovery')
+          .send({
+            email: `recovery${i}@example.dev`,
+          })
+          .expect(204);
+      }
+
+      // Registration endpoint should still work
+      await request(app)
+        .post('/auth/registration')
+        .send({
+          login: 'newuser',
+          password: 'password123',
+          email: 'new@example.dev',
+        })
+        .expect(204);
+    });
+  });
+
+  describe('POST /auth/new-password rate limiting', () => {
+    // A non-existent recovery code returns 400, but the request still counts
+    // against the rate limit, so the 6th attempt must return 429.
+    it('should return 429 after 5 attempts from same IP within 10 seconds', async () => {
+      for (let i = 0; i < 5; i++) {
+        await request(app)
+          .post('/auth/new-password')
+          .send({
+            newPassword: 'newPassword123',
+            recoveryCode: `code-${i}`,
+          })
+          .expect(400);
+      }
+
+      const response = await request(app)
+        .post('/auth/new-password')
+        .send({
+          newPassword: 'newPassword123',
+          recoveryCode: 'code-6',
+        });
+
+      expect(response.status).toBe(429);
+    });
+
+    it('should track new-password attempts separately from other endpoints', async () => {
+      for (let i = 0; i < 5; i++) {
+        await request(app)
+          .post('/auth/new-password')
+          .send({
+            newPassword: 'newPassword123',
+            recoveryCode: `code-${i}`,
+          })
+          .expect(400);
+      }
+
+      // Registration endpoint should still work
+      await request(app)
+        .post('/auth/registration')
+        .send({
+          login: 'newuser',
+          password: 'password123',
+          email: 'new@example.dev',
+        })
+        .expect(204);
+    });
+  });
+
   describe('Rate limiting - edge cases', () => {
     // /security/devices* endpoints are NOT rate limited per api.json (they only
     // define 200/204/401/403/404). This test guards that exhausting the login

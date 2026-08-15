@@ -1,7 +1,7 @@
 import { RegistrationService } from './domain/registrarion-service';
 import { RegistrationUserAccessor } from './domain/ports/reistration-user-accessor.interface';
 import { BcryptAdapter } from '../../core/adapters/bcrypt-adapter';
-import { MailAdapter } from './adapters/mail-adapter';
+import { MailAdapter } from '../../core/adapters/email-adapter/mail-adapter';
 import { User } from '../user/domain/types';
 import {
   DomainValidationError,

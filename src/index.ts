@@ -10,6 +10,7 @@ import { MongoPostRepository } from './modules/post/infrastructure/post-reposito
 import { MongoCommentRepository } from './modules/comment/infrastucture/comment-repository';
 import { MongoDeviceRepository } from './modules/security/infrastructure/device-repository';
 import { MongoLogRepository } from './modules/rateLimiting/infrastructure/log-repository';
+import { MongoRecoveryRepository } from './modules/recovery/infrastuucture/recovery-repository';
 import { DEVICE_REPOSITORY } from './modules/security/domain/ports/device-repository.interface';
 import { USER_REPOSITORY } from './modules/user/domain/user-repository.interface';
 import { BLOG_REPOSITORY } from './modules/blog/domain/blog-repository.interface';
@@ -18,6 +19,7 @@ import { COMMENT_REPOSITORY } from './modules/comment/domain/comment-repository.
 import { LOG_ROPOSITORY } from './modules/rateLimiting/domain/log-repository.interface';
 import { REGISTATION_USER_ACESSOR } from './modules/registration/domain/ports/reistration-user-accessor.interface';
 import { AUTH_USER_ACCESSOR } from './modules/auth/domain/ports/auth-user-accessor.interface';
+import { RECOVERY_REPOSITORY } from './modules/recovery/domain/ports/recovery-repository.interface';
 
 const bootstrap = async () => {
   // connect to DB
@@ -40,6 +42,7 @@ const bootstrap = async () => {
   container.bind(LOG_ROPOSITORY).to(MongoLogRepository);
   container.bind(REGISTATION_USER_ACESSOR).to(MongoUserRepository);
   container.bind(AUTH_USER_ACCESSOR).to(MongoUserRepository);
+  container.bind(RECOVERY_REPOSITORY).to(MongoRecoveryRepository);
 
   // создание приложения
   const app = express();

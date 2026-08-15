@@ -3,6 +3,7 @@ import { inject, injectable } from 'inversify';
 import {
   LoginInputDTO,
   LoginOutputDTO,
+  RecoveryPasswordInputDTO,
   RegistrationConfirmationInputDTO,
   RegistrationEmailResendingInputDTO,
   RegistrationInputDTO,
@@ -19,6 +20,7 @@ import {
 import { UserQueryRepository } from '../../user/infrastructure/user-query-repository';
 import { ValidationError } from '../../../core/errors/api-errors';
 import { RegistrationService } from '../../registration/domain/registrarion-service';
+import { RecoveryService } from '../../recovery/domain/recovery-service';
 
 @injectable()
 export class AuthController {
@@ -26,6 +28,8 @@ export class AuthController {
     @inject(AuthService) protected readonly authService: AuthService,
     @inject(RegistrationService)
     protected readonly registrationService: RegistrationService,
+    @inject(RecoveryService)
+    protected readonly recoveryService: RecoveryService,
     @inject(UserQueryRepository)
     protected readonly userQueryRepository: UserQueryRepository,
   ) {}
@@ -168,6 +172,18 @@ export class AuthController {
       }
       throw e;
     }
+
+    return res.status(204).send();
+  };
+
+  public recoveryPassword: RequestHandler<
+    object,
+    object,
+    RecoveryPasswordInputDTO
+  > = async (req, res) => {
+    const { email } = matchedData<RecoveryPasswordInputDTO>(req);
+
+    await this.recoveryService.recoveryPassword(email);
 
     return res.status(204).send();
   };

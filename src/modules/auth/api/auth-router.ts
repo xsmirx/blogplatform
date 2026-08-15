@@ -13,6 +13,8 @@ import { Container } from 'inversify';
 import { AuthController } from './auth-controller';
 import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
 import { RateLimitingService } from '../../rateLimiting/domain/rate-limiting-service';
+import { newPasswordValidation } from '../middlewares/password.validation';
+import { recoveryCodeValidation } from '../middlewares/recovery-code.validation';
 
 export const createAuthRouter = (container: Container) => {
   const authController = container.get(AuthController);
@@ -32,6 +34,26 @@ export const createAuthRouter = (container: Container) => {
       passwordLoginValidation,
       inputValidationResultMiddleware,
       authController.login,
+    )
+    .post(
+      '/password-recovery',
+      createRateLimiter(
+        { rateLimitingService },
+        { maxRequests: 5, windowMs: 10000 },
+      ),
+      emailValidation,
+      inputValidationResultMiddleware,
+      authController.recoveryPassword,
+    )
+    .post(
+      '/new-password',
+      createRateLimiter(
+        { rateLimitingService },
+        { maxRequests: 5, windowMs: 10000 },
+      ),
+      newPasswordValidation,
+      recoveryCodeValidation,
+      inputValidationResultMiddleware,
     )
     .post(
       '/refresh-token',

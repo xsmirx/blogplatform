@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { settings } from '../../../core/settings/settings';
+import { settings } from '../../settings/settings';
 import { injectable } from 'inversify';
 
 @injectable()
