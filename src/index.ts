@@ -20,6 +20,7 @@ import { LOG_ROPOSITORY } from './modules/rateLimiting/domain/log-repository.int
 import { REGISTATION_USER_ACESSOR } from './modules/registration/domain/ports/reistration-user-accessor.interface';
 import { AUTH_USER_ACCESSOR } from './modules/auth/domain/ports/auth-user-accessor.interface';
 import { RECOVERY_REPOSITORY } from './modules/recovery/domain/ports/recovery-repository.interface';
+import { RECOVERY_USER_REPOSITORY } from './modules/recovery/domain/ports/recovery-user-repository.interface';
 
 const bootstrap = async () => {
   // connect to DB
@@ -43,6 +44,7 @@ const bootstrap = async () => {
   container.bind(REGISTATION_USER_ACESSOR).to(MongoUserRepository);
   container.bind(AUTH_USER_ACCESSOR).to(MongoUserRepository);
   container.bind(RECOVERY_REPOSITORY).to(MongoRecoveryRepository);
+  container.bind(RECOVERY_USER_REPOSITORY).to(MongoUserRepository);
 
   // создание приложения
   const app = express();

@@ -8,6 +8,8 @@ import {
   RECOVERY_USER_REPOSITORY,
   type RecoveryUserAccessor,
 } from './ports/recovery-user-repository.interface';
+import { randomUUID } from 'crypto';
+import { emailExamples } from '../../../core/adapters/email-adapter/email-examples';
 
 @injectable()
 export class RecoveryService {
@@ -20,9 +22,16 @@ export class RecoveryService {
   ) {}
 
   public async recoveryPassword(email: string): Promise<void> {
-    const result = await this.recoveryUserAcessor.findByEmail(email);
-    if (!result) {
+    const isExist = await this.recoveryUserAcessor.findByEmail(email);
+    if (!isExist) {
       return;
     }
+
+    const recoveryCode = randomUUID();
+    await this.recoveryRepository.create(recoveryCode);
+
+    await this.mailAdapter
+      .sendEmail(email, recoveryCode, emailExamples.passwordRecoveryEmail)
+      .catch((e) => console.error(e));
   }
 }

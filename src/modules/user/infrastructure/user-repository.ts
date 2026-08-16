@@ -6,10 +6,15 @@ import type { UserRepository } from '../domain/user-repository.interface';
 import { AuthUserAccessor } from '../../auth/domain/ports/auth-user-accessor.interface';
 import { RegistrationUserAccessor } from '../../registration/domain/ports/reistration-user-accessor.interface';
 import { inject, injectable } from 'inversify';
+import { RecoveryUserAccessor } from '../../recovery/domain/ports/recovery-user-repository.interface';
 
 @injectable()
 export class MongoUserRepository
-  implements UserRepository, AuthUserAccessor, RegistrationUserAccessor
+  implements
+    UserRepository,
+    AuthUserAccessor,
+    RegistrationUserAccessor,
+    RecoveryUserAccessor
 {
   constructor(
     @inject(DatabaseConnection)
