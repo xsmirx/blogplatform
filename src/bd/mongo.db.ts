@@ -25,14 +25,16 @@ export class DatabaseConnection {
   private db: Db;
 
   private async initIndexes() {
-    this.getCollections().logCollection.createIndex(
-      { date: 1 },
-      { expireAfterSeconds: 60 },
-    );
-    this.getCollections().recoveryCollection.createIndex(
-      { expideAt: 1 },
-      { expireAfterSeconds: 0 },
-    );
+    await Promise.all([
+      this.getCollections().logCollection.createIndex(
+        { date: 1 },
+        { expireAfterSeconds: 60 },
+      ),
+      this.getCollections().recoveryCollection.createIndex(
+        { expideAt: 1 },
+        { expireAfterSeconds: 0 },
+      ),
+    ]);
   }
 
   public async connect() {

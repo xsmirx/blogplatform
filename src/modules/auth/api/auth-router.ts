@@ -13,7 +13,7 @@ import { Container } from 'inversify';
 import { AuthController } from './auth-controller';
 import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
 import { RateLimitingService } from '../../rateLimiting/domain/rate-limiting-service';
-import { newPasswordValidation } from '../middlewares/password.validation';
+import { newPasswordValidation } from '../middlewares/new-password.validation';
 import { recoveryCodeValidation } from '../middlewares/recovery-code.validation';
 
 export const createAuthRouter = (container: Container) => {

@@ -2,7 +2,7 @@ import { inject, injectable } from 'inversify';
 import { RecoveryRepository } from '../domain/ports/recovery-repository.interface';
 import { DatabaseConnection } from '../../../bd/mongo.db';
 import { Recovery } from '../domain/types';
-import { WithId } from 'mongodb';
+import { ObjectId, WithId } from 'mongodb';
 import { RecoveryDB } from './types';
 
 @injectable()
@@ -46,8 +46,13 @@ export class MongoRecoveryRepository implements RecoveryRepository {
       code: input.code,
       email: input.email,
       userId: input.userId,
-      expiresAt: new Date(),
+      expiresAt: new Date(Date.now() + 60 * 60),
     });
     return result.insertedId.toString();
+  }
+
+  public async delete(id: string): Promise<boolean> {
+    const result = await this.collection.deleteOne({ _id: new ObjectId(id) });
+    return result.deletedCount > 0;
   }
 }

@@ -61,5 +61,7 @@ export class RecoveryService {
       recovery.userId,
       passwordHash,
     );
+
+    await this.recoveryRepository.delete(recovery.id);
   }
 }

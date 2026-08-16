@@ -8,6 +8,7 @@ export interface RecoveryRepository {
     userId: string;
     email: string;
   }): Promise<string>;
+  delete(id: string): Promise<boolean>;
 }
 
 export const RECOVERY_REPOSITORY: ServiceIdentifier<RecoveryRepository> =

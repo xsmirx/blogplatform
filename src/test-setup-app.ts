@@ -18,6 +18,9 @@ import { COMMENT_REPOSITORY } from './modules/comment/domain/comment-repository.
 import { LOG_ROPOSITORY } from './modules/rateLimiting/domain/log-repository.interface';
 import { REGISTATION_USER_ACESSOR } from './modules/registration/domain/ports/reistration-user-accessor.interface';
 import { AUTH_USER_ACCESSOR } from './modules/auth/domain/ports/auth-user-accessor.interface';
+import { RECOVERY_REPOSITORY } from './modules/recovery/domain/ports/recovery-repository.interface';
+import { MongoRecoveryRepository } from './modules/recovery/infrastuucture/recovery-repository';
+import { RECOVERY_USER_REPOSITORY } from './modules/recovery/domain/ports/recovery-user-repository.interface';
 
 export const mockMailService: jest.Mocked<MailAdapter> = {
   sendEmail: jest.fn().mockResolvedValue(true),
@@ -45,6 +48,8 @@ export const createTestApp = (): Express => {
   container.bind(REGISTATION_USER_ACESSOR).to(MongoUserRepository);
   container.bind(AUTH_USER_ACCESSOR).to(MongoUserRepository);
   container.bind(MailAdapter).toConstantValue(mockMailService);
+  container.bind(RECOVERY_REPOSITORY).to(MongoRecoveryRepository);
+  container.bind(RECOVERY_USER_REPOSITORY).to(MongoUserRepository);
 
   setupApp(app, container);
 
