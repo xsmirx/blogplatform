@@ -24,7 +24,16 @@ export class DatabaseConnection {
   private client: MongoClient;
   private db: Db;
 
-  private async initIndexes() {}
+  private async initIndexes() {
+    this.getCollections().logCollection.createIndex(
+      { date: 1 },
+      { expireAfterSeconds: 60 },
+    );
+    this.getCollections().recoveryCollection.createIndex(
+      { expideAt: 1 },
+      { expireAfterSeconds: 0 },
+    );
+  }
 
   public async connect() {
     try {

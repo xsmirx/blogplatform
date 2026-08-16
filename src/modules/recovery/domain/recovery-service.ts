@@ -25,13 +25,17 @@ export class RecoveryService {
   ) {}
 
   public async recoveryPassword(email: string): Promise<void> {
-    const isExist = await this.recoveryUserAcessor.findByEmail(email);
-    if (!isExist) {
+    const user = await this.recoveryUserAcessor.findByEmail(email);
+    if (!user) {
       return;
     }
 
     const recoveryCode = randomUUID();
-    await this.recoveryRepository.create(recoveryCode);
+    await this.recoveryRepository.create({
+      code: recoveryCode,
+      email,
+      userId: user.id,
+    });
 
     await this.mailAdapter
       .sendEmail(email, recoveryCode, emailExamples.passwordRecoveryEmail)
@@ -44,12 +48,6 @@ export class RecoveryService {
   ): Promise<void> {
     const recovery = await this.recoveryRepository.findByCode(recoveryCode);
     if (!recovery) {
-      throw new DomainValidationError(
-        'newPasswrdEmail',
-        newPassword,
-        'recovery code not found',
-      );
-    } else if (recovery && recovery.expiresAt < new Date()) {
       throw new DomainValidationError(
         'newPasswrdEmail',
         newPassword,

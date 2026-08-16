@@ -124,6 +124,17 @@ export class MongoUserRepository
     return result.matchedCount > 0;
   }
 
+  public async updatePasswordHash(
+    id: string,
+    passwordHash: string,
+  ): Promise<boolean> {
+    const result = await this.collection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { passwordHash } },
+    );
+    return result.matchedCount > 0;
+  }
+
   public async delete(userId: string): Promise<boolean> {
     const result = await this.collection.deleteOne({
       _id: new ObjectId(userId),

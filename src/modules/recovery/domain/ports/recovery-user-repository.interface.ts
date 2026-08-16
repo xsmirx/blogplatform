@@ -3,7 +3,7 @@ import { User } from '../../../user/domain/types';
 
 export interface RecoveryUserAccessor {
   findByEmail(email: string): Promise<User | null>;
-  updatePasswordHash(userId: string, passwordHash: string): Promise<boolean>;
+  updatePasswordHash(id: string, passwordHash: string): Promise<boolean>;
 }
 
 export const RECOVERY_USER_REPOSITORY: ServiceIdentifier<RecoveryUserAccessor> =
