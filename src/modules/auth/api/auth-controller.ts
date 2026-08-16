@@ -3,6 +3,7 @@ import { inject, injectable } from 'inversify';
 import {
   LoginInputDTO,
   LoginOutputDTO,
+  NewPasswordInputDTO,
   RecoveryPasswordInputDTO,
   RegistrationConfirmationInputDTO,
   RegistrationEmailResendingInputDTO,
@@ -187,4 +188,14 @@ export class AuthController {
 
     return res.status(204).send();
   };
+
+  public updatePassword: RequestHandler<object, object, NewPasswordInputDTO> =
+    async (req, res) => {
+      const { newPassword, recoveryCode } =
+        matchedData<NewPasswordInputDTO>(req);
+
+      await this.recoveryService.updatePassword(recoveryCode, newPassword);
+
+      return res.status(204).send();
+    };
 }

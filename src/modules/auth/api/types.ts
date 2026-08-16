@@ -24,3 +24,8 @@ export type RegistrationEmailResendingInputDTO = {
 export type RecoveryPasswordInputDTO = {
   email: string;
 };
+
+export type NewPasswordInputDTO = {
+  newPassword: string;
+  recoveryCode: string;
+};

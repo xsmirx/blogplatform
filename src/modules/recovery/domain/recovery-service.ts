@@ -10,6 +10,8 @@ import {
 } from './ports/recovery-user-repository.interface';
 import { randomUUID } from 'crypto';
 import { emailExamples } from '../../../core/adapters/email-adapter/email-examples';
+import { DomainValidationError } from '../../../core/errors/domain-errors';
+import { BcryptAdapter } from '../../../core/adapters/bcrypt-adapter';
 
 @injectable()
 export class RecoveryService {
@@ -19,6 +21,7 @@ export class RecoveryService {
     @inject(RECOVERY_USER_REPOSITORY)
     protected readonly recoveryUserAcessor: RecoveryUserAccessor,
     @inject(MailAdapter) protected readonly mailAdapter: MailAdapter,
+    @inject(BcryptAdapter) protected readonly bcryptAdapter: BcryptAdapter,
   ) {}
 
   public async recoveryPassword(email: string): Promise<void> {
@@ -33,5 +36,32 @@ export class RecoveryService {
     await this.mailAdapter
       .sendEmail(email, recoveryCode, emailExamples.passwordRecoveryEmail)
       .catch((e) => console.error(e));
+  }
+
+  public async updatePassword(
+    recoveryCode: string,
+    newPassword: string,
+  ): Promise<void> {
+    const recovery = await this.recoveryRepository.findByCode(recoveryCode);
+    if (!recovery) {
+      throw new DomainValidationError(
+        'newPasswrdEmail',
+        newPassword,
+        'recovery code not found',
+      );
+    } else if (recovery && recovery.expiresAt < new Date()) {
+      throw new DomainValidationError(
+        'newPasswrdEmail',
+        newPassword,
+        'recovery code has been expired',
+      );
+    }
+
+    const passwordHash = await this.bcryptAdapter.generateHash(newPassword);
+
+    await this.recoveryUserAcessor.updatePasswordHash(
+      recovery.userId,
+      passwordHash,
+    );
   }
 }
