@@ -54,6 +54,7 @@ export const createAuthRouter = (container: Container) => {
       newPasswordValidation,
       recoveryCodeValidation,
       inputValidationResultMiddleware,
+      authController.updatePassword,
     )
     .post(
       '/refresh-token',

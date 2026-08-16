@@ -194,8 +194,14 @@ export class AuthController {
       const { newPassword, recoveryCode } =
         matchedData<NewPasswordInputDTO>(req);
 
-      await this.recoveryService.updatePassword(recoveryCode, newPassword);
-
-      return res.status(204).send();
+      try {
+        await this.recoveryService.updatePassword(recoveryCode, newPassword);
+        return res.status(204).send();
+      } catch (e) {
+        if (e instanceof DomainValidationError) {
+          throw new ValidationError([]);
+        }
+        throw e;
+      }
     };
 }
