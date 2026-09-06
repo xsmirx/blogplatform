@@ -37,7 +37,7 @@ export class RecoveryService {
       userId: user.id,
     });
 
-    await this.mailAdapter
+    this.mailAdapter
       .sendEmail(email, recoveryCode, emailExamples.passwordRecoveryEmail)
       .catch((e) => console.error(e));
   }
@@ -49,9 +49,9 @@ export class RecoveryService {
     const recovery = await this.recoveryRepository.findByCode(recoveryCode);
     if (!recovery) {
       throw new DomainValidationError(
-        'newPasswrdEmail',
+        'recoveryCode',
         newPassword,
-        'recovery code has been expired',
+        'invalid recovery code',
       );
     }
 

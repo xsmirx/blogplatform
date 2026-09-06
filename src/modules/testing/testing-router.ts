@@ -8,6 +8,7 @@ export const createTestingRouter = (container: Container) => {
 
   testingRouter.delete('/', async (req, res) => {
     await databaseConnection.drop();
+    await databaseConnection.initIndexes();
     res.sendStatus(204);
   });
 

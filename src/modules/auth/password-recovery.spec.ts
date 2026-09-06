@@ -93,29 +93,53 @@ describe('Password Recovery API', () => {
     });
 
     it('should return 400 when email has invalid format (222^gmail.com)', async () => {
-      await request(app)
+      const response = await request(app)
         .post('/auth/password-recovery')
         .send({ email: '222^gmail.com' })
         .expect(400);
 
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'email',
+          }),
+        ]),
+      });
       expect(mockMailService.sendEmail).not.toHaveBeenCalled();
     });
 
     it('should return 400 when email is an empty string', async () => {
-      await request(app)
+      const response = await request(app)
         .post('/auth/password-recovery')
         .send({ email: '' })
         .expect(400);
 
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'email',
+          }),
+        ]),
+      });
       expect(mockMailService.sendEmail).not.toHaveBeenCalled();
     });
 
     it('should return 400 when email is missing', async () => {
-      await request(app)
+      const response = await request(app)
         .post('/auth/password-recovery')
         .send({})
         .expect(400);
 
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'email',
+          }),
+        ]),
+      });
       expect(mockMailService.sendEmail).not.toHaveBeenCalled();
     });
   });
@@ -165,10 +189,19 @@ describe('Password Recovery API', () => {
     });
 
     it('should return 400 when recoveryCode does not exist', async () => {
-      await request(app)
+      const response = await request(app)
         .post('/auth/new-password')
         .send({ newPassword: 'newPassword123', recoveryCode: 'non-existent-code' })
         .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'recoveryCode',
+          }),
+        ]),
+      });
     });
 
     it('should return 400 when recoveryCode is reused (already applied / no longer valid)', async () => {
@@ -181,44 +214,89 @@ describe('Password Recovery API', () => {
         .expect(204);
 
       // Second use of the same code must be rejected (imitates an invalid/expired code).
-      await request(app)
+      const response = await request(app)
         .post('/auth/new-password')
         .send({ newPassword: 'anotherPass123', recoveryCode })
         .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'recoveryCode',
+          }),
+        ]),
+      });
     });
 
     it('should return 400 when newPassword is too short (less than 6 characters)', async () => {
       const recoveryCode = await requestRecoveryCode();
 
-      await request(app)
+      const response = await request(app)
         .post('/auth/new-password')
         .send({ newPassword: '12345', recoveryCode })
         .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'newPassword',
+          }),
+        ]),
+      });
     });
 
     it('should return 400 when newPassword is too long (more than 20 characters)', async () => {
       const recoveryCode = await requestRecoveryCode();
 
-      await request(app)
+      const response = await request(app)
         .post('/auth/new-password')
         .send({ newPassword: 'a'.repeat(21), recoveryCode })
         .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'newPassword',
+          }),
+        ]),
+      });
     });
 
     it('should return 400 when newPassword is missing', async () => {
       const recoveryCode = await requestRecoveryCode();
 
-      await request(app)
+      const response = await request(app)
         .post('/auth/new-password')
         .send({ recoveryCode })
         .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'newPassword',
+          }),
+        ]),
+      });
     });
 
     it('should return 400 when recoveryCode is missing', async () => {
-      await request(app)
+      const response = await request(app)
         .post('/auth/new-password')
         .send({ newPassword: 'newPassword123' })
         .expect(400);
+
+      expect(response.body).toEqual({
+        errorsMessages: expect.arrayContaining([
+          expect.objectContaining({
+            message: expect.any(String),
+            field: 'recoveryCode',
+          }),
+        ]),
+      });
     });
   });
 });

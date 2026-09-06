@@ -46,7 +46,7 @@ export class MongoRecoveryRepository implements RecoveryRepository {
       code: input.code,
       email: input.email,
       userId: input.userId,
-      expiresAt: new Date(Date.now() + 60 * 60),
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     });
     return result.insertedId.toString();
   }

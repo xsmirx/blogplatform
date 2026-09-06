@@ -24,14 +24,14 @@ export class DatabaseConnection {
   private client: MongoClient;
   private db: Db;
 
-  private async initIndexes() {
+  public async initIndexes() {
     await Promise.all([
       this.getCollections().logCollection.createIndex(
         { date: 1 },
         { expireAfterSeconds: 60 },
       ),
       this.getCollections().recoveryCollection.createIndex(
-        { expideAt: 1 },
+        { expiresAt: 1 },
         { expireAfterSeconds: 0 },
       ),
     ]);

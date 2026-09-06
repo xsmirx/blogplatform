@@ -199,7 +199,9 @@ export class AuthController {
         return res.status(204).send();
       } catch (e) {
         if (e instanceof DomainValidationError) {
-          throw new ValidationError([]);
+          throw new ValidationError([
+            { field: e.paramKey as string, message: e.message },
+          ]);
         }
         throw e;
       }
