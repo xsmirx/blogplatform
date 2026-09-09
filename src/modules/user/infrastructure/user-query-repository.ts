@@ -1,5 +1,5 @@
 import { Filter, ObjectId, WithId } from 'mongodb';
-import { DatabaseConnection } from '../../../bd/mongo.db';
+import { DatabaseConnection } from '../../../db/mongo.db';
 import { ListResponse } from '../../../core/types/list-response';
 import { UserDB } from './types';
 import {

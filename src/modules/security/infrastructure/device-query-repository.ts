@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { DatabaseConnection } from '../../../bd/mongo.db';
+import { DatabaseConnection } from '../../../db/mongo.db';
 import { DeviceOutputDTO } from '../api/types';
 import { DeviceDB } from './types';
 

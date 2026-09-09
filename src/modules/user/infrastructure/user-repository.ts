@@ -1,5 +1,5 @@
 import { ObjectId, type WithId } from 'mongodb';
-import { DatabaseConnection } from '../../../bd/mongo.db';
+import { DatabaseConnection } from '../../../db/mongo.db';
 import type { User } from '../domain/types';
 import type { UserDB } from './types';
 import type { UserRepository } from '../domain/user-repository.interface';

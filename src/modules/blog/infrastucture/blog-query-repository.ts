@@ -1,24 +1,19 @@
-import { ObjectId, type Filter, type WithId } from 'mongodb';
-import { DatabaseConnection } from '../../../bd/mongo.db';
 import type { BlogListQueryInput, BlogOutputDTO } from '../api/types';
-import type { BlogDB } from './types';
+import type { BlogDocument, BlogInput } from './types';
 import type { ListResponse } from '../../../core/types/list-response';
 import { inject, injectable } from 'inversify';
+import { BLOG_MODEL } from './blog-model';
+import { Model } from 'mongoose';
 
 @injectable()
 export class BlogQueryRepository {
   constructor(
-    @inject(DatabaseConnection)
-    protected readonly databaseConnection: DatabaseConnection,
+    @inject(BLOG_MODEL) protected readonly blogModel: Model<BlogInput>,
   ) {}
 
-  private get collection() {
-    return this.databaseConnection.getCollections().blogCollection;
-  }
-
-  private mapToViewModel(blog: WithId<BlogDB>): BlogOutputDTO {
+  private mapToViewModel(blog: BlogDocument): BlogOutputDTO {
     return {
-      id: blog._id.toString(),
+      id: blog.id,
       name: blog.name,
       description: blog.description,
       websiteUrl: blog.websiteUrl,
@@ -28,7 +23,7 @@ export class BlogQueryRepository {
   }
 
   public async findById(id: string): Promise<BlogOutputDTO | null> {
-    const blog = await this.collection.findOne({ _id: new ObjectId(id) });
+    const blog = await this.blogModel.findById(id);
     return blog ? this.mapToViewModel(blog) : null;
   }
 
@@ -38,24 +33,22 @@ export class BlogQueryRepository {
     const { pageNumber, pageSize, sortBy, sortDirection, searchNameTerm } =
       query;
 
-    const skip = (pageNumber - 1) * pageSize;
-
-    const filter: Filter<BlogDB> = {};
+    const blogQuery = this.blogModel.find();
 
     if (searchNameTerm) {
-      filter.name = { $regex: searchNameTerm, $options: 'i' };
+      blogQuery.where('name').regex(new RegExp(searchNameTerm, 'i'));
     }
-
-    const items = await this.collection
-      .find(filter)
-      .sort(sortBy, sortDirection)
+    const filter = blogQuery.getFilter();
+    const skip = (pageNumber - 1) * pageSize;
+    const items = await blogQuery
+      .sort({ [sortBy]: sortDirection })
       .skip(skip)
       .limit(pageSize)
-      .toArray();
+      .exec();
 
     const mappedItems = items.map((item) => this.mapToViewModel(item));
 
-    const totalCount = await this.collection.countDocuments(filter);
+    const totalCount = await this.blogModel.countDocuments(filter);
 
     return {
       page: pageNumber,

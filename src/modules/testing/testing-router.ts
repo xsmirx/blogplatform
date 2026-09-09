@@ -1,14 +1,12 @@
 import { Router } from 'express';
-import { DatabaseConnection } from '../../bd/mongo.db';
 import { Container } from 'inversify';
+import mongoose from 'mongoose';
 
-export const createTestingRouter = (container: Container) => {
-  const databaseConnection = container.get(DatabaseConnection);
+export const createTestingRouter = (_container: Container) => {
   const testingRouter: Router = Router();
 
   testingRouter.delete('/', async (req, res) => {
-    await databaseConnection.drop();
-    await databaseConnection.initIndexes();
+    await mongoose.connection.dropDatabase();
     res.sendStatus(204);
   });
 

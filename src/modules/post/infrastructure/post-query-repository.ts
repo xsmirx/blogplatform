@@ -1,5 +1,5 @@
 import { ObjectId, type Filter, type WithId } from 'mongodb';
-import { DatabaseConnection } from '../../../bd/mongo.db';
+import { DatabaseConnection } from '../../../db/mongo.db';
 import type { PostListQueryInput, PostOutputDTO } from '../api/types';
 import type { PostDB } from './types';
 import type { ListResponse } from '../../../core/types/list-response';

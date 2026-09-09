@@ -1,5 +1,5 @@
 import { ObjectId, type WithId } from 'mongodb';
-import { DatabaseConnection } from '../../../bd/mongo.db';
+import { DatabaseConnection } from '../../../db/mongo.db';
 import type { CommentRepository } from '../domain/comment-repository.interface';
 import type { CommentDB } from './types';
 import type { Comment, NewComment, UpdateComment } from '../domain/types';

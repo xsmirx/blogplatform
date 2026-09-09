@@ -1,5 +1,5 @@
 import { type WithId } from 'mongodb';
-import { DatabaseConnection } from '../../../bd/mongo.db';
+import { DatabaseConnection } from '../../../db/mongo.db';
 import type { DeviceDB } from './types';
 import type { Device } from '../domain/types';
 import { DeviceRepository } from '../domain/ports/device-repository.interface';

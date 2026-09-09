@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { RecoveryRepository } from '../domain/ports/recovery-repository.interface';
-import { DatabaseConnection } from '../../../bd/mongo.db';
+import { DatabaseConnection } from '../../../db/mongo.db';
 import { Recovery } from '../domain/types';
 import { ObjectId, WithId } from 'mongodb';
 import { RecoveryDB } from './types';

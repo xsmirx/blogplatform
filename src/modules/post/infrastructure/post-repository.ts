@@ -1,5 +1,5 @@
 import { ObjectId, type WithId } from 'mongodb';
-import { DatabaseConnection } from '../../../bd/mongo.db';
+import { DatabaseConnection } from '../../../db/mongo.db';
 import type { PostRepository } from '../domain/post-repository.interface';
 import type { NewPost, Post } from '../domain/types';
 import type { PostDB } from './types';

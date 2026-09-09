@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { DatabaseConnection } from '../../../bd/mongo.db';
+import { DatabaseConnection } from '../../../db/mongo.db';
 import { LogRepository } from '../domain/log-repository.interface';
 
 @injectable()
