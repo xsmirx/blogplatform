@@ -32,8 +32,8 @@ Required in `.env`: `MONGO_URL`, `MONGO_DB_NAME`, `AC_TOKEN_SECRET`, `AC_TOKEN_T
 
 - **Entry point:** `src/index.ts` bootstraps DB connection then starts Express. `src/setup-app.ts` registers all routes and the global error handler.
 - **Modules:** `src/modules/` — each domain module (blog, post, comment, user, auth, testing) has its own router, handlers, service, repository, validators, and types. Some modules (user, auth) have deeper subdirectory structure (`api/`, `domain/`, `infrastructure/`).
-- **Database:** MongoDB native driver (not Mongoose). Singleton `databaseConnection` in `src/bd/mongo.db.ts` exposes typed collections. Collections defined in `src/bd/collections.ts`.
+- **Database:** Mongoose (ODM), connected via `MongooseDatabaseConnection` in `src/db/mongoose.db.ts`. Each module defines its own schema/model in an `infrastructure`/`infrastucture` folder (e.g. `blog-model.ts`, `device-model.ts`). Some modules are still mid-migration off the old native `mongodb` driver (`DatabaseConnection` in `src/db/mongo.db.ts`) — when reviewing code, assume the target/intended approach is Mongoose, not the native driver.
 - **Auth:** Basic auth for super-admin operations (hardcoded `admin:qwerty` default), JWT bearer tokens for user auth. `BcryptService` for password hashing, `JwtService` for token generation/verification.
-- **Result pattern:** Services return `Result<T>` objects with `ResultStatus` enum instead of throwing — maps to HTTP status via `resultCodeToHttpException`. Legacy error-throwing approach (custom error classes + global `errorHandler`) also exists.
+- **Error handling:** Services throw custom error classes (`src/core/errors/api-errors.ts`, `domain-errors.ts`) instead of returning a `Result<T>`. The global `errorHandler` (registered in `src/setup-app.ts`) catches them and maps to the appropriate HTTP status.
 - **Validation:** `express-validator` middleware per field, collected via `inputValidationResultMiddleware`.
 - **Tests:** Integration tests using `supertest` against the Express app, connecting to a local MongoDB (`blogplatform-test` DB). Each test suite resets data via `DELETE /testing/all-data`.

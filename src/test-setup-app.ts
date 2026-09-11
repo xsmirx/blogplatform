@@ -23,6 +23,10 @@ import { MongoRecoveryRepository } from './modules/recovery/infrastuucture/recov
 import { RECOVERY_USER_REPOSITORY } from './modules/recovery/domain/ports/recovery-user-repository.interface';
 import { MongooseDatabaseConnection } from './db/mongoose.db';
 import { BLOG_MODEL, BlogModel } from './modules/blog/infrastucture/blog-model';
+import {
+  DEVICE_MODEL,
+  DeviceModel,
+} from './modules/security/infrastructure/device-model';
 
 export const mockMailService: jest.Mocked<MailAdapter> = {
   sendEmail: jest.fn().mockResolvedValue(true),
@@ -59,6 +63,7 @@ export const createTestApp = (): Express => {
   container.bind(RECOVERY_USER_REPOSITORY).to(MongoUserRepository);
 
   container.bind(BLOG_MODEL).toConstantValue(BlogModel);
+  container.bind(DEVICE_MODEL).toConstantValue(DeviceModel);
 
   setupApp(app, container);
 

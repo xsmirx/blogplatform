@@ -2,6 +2,7 @@ import request from 'supertest';
 import {
   createTestApp,
   testDatabaseConnection,
+  testMongooseDatabaseConnetcion,
 } from '../../test-setup-app';
 import jwt from 'jsonwebtoken';
 
@@ -42,11 +43,12 @@ describe('Security Devices API', () => {
   };
 
   beforeAll(async () => {
-    await testDatabaseConnection.connect();
+    await testMongooseDatabaseConnetcion.connect();
     await request(app).delete('/testing/all-data').expect(204);
   });
 
   afterAll(async () => {
+    await testMongooseDatabaseConnetcion.disconnect();
     await testDatabaseConnection.getClient().close();
   });
 
@@ -174,7 +176,9 @@ describe('Security Devices API', () => {
         .expect(200);
 
       expect(devicesResponse.body.length).toBe(3);
-      expect(devicesResponse.body.find((d: any) => d.deviceId === deviceIds[1])).toBeUndefined();
+      expect(
+        devicesResponse.body.find((d: any) => d.deviceId === deviceIds[1]),
+      ).toBeUndefined();
     });
 
     it('should remove device 3 from list after logout', async () => {
@@ -191,7 +195,9 @@ describe('Security Devices API', () => {
         .expect(200);
 
       expect(devicesResponse.body.length).toBe(3);
-      expect(devicesResponse.body.find((d: any) => d.deviceId === deviceIds[2])).toBeUndefined();
+      expect(
+        devicesResponse.body.find((d: any) => d.deviceId === deviceIds[2]),
+      ).toBeUndefined();
     });
 
     it('should keep only current device after DELETE /security/devices', async () => {
@@ -763,9 +769,7 @@ describe('Security Devices API', () => {
     });
 
     it('should return 401 when no refreshToken is provided', async () => {
-      await request(app)
-        .delete(`/security/devices/${deviceId2}`)
-        .expect(401);
+      await request(app).delete(`/security/devices/${deviceId2}`).expect(401);
     });
 
     it('should return 401 when refreshToken is invalid', async () => {

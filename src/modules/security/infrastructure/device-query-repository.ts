@@ -1,25 +1,22 @@
 import { inject, injectable } from 'inversify';
-import { DatabaseConnection } from '../../../db/mongo.db';
 import { DeviceOutputDTO } from '../api/types';
-import { DeviceDB } from './types';
+import { DEVICE_MODEL } from './device-model';
+import { Model } from 'mongoose';
+import { DeviceDocument, DeviceInput } from './types';
 
 @injectable()
 export class DeviceQueryRepository {
   constructor(
-    @inject(DatabaseConnection)
-    protected readonly databaseConnection: DatabaseConnection,
+    @inject(DEVICE_MODEL)
+    protected readonly deviceModel: Model<DeviceInput>,
   ) {}
 
-  private get collection() {
-    return this.databaseConnection.getCollections().devicesCollection;
-  }
-
-  private mapToViewModel(device: DeviceDB): DeviceOutputDTO {
+  private mapToViewModel(device: DeviceDocument): DeviceOutputDTO {
     return {
       ip: device.ip,
       title: device.deviceName,
-      lastActiveDate: device.createdAt.toISOString(),
-      deviceId: device._id,
+      lastActiveDate: device.updatedAt.toISOString(),
+      deviceId: device.id,
     };
   }
 
@@ -30,9 +27,9 @@ export class DeviceQueryRepository {
     userId: string;
     currentDeviceId: string;
   }) {
-    const devices = await this.collection.find({ userId }).toArray();
+    const result = await this.deviceModel.find({ userId });
 
-    return devices
+    return result
       .map((device) => this.mapToViewModel(device))
       .sort((a, b) =>
         a.deviceId === currentDeviceId

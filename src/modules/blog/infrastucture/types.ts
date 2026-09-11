@@ -1,5 +1,11 @@
 import { HydratedDocument, InferSchemaType } from 'mongoose';
-import { BlogSchema } from './blog-model';
+import { blogSchema } from './blog-model';
 
-export type BlogInput = InferSchemaType<typeof BlogSchema>;
-export type BlogDocument = HydratedDocument<BlogInput>;
+export type BlogInput = {
+  name: string;
+  description: string;
+  websiteUrl: string;
+  isMembership: boolean;
+};
+
+export type BlogDocument = HydratedDocument<InferSchemaType<typeof blogSchema>>;

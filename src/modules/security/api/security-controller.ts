@@ -3,6 +3,8 @@ import { inject, injectable } from 'inversify';
 import { DeviceOutputDTO } from './types';
 import { DeviceService } from '../domain/device-service';
 import { DeviceQueryRepository } from '../infrastructure/device-query-repository';
+import { NotFoundError } from '../../../core/errors/domain-errors';
+import { Types } from 'mongoose';
 
 @injectable()
 export class SecurityController {
@@ -42,6 +44,10 @@ export class SecurityController {
     const deviceId = req.params.deviceId;
     const currentDeviceId = req.appContext?.device?.deviceId as string;
     const version = req.appContext?.device?.version as string;
+
+    if (!Types.UUID.isValid(deviceId)) {
+      throw new NotFoundError('device');
+    }
 
     await this.deviceService.ensureActiveSession({
       deviceId: currentDeviceId,

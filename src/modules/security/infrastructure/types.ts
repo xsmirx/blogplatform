@@ -1,9 +1,5 @@
-export type DeviceDB = {
-  _id: string;
-  version: string;
-  userId: string;
-  ip: string;
-  deviceName: string;
-  createdAt: Date;
-  expiresAt: Date;
-};
+import { HydratedDocument, InferSchemaType } from 'mongoose';
+import { deviceSchema } from './device-model';
+
+export type DeviceInput = InferSchemaType<typeof deviceSchema>;
+export type DeviceDocument = HydratedDocument<DeviceInput>;

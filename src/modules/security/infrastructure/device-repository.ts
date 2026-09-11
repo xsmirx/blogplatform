@@ -1,26 +1,22 @@
-import { type WithId } from 'mongodb';
-import { DatabaseConnection } from '../../../db/mongo.db';
-import type { DeviceDB } from './types';
 import type { Device } from '../domain/types';
 import { DeviceRepository } from '../domain/ports/device-repository.interface';
 import { injectable, inject } from 'inversify';
+import { DEVICE_MODEL } from './device-model';
+import { Model } from 'mongoose';
+import { DeviceDocument, DeviceInput } from './types';
 
 @injectable()
 export class MongoDeviceRepository implements DeviceRepository {
   constructor(
-    @inject(DatabaseConnection)
-    protected readonly databaseConnection: DatabaseConnection,
+    @inject(DEVICE_MODEL)
+    protected readonly deviceModel: Model<DeviceInput>,
   ) {}
 
-  private get collection() {
-    return this.databaseConnection.getCollections().devicesCollection;
-  }
-
-  private mapToDomain(doc: WithId<DeviceDB>): Device {
+  private mapToDomain(doc: DeviceDocument): Device {
     return {
-      id: doc._id,
-      version: doc.version,
-      userId: doc.userId,
+      id: doc.id,
+      version: doc.version.toString(),
+      userId: doc.userId.toString(),
       ip: doc.ip,
       deviceName: doc.deviceName,
       createdAt: doc.createdAt,
@@ -29,30 +25,28 @@ export class MongoDeviceRepository implements DeviceRepository {
   }
 
   public async findById(deviceId: string): Promise<Device | null> {
-    const result = await this.collection.findOne({
-      _id: deviceId,
-    });
+    const result = await this.deviceModel.findById(deviceId);
     if (!result) return null;
-
     return this.mapToDomain(result);
   }
 
   public async findByUserId(userId: string): Promise<Device[]> {
-    const cursor = this.collection.find({
+    const query = this.deviceModel.find({
       userId,
     });
-    const results = await cursor.toArray();
-    return results.map((doc) => this.mapToDomain(doc));
+    const result = await query.exec();
+
+    return result.map((doc) => this.mapToDomain(doc));
   }
 
   public async findByIdAndVersion(input: {
     id: string;
     version: string;
   }): Promise<Device | null> {
-    const result = await this.collection.findOne({
-      _id: input.id,
-      version: input.version,
-    });
+    const result = await this.deviceModel
+      .findById(input.id)
+      .where('version')
+      .equals(input.version);
     if (!result) {
       return null;
     } else {
@@ -61,49 +55,40 @@ export class MongoDeviceRepository implements DeviceRepository {
   }
 
   public async create(device: Device) {
-    const result = await this.collection.insertOne({
+    const result = await this.deviceModel.create({
       _id: device.id,
       version: device.version,
       userId: device.userId,
       ip: device.ip,
       deviceName: device.deviceName,
-      createdAt: device.createdAt,
       expiresAt: device.expiresAt,
     });
-
-    return result.insertedId;
+    return result.id;
   }
 
   public async update(
     filter: { id: string; version: string },
     device: Omit<Device, 'id'>,
   ): Promise<boolean> {
-    const result = await this.collection.updateOne(
-      {
-        _id: filter.id,
+    const result = await this.deviceModel
+      .findByIdAndUpdate(filter.id)
+      .where('userId')
+      .equals(device.userId)
+      .where('version')
+      .equals(filter.version)
+      .set({
         userId: device.userId,
-        version: filter.version,
-      },
-      {
-        $set: {
-          userId: device.userId,
-          ip: device.ip,
-          version: device.version,
-          deviceName: device.deviceName,
-          createdAt: device.createdAt,
-          expiresAt: device.expiresAt,
-        },
-      },
-    );
+        ip: device.ip,
+        version: device.version,
+        deviceName: device.deviceName,
+        expiresAt: device.expiresAt,
+      });
 
-    return result.matchedCount > 0;
+    return result !== null;
   }
 
   public async delete(deviceId: string) {
-    const result = await this.collection.deleteOne({
-      _id: deviceId,
-    });
-
-    return result.deletedCount > 0;
+    const result = await this.deviceModel.findByIdAndDelete(deviceId);
+    return result !== null;
   }
 }

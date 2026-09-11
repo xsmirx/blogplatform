@@ -17,6 +17,10 @@ import { AUTH_USER_ACCESSOR } from './modules/auth/domain/ports/auth-user-access
 import { RECOVERY_REPOSITORY } from './modules/recovery/domain/ports/recovery-repository.interface';
 import { RECOVERY_USER_REPOSITORY } from './modules/recovery/domain/ports/recovery-user-repository.interface';
 import { BLOG_MODEL, BlogModel } from './modules/blog/infrastucture/blog-model';
+import {
+  DEVICE_MODEL,
+  DeviceModel,
+} from './modules/security/infrastructure/device-model';
 
 export const container = new Container({
   autobind: true,
@@ -35,3 +39,4 @@ container.bind(RECOVERY_REPOSITORY).to(MongoRecoveryRepository);
 container.bind(RECOVERY_USER_REPOSITORY).to(MongoUserRepository);
 
 container.bind(BLOG_MODEL).toConstantValue(BlogModel);
+container.bind(DEVICE_MODEL).toConstantValue(DeviceModel);
