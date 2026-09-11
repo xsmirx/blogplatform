@@ -1,8 +1,7 @@
 import { model, Schema } from 'mongoose';
 import { BLOGS_COLLECTION_NAME } from '../../../db/collections';
-import { BlogInput } from './types';
 
-export const blogSchema = new Schema<BlogInput>(
+export const blogSchema = new Schema(
   {
     name: { type: String, minLength: 1, maxLength: 256, required: true },
     description: { type: String, minLength: 1, maxLength: 500, required: true },

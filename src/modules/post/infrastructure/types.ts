@@ -1,8 +1,5 @@
-export type PostDB = {
-  title: string;
-  shortDescription: string;
-  content: string;
-  blogId: string;
-  blogName: string;
-  createdAt: Date;
-};
+import { HydratedDocument, InferSchemaType } from 'mongoose';
+import { postSchema } from './post-model';
+
+export type PostInput = InferSchemaType<typeof postSchema>;
+export type PostDocument = HydratedDocument<PostInput>;

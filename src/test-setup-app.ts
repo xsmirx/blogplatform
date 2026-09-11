@@ -27,6 +27,10 @@ import {
   DEVICE_MODEL,
   DeviceModel,
 } from './modules/security/infrastructure/device-model';
+import {
+  POST_MODEL,
+  PostModel,
+} from './modules/post/infrastructure/post-model';
 
 export const mockMailService: jest.Mocked<MailAdapter> = {
   sendEmail: jest.fn().mockResolvedValue(true),
@@ -63,6 +67,7 @@ export const createTestApp = (): Express => {
   container.bind(RECOVERY_USER_REPOSITORY).to(MongoUserRepository);
 
   container.bind(BLOG_MODEL).toConstantValue(BlogModel);
+  container.bind(POST_MODEL).toConstantValue(PostModel);
   container.bind(DEVICE_MODEL).toConstantValue(DeviceModel);
 
   setupApp(app, container);

@@ -1,35 +1,31 @@
-import { ObjectId, type Filter, type WithId } from 'mongodb';
-import { DatabaseConnection } from '../../../db/mongo.db';
 import type { PostListQueryInput, PostOutputDTO } from '../api/types';
-import type { PostDB } from './types';
 import type { ListResponse } from '../../../core/types/list-response';
 import { inject, injectable } from 'inversify';
+import { POST_MODEL } from './post-model';
+import { Model } from 'mongoose';
+import { PostDocument, PostInput } from './types';
 
 @injectable()
 export class PostQueryRepository {
   constructor(
-    @inject(DatabaseConnection)
-    protected readonly databaseConnection: DatabaseConnection,
+    @inject(POST_MODEL)
+    protected readonly postModel: Model<PostInput>,
   ) {}
 
-  private get collection() {
-    return this.databaseConnection.getCollections().postsCollection;
-  }
-
-  private mapToViewModel(post: WithId<PostDB>): PostOutputDTO {
+  private mapToViewModel(post: PostDocument): PostOutputDTO {
     return {
-      id: post._id.toString(),
+      id: post.id,
       title: post.title,
       shortDescription: post.shortDescription,
       content: post.content,
-      blogId: post.blogId,
+      blogId: post.blogId.toString(),
       blogName: post.blogName,
       createdAt: post.createdAt.toISOString(),
     };
   }
 
   public async findById(id: string): Promise<PostOutputDTO | null> {
-    const post = await this.collection.findOne({ _id: new ObjectId(id) });
+    const post = await this.postModel.findById(id);
     return post ? this.mapToViewModel(post) : null;
   }
 
@@ -38,29 +34,27 @@ export class PostQueryRepository {
   ): Promise<ListResponse<PostOutputDTO>> {
     const { pageNumber, pageSize, sortBy, sortDirection, blogId } = input;
 
-    const skip = (pageNumber - 1) * pageSize;
-
-    const filter: Filter<PostDB> = {};
+    const query = this.postModel.find();
 
     if (blogId) {
-      filter.blogId = blogId;
+      query.where('blogId').equals(blogId);
     }
+    const filter = query.getFilter();
 
-    const items = await this.collection
-      .find(filter)
-      .sort(sortBy, sortDirection)
+    const skip = (pageNumber - 1) * pageSize;
+    const result = await query
+      .sort({ [sortBy]: sortDirection })
       .skip(skip)
-      .limit(pageSize)
-      .toArray();
+      .limit(pageSize);
 
-    const totalCount = await this.collection.countDocuments(filter);
+    const totalCount = await this.postModel.countDocuments(filter);
 
     return {
       page: pageNumber,
       pageSize: pageSize,
       pagesCount: Math.ceil(totalCount / pageSize),
       totalCount: totalCount,
-      items: items.map((item) => this.mapToViewModel(item)),
+      items: result.map((item) => this.mapToViewModel(item)),
     };
   }
 }
