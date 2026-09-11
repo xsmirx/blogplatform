@@ -1,27 +1,23 @@
-import { ObjectId, type Filter, type WithId } from 'mongodb';
-import { DatabaseConnection } from '../../../db/mongo.db';
-import type { CommentDB } from './types';
 import type { CommentListQueryInput, CommentOutputDTO } from '../api/types';
 import type { ListResponse } from '../../../core/types/list-response';
 import { inject, injectable } from 'inversify';
+import { COMMENT_MODEL } from './comment-model';
+import { Model } from 'mongoose';
+import { CommentDocument, CommentInput } from './types';
 
 @injectable()
 export class CommentQueryRepository {
   constructor(
-    @inject(DatabaseConnection)
-    protected readonly databaseConnection: DatabaseConnection,
+    @inject(COMMENT_MODEL)
+    protected readonly commentModel: Model<CommentInput>,
   ) {}
 
-  private get collection() {
-    return this.databaseConnection.getCollections().commentsCollection;
-  }
-
-  private mapToOutputModel(comment: WithId<CommentDB>): CommentOutputDTO {
+  private mapToOutputModel(comment: CommentDocument): CommentOutputDTO {
     return {
-      id: comment._id.toString(),
+      id: comment.id,
       content: comment.content,
       commentatorInfo: {
-        userId: comment.userId,
+        userId: comment.userId.toString(),
         userLogin: comment.userLogin,
       },
       createdAt: comment.createdAt.toISOString(),
@@ -33,7 +29,7 @@ export class CommentQueryRepository {
     queries,
     totalCount,
   }: {
-    items: WithId<CommentDB>[];
+    items: CommentDocument[];
     queries: CommentListQueryInput;
     totalCount: number;
   }): ListResponse<CommentOutputDTO> {
@@ -50,22 +46,22 @@ export class CommentQueryRepository {
     queries: CommentListQueryInput,
   ): Promise<ListResponse<CommentOutputDTO>> {
     const { postId, pageNumber, pageSize, sortBy, sortDirection } = queries;
-    const filter: Filter<CommentDB> = { postId: postId };
 
-    const items = await this.collection
-      .find(filter)
-      .sort(sortBy, sortDirection)
+    const query = this.commentModel.find({ postId: postId });
+    const filter = query.getFilter();
+
+    const items = await query
+      .sort({ [sortBy]: sortDirection })
       .skip((pageNumber - 1) * pageSize)
-      .limit(pageSize)
-      .toArray();
+      .limit(pageSize);
 
-    const totalCount = await this.collection.countDocuments(filter);
+    const totalCount = await this.commentModel.countDocuments(filter);
 
     return this.mapListToListResponseViewModel({ items, queries, totalCount });
   }
 
   public async findById(id: string): Promise<CommentOutputDTO | null> {
-    const comment = await this.collection.findOne({ _id: new ObjectId(id) });
+    const comment = await this.commentModel.findById(id);
     if (!comment) return null;
     return this.mapToOutputModel(comment);
   }

@@ -13,7 +13,7 @@ export type CreateCommentInput = {
   content: string;
 };
 
-export type NewComment = Omit<Comment, 'id'>;
+export type NewComment = Omit<Comment, 'id' | 'createdAt'>;
 
 export type UpdateCommentInput = {
   content: string;

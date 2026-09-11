@@ -1,36 +1,30 @@
-import { ObjectId, type WithId } from 'mongodb';
-import { DatabaseConnection } from '../../../db/mongo.db';
 import type { CommentRepository } from '../domain/comment-repository.interface';
-import type { CommentDB } from './types';
 import type { Comment, NewComment, UpdateComment } from '../domain/types';
 import { inject, injectable } from 'inversify';
+import { CommentDocument, CommentInput } from './types';
+import { COMMENT_MODEL } from './comment-model';
+import { Model } from 'mongoose';
 
 @injectable()
 export class MongoCommentRepository implements CommentRepository {
   constructor(
-    @inject(DatabaseConnection)
-    protected readonly databaseConnection: DatabaseConnection,
+    @inject(COMMENT_MODEL)
+    protected readonly commentModel: Model<CommentInput>,
   ) {}
 
-  private get collection() {
-    return this.databaseConnection.getCollections().commentsCollection;
-  }
-
-  private mapToDomainModel(comment: WithId<CommentDB>): Comment {
+  private mapToDomainModel(comment: CommentDocument): Comment {
     return {
-      id: comment._id.toString(),
+      id: comment.id,
       content: comment.content,
-      postId: comment.postId,
-      userId: comment.userId,
+      postId: comment.postId.toString(),
+      userId: comment.userId.toString(),
       userLogin: comment.userLogin,
       createdAt: comment.createdAt,
     };
   }
 
   public async findById(commentId: string): Promise<Comment | null> {
-    const comment = await this.collection.findOne({
-      _id: new ObjectId(commentId),
-    });
+    const comment = await this.commentModel.findById(commentId);
     if (!comment) return null;
     return this.mapToDomainModel(comment);
   }
@@ -40,33 +34,28 @@ export class MongoCommentRepository implements CommentRepository {
     userLogin,
     postId,
     content,
-    createdAt,
   }: NewComment): Promise<string> {
-    const result = await this.collection.insertOne({
+    const result = await this.commentModel.create({
       userId,
       userLogin,
       postId,
       content,
-      createdAt,
     });
-    return result.insertedId.toString();
+    return result.id;
   }
 
   public async update(
     id: string,
     { content }: UpdateComment,
   ): Promise<boolean> {
-    const result = await this.collection.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: { content } },
-    );
-    return result.matchedCount > 0;
+    const result = await this.commentModel
+      .findByIdAndUpdate(id)
+      .set({ content });
+    return result !== null;
   }
 
   public async delete(id: string): Promise<boolean> {
-    const result = await this.collection.deleteOne({
-      _id: new ObjectId(id),
-    });
-    return result.deletedCount > 0;
+    const result = await this.commentModel.findByIdAndDelete(id);
+    return result !== null;
   }
 }

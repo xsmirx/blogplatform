@@ -54,7 +54,6 @@ export class CommentService {
       content: content,
       userId: user.id,
       userLogin: user.login,
-      createdAt: new Date(),
     });
   }
 

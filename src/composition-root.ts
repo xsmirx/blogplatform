@@ -25,6 +25,10 @@ import {
   POST_MODEL,
   PostModel,
 } from './modules/post/infrastructure/post-model';
+import {
+  COMMENT_MODEL,
+  CommentModel,
+} from './modules/comment/infrastucture/comment-model';
 
 export const container = new Container({
   autobind: true,
@@ -44,4 +48,5 @@ container.bind(RECOVERY_USER_REPOSITORY).to(MongoUserRepository);
 
 container.bind(BLOG_MODEL).toConstantValue(BlogModel);
 container.bind(POST_MODEL).toConstantValue(PostModel);
+container.bind(COMMENT_MODEL).toConstantValue(CommentModel);
 container.bind(DEVICE_MODEL).toConstantValue(DeviceModel);

@@ -1,7 +1,5 @@
-export type CommentDB = {
-  content: string;
-  userId: string;
-  userLogin: string;
-  postId: string;
-  createdAt: Date;
-};
+import { HydratedDocument, InferSchemaType } from 'mongoose';
+import { commentSchema } from './comment-model';
+
+export type CommentInput = InferSchemaType<typeof commentSchema>;
+export type CommentDocument = HydratedDocument<CommentInput>;
