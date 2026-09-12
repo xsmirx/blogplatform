@@ -35,6 +35,10 @@ import {
   COMMENT_MODEL,
   CommentModel,
 } from './modules/comment/infrastucture/comment-model';
+import {
+  LOG_MODEL,
+  LogModel,
+} from './modules/rateLimiting/infrastructure/log-model';
 
 export const mockMailService: jest.Mocked<MailAdapter> = {
   sendEmail: jest.fn().mockResolvedValue(true),
@@ -74,6 +78,7 @@ export const createTestApp = (): Express => {
   container.bind(POST_MODEL).toConstantValue(PostModel);
   container.bind(COMMENT_MODEL).toConstantValue(CommentModel);
   container.bind(DEVICE_MODEL).toConstantValue(DeviceModel);
+  container.bind(LOG_MODEL).toConstantValue(LogModel);
 
   setupApp(app, container);
 

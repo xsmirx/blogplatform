@@ -2,6 +2,7 @@ import request from 'supertest';
 import {
   createTestApp,
   testDatabaseConnection,
+  testMongooseDatabaseConnetcion,
 } from '../../test-setup-app';
 
 describe('Rate Limiting (429 Too Many Requests)', () => {
@@ -16,10 +17,11 @@ describe('Rate Limiting (429 Too Many Requests)', () => {
   };
 
   beforeAll(async () => {
-    await testDatabaseConnection.connect();
+    await testMongooseDatabaseConnetcion.connect();
   });
 
   afterAll(async () => {
+    await testMongooseDatabaseConnetcion.disconnect();
     await testDatabaseConnection.getClient().close();
   });
 
@@ -49,12 +51,10 @@ describe('Rate Limiting (429 Too Many Requests)', () => {
       }
 
       // 6th attempt should return 429
-      const response = await request(app)
-        .post('/auth/login')
-        .send({
-          loginOrEmail: testUser.login,
-          password: testUser.password,
-        });
+      const response = await request(app).post('/auth/login').send({
+        loginOrEmail: testUser.login,
+        password: testUser.password,
+      });
 
       expect(response.status).toBe(429);
     });
@@ -120,13 +120,11 @@ describe('Rate Limiting (429 Too Many Requests)', () => {
       }
 
       // 6th attempt should return 429
-      const response = await request(app)
-        .post('/auth/registration')
-        .send({
-          login: 'user6',
-          password: 'password123',
-          email: 'user6@example.dev',
-        });
+      const response = await request(app).post('/auth/registration').send({
+        login: 'user6',
+        password: 'password123',
+        email: 'user6@example.dev',
+      });
 
       expect(response.status).toBe(429);
     });
@@ -151,12 +149,10 @@ describe('Rate Limiting (429 Too Many Requests)', () => {
         .send(testUser)
         .expect(201);
 
-      const loginResponse = await request(app)
-        .post('/auth/login')
-        .send({
-          loginOrEmail: testUser.login,
-          password: testUser.password,
-        });
+      const loginResponse = await request(app).post('/auth/login').send({
+        loginOrEmail: testUser.login,
+        password: testUser.password,
+      });
 
       expect(loginResponse.status).toBe(200);
     });
@@ -287,11 +283,9 @@ describe('Rate Limiting (429 Too Many Requests)', () => {
           .expect(204);
       }
 
-      const response = await request(app)
-        .post('/auth/password-recovery')
-        .send({
-          email: 'recovery6@example.dev',
-        });
+      const response = await request(app).post('/auth/password-recovery').send({
+        email: 'recovery6@example.dev',
+      });
 
       expect(response.status).toBe(429);
     });
@@ -332,12 +326,10 @@ describe('Rate Limiting (429 Too Many Requests)', () => {
           .expect(400);
       }
 
-      const response = await request(app)
-        .post('/auth/new-password')
-        .send({
-          newPassword: 'newPassword123',
-          recoveryCode: 'code-6',
-        });
+      const response = await request(app).post('/auth/new-password').send({
+        newPassword: 'newPassword123',
+        recoveryCode: 'code-6',
+      });
 
       expect(response.status).toBe(429);
     });
@@ -421,7 +413,6 @@ describe('Rate Limiting (429 Too Many Requests)', () => {
       // This test demonstrates the concept - in practice, the 10-second window
       // would need to actually pass. For CI/CD, we can make assumptions about timing
       // or skip time-based tests
-
       // The key is that rate limits are per-endpoint and per-IP
       // Different endpoints should have independent counters
     });
