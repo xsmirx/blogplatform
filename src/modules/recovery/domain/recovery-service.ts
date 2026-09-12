@@ -13,7 +13,6 @@ import { emailExamples } from '../../../core/adapters/email-adapter/email-exampl
 import { DomainValidationError } from '../../../core/errors/domain-errors';
 import { BcryptAdapter } from '../../../core/adapters/bcrypt-adapter';
 import { Types } from 'mongoose';
-import { ValidationError } from '../../../core/errors/api-errors';
 
 @injectable()
 export class RecoveryService {

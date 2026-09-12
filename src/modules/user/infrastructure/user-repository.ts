@@ -1,12 +1,12 @@
-import { ObjectId, type WithId } from 'mongodb';
-import { DatabaseConnection } from '../../../db/mongo.db';
 import type { User } from '../domain/types';
-import type { UserDB } from './types';
+import type { UserDocument, UserInput } from './types';
 import type { UserRepository } from '../domain/user-repository.interface';
 import { AuthUserAccessor } from '../../auth/domain/ports/auth-user-accessor.interface';
 import { RegistrationUserAccessor } from '../../registration/domain/ports/reistration-user-accessor.interface';
 import { inject, injectable } from 'inversify';
 import { RecoveryUserAccessor } from '../../recovery/domain/ports/recovery-user-repository.interface';
+import { USER_MODEL } from './user-model';
+import { Model } from 'mongoose';
 
 @injectable()
 export class MongoUserRepository
@@ -17,23 +17,19 @@ export class MongoUserRepository
     RecoveryUserAccessor
 {
   constructor(
-    @inject(DatabaseConnection)
-    protected readonly databaseConnection: DatabaseConnection,
+    @inject(USER_MODEL)
+    protected readonly userModel: Model<UserInput>,
   ) {}
 
-  private get collection() {
-    return this.databaseConnection.getCollections().usersCollection;
-  }
-
-  private mapToDomainModel(user: WithId<UserDB>): User {
+  private mapToDomainModel(user: UserDocument): User {
     return {
-      id: user._id.toString(),
+      id: user.id,
       login: user.login,
       email: user.email,
       passwordHash: user.passwordHash,
       createdAt: user.createdAt,
       emailConfirmation: {
-        confirmationCode: user.emailConfirmation.confirmationCode,
+        confirmationCode: user.emailConfirmation.confirmationCode.toString(),
         expirationDate: user.emailConfirmation.expirationDate,
         isConfirmed: user.emailConfirmation.isConfirmed,
       },
@@ -41,7 +37,7 @@ export class MongoUserRepository
   }
 
   public async findById(userId: string): Promise<User | null> {
-    const user = await this.collection.findOne({ _id: new ObjectId(userId) });
+    const user = await this.userModel.findById(userId);
     if (!user) {
       return null;
     }
@@ -49,7 +45,7 @@ export class MongoUserRepository
   }
 
   public async findByLogin(login: string): Promise<User | null> {
-    const user = await this.collection.findOne({ login });
+    const user = await this.userModel.findOne({ login });
     if (!user) {
       return null;
     }
@@ -57,7 +53,7 @@ export class MongoUserRepository
   }
 
   public async findByEmail(email: string): Promise<User | null> {
-    const user = await this.collection.findOne({ email });
+    const user = await this.userModel.findOne({ email });
     if (!user) {
       return null;
     }
@@ -65,7 +61,7 @@ export class MongoUserRepository
   }
 
   public async findByLoginOrEmail(loginOrEmail: string): Promise<User | null> {
-    const user = await this.collection.findOne({
+    const user = await this.userModel.findOne({
       $or: [{ login: loginOrEmail }, { email: loginOrEmail }],
     });
     if (!user) {
@@ -75,7 +71,7 @@ export class MongoUserRepository
   }
 
   public async findByCode(code: string): Promise<User | null> {
-    const user = await this.collection.findOne({
+    const user = await this.userModel.findOne({
       'emailConfirmation.confirmationCode': code,
     });
     if (!user) {
@@ -84,19 +80,18 @@ export class MongoUserRepository
     return this.mapToDomainModel(user);
   }
 
-  public async create(user: Omit<User, 'id'>): Promise<string> {
-    const result = await this.collection.insertOne({
+  public async create(user: Omit<User, 'id' | 'createdAt'>): Promise<string> {
+    const result = await this.userModel.create({
       login: user.login,
       email: user.email,
       passwordHash: user.passwordHash,
-      createdAt: user.createdAt,
       emailConfirmation: {
         confirmationCode: user.emailConfirmation.confirmationCode,
         expirationDate: user.emailConfirmation.expirationDate,
         isConfirmed: user.emailConfirmation.isConfirmed,
       },
     });
-    return result.insertedId.toString();
+    return result.id;
   }
 
   public async updateEmailConfirmation(
@@ -114,31 +109,25 @@ export class MongoUserRepository
     if (confirmation.isConfirmed !== undefined)
       setFields['emailConfirmation.isConfirmed'] = confirmation.isConfirmed;
 
-    const result = await this.collection.updateOne(
-      { _id: new ObjectId(userId) },
-      {
-        $set: setFields,
-      },
-    );
+    const result = await this.userModel
+      .findByIdAndUpdate(userId)
+      .set(setFields);
 
-    return result.matchedCount > 0;
+    return result !== null;
   }
 
   public async updatePasswordHash(
     id: string,
     passwordHash: string,
   ): Promise<boolean> {
-    const result = await this.collection.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: { passwordHash } },
-    );
-    return result.matchedCount > 0;
+    const result = await this.userModel
+      .findByIdAndUpdate(id)
+      .set({ passwordHash });
+    return result !== null;
   }
 
   public async delete(userId: string): Promise<boolean> {
-    const result = await this.collection.deleteOne({
-      _id: new ObjectId(userId),
-    });
-    return result.deletedCount > 0;
+    const result = await this.userModel.findByIdAndDelete(userId);
+    return result !== null;
   }
 }

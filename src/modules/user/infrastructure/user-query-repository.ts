@@ -1,28 +1,24 @@
-import { Filter, ObjectId, WithId } from 'mongodb';
-import { DatabaseConnection } from '../../../db/mongo.db';
 import { ListResponse } from '../../../core/types/list-response';
-import { UserDB } from './types';
+import { UserDocument, UserInput } from './types';
 import {
   MeOutputDTO,
   UserOutputDTO,
   type UserListQueryInput,
 } from '../api/types';
 import { inject, injectable } from 'inversify';
+import { USER_MODEL } from './user-model';
+import { Model } from 'mongoose';
 
 @injectable()
 export class UserQueryRepository {
   constructor(
-    @inject(DatabaseConnection)
-    protected readonly databaseConnection: DatabaseConnection,
+    @inject(USER_MODEL)
+    protected readonly userModel: Model<UserInput>,
   ) {}
 
-  private get collection() {
-    return this.databaseConnection.getCollections().usersCollection;
-  }
-
-  private mapUserToViewModel(user: WithId<UserDB>): UserOutputDTO {
+  private mapUserToViewModel(user: UserDocument): UserOutputDTO {
     return {
-      id: user._id.toString(),
+      id: user.id,
       login: user.login,
       email: user.email,
       createdAt: user.createdAt.toISOString(),
@@ -34,13 +30,13 @@ export class UserQueryRepository {
   }
 
   public async findById(userId: string): Promise<UserOutputDTO | null> {
-    const user = await this.collection.findOne({ _id: new ObjectId(userId) });
+    const user = await this.userModel.findById(userId);
     if (!user) return null;
     return this.mapUserToViewModel(user);
   }
 
   public async findMeById(userId: string): Promise<MeOutputDTO | null> {
-    const me = await this.collection.findOne({ _id: new ObjectId(userId) });
+    const me = await this.userModel.findById(userId);
     if (!me) {
       return null;
     }
@@ -63,41 +59,40 @@ export class UserQueryRepository {
       sortDirection,
     } = queries;
 
-    const filter: Filter<UserDB> =
-      searchLoginTerm || searchEmailTerm ? { $or: [] } : {};
+    const query = this.userModel.find();
 
     if (searchLoginTerm) {
-      filter.$or?.push({
-        login: {
-          $regex: this.escapeRegex(searchLoginTerm),
-          $options: 'i',
-        },
-      });
+      query.or([
+        this.userModel
+          .where('login')
+          .regex(new RegExp(this.escapeRegex(searchLoginTerm), 'i'))
+          .getFilter(),
+      ]);
     }
     if (searchEmailTerm) {
-      filter.$or?.push({
-        email: {
-          $regex: this.escapeRegex(searchEmailTerm),
-          $options: 'i',
-        },
-      });
+      query.or([
+        this.userModel
+          .where('email')
+          .regex(new RegExp(this.escapeRegex(searchEmailTerm), 'i'))
+          .getFilter(),
+      ]);
     }
 
-    const users = await this.collection
-      .find(filter)
-      .sort(sortBy, sortDirection)
-      .skip((pageNumber - 1) * pageSize)
-      .limit(pageSize)
-      .toArray();
+    const filter = query.getFilter();
 
-    const totalCount = await this.collection.countDocuments(filter);
+    const result = await query
+      .sort({ [sortBy]: sortDirection })
+      .skip((pageNumber - 1) * pageSize)
+      .limit(pageSize);
+
+    const totalCount = await this.userModel.countDocuments(filter);
 
     return {
       page: pageNumber,
       pageSize: pageSize,
       pagesCount: Math.ceil(totalCount / pageSize),
       totalCount: totalCount,
-      items: users.map((user) => this.mapUserToViewModel(user)),
+      items: result.map((user) => this.mapUserToViewModel(user)),
     };
   }
 }

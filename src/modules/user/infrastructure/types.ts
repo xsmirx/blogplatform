@@ -1,3 +1,6 @@
+import { HydratedDocument, InferSchemaType } from 'mongoose';
+import { userSchema } from './user-model';
+
 export type UserDB = {
   login: string;
   email: string;
@@ -9,3 +12,6 @@ export type UserDB = {
     isConfirmed: boolean;
   };
 };
+
+export type UserInput = InferSchemaType<typeof userSchema>;
+export type UserDocument = HydratedDocument<UserInput>;

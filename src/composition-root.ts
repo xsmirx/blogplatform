@@ -37,6 +37,10 @@ import {
   RECOVERY_MODEL,
   RecoveryModel,
 } from './modules/recovery/infrastuucture/recovery-model';
+import {
+  USER_MODEL,
+  UserModel,
+} from './modules/user/infrastructure/user-model';
 
 export const container = new Container({
   autobind: true,
@@ -54,6 +58,7 @@ container.bind(AUTH_USER_ACCESSOR).to(MongoUserRepository);
 container.bind(RECOVERY_REPOSITORY).to(MongoRecoveryRepository);
 container.bind(RECOVERY_USER_REPOSITORY).to(MongoUserRepository);
 
+container.bind(USER_MODEL).toConstantValue(UserModel);
 container.bind(BLOG_MODEL).toConstantValue(BlogModel);
 container.bind(POST_MODEL).toConstantValue(PostModel);
 container.bind(COMMENT_MODEL).toConstantValue(CommentModel);

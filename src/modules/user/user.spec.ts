@@ -1,5 +1,9 @@
 import request from 'supertest';
-import { createTestApp, testDatabaseConnection } from '../../test-setup-app';
+import {
+  createTestApp,
+  testDatabaseConnection,
+  testMongooseDatabaseConnetcion,
+} from '../../test-setup-app';
 
 describe('User API', () => {
   const app = createTestApp();
@@ -14,12 +18,12 @@ describe('User API', () => {
   };
 
   beforeAll(async () => {
-    await testDatabaseConnection.connect();
-
+    await testMongooseDatabaseConnetcion.connect();
     await request(app).delete('/testing/all-data').expect(204);
   });
 
   afterAll(async () => {
+    await testMongooseDatabaseConnetcion.disconnect();
     await testDatabaseConnection.getClient().close();
   });
 
