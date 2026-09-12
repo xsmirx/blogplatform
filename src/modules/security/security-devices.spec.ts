@@ -1,9 +1,5 @@
 import request from 'supertest';
-import {
-  createTestApp,
-  testDatabaseConnection,
-  testMongooseDatabaseConnetcion,
-} from '../../test-setup-app';
+import { createTestApp, testDatabaseConnetcion } from '../../test-setup-app';
 import jwt from 'jsonwebtoken';
 
 const extractRefreshToken = (res: request.Response): string | null => {
@@ -43,13 +39,12 @@ describe('Security Devices API', () => {
   };
 
   beforeAll(async () => {
-    await testMongooseDatabaseConnetcion.connect();
+    await testDatabaseConnetcion.connect();
     await request(app).delete('/testing/all-data').expect(204);
   });
 
   afterAll(async () => {
-    await testMongooseDatabaseConnetcion.disconnect();
-    await testDatabaseConnection.getClient().close();
+    await testDatabaseConnetcion.disconnect();
   });
 
   describe('Integration scenario (4 logins → refresh → delete → logout → delete all)', () => {

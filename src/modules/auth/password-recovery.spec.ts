@@ -3,8 +3,7 @@ import { Express } from 'express';
 import {
   createTestApp,
   mockMailService,
-  testDatabaseConnection,
-  testMongooseDatabaseConnetcion,
+  testDatabaseConnetcion,
 } from '../../test-setup-app';
 
 /**
@@ -52,13 +51,12 @@ describe('Password Recovery API', () => {
   };
 
   beforeAll(async () => {
-    await testMongooseDatabaseConnetcion.connect();
+    await testDatabaseConnetcion.connect();
     await request(app).delete('/testing/all-data').expect(204);
   });
 
   afterAll(async () => {
-    await testMongooseDatabaseConnetcion.disconnect();
-    await testDatabaseConnection.getClient().close();
+    await testDatabaseConnetcion.disconnect();
   });
 
   afterEach(() => {

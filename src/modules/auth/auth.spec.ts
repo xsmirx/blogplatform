@@ -2,7 +2,7 @@ import request from 'supertest';
 import {
   createTestApp,
   mockMailService,
-  testDatabaseConnection,
+  testDatabaseConnetcion,
 } from '../../test-setup-app';
 
 const extractRefreshToken = (res: request.Response): string | null => {
@@ -43,13 +43,12 @@ describe('Auth API', () => {
   };
 
   beforeAll(async () => {
-    await testDatabaseConnection.connect();
-
+    await testDatabaseConnetcion.connect();
     await request(app).delete('/testing/all-data').expect(204);
   });
 
   afterAll(async () => {
-    await testDatabaseConnection.getClient().close();
+    await testDatabaseConnetcion.disconnect();
   });
 
   afterEach(() => {

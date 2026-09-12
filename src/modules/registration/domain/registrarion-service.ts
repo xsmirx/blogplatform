@@ -13,6 +13,7 @@ import { RegisterUserInput, RegistrationConfirmationInput } from './types';
 import { MailAdapter } from '../../../core/adapters/email-adapter/mail-adapter';
 import { emailExamples } from '../../../core/adapters/email-adapter/email-examples';
 import { inject, injectable } from 'inversify';
+import { Types } from 'mongoose';
 
 @injectable()
 export class RegistrationService {
@@ -71,6 +72,14 @@ export class RegistrationService {
   public async confirmRegistration({
     code,
   }: RegistrationConfirmationInput): Promise<void> {
+    if (!Types.UUID.isValid(code)) {
+      throw new DomainValidationError<RegistrationConfirmationInput>(
+        'code',
+        code,
+        'code is not valid',
+      );
+    }
+
     const user = await this.registrationUserAccessor.findByCode(code);
     if (!user) {
       throw new NotFoundError('user thith confirmation code not found');

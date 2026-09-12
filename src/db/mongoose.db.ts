@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-export class MongooseDatabaseConnection {
+export class DatabaseConnection {
   constructor(protected readonly mongoURL: string) {}
 
   public async connect() {

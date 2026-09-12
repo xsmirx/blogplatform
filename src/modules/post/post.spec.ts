@@ -2,11 +2,7 @@ import request from 'supertest';
 import { BlogInputDTO } from '../blog/api/types';
 import { ValidationError } from '../../core/types/validation-error';
 import { PostInputDTO } from './api/types';
-import {
-  createTestApp,
-  testDatabaseConnection,
-  testMongooseDatabaseConnetcion,
-} from '../../test-setup-app';
+import { createTestApp, testDatabaseConnetcion } from '../../test-setup-app';
 
 describe('Post API', () => {
   const app = createTestApp();
@@ -38,12 +34,11 @@ describe('Post API', () => {
   let postId: string;
 
   afterAll(async () => {
-    await testMongooseDatabaseConnetcion.disconnect();
-    await testDatabaseConnection.getClient().close();
+    await testDatabaseConnetcion.disconnect();
   });
 
   beforeAll(async () => {
-    await testMongooseDatabaseConnetcion.connect();
+    await testDatabaseConnetcion.connect();
 
     await request(app).delete('/testing/all-data').expect(204);
 

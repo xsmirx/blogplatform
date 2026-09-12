@@ -1,9 +1,5 @@
 import request from 'supertest';
-import {
-  createTestApp,
-  testDatabaseConnection,
-  testMongooseDatabaseConnetcion,
-} from '../../test-setup-app';
+import { createTestApp, testDatabaseConnetcion } from '../../test-setup-app';
 
 describe('Rate Limiting (429 Too Many Requests)', () => {
   const app = createTestApp();
@@ -17,12 +13,11 @@ describe('Rate Limiting (429 Too Many Requests)', () => {
   };
 
   beforeAll(async () => {
-    await testMongooseDatabaseConnetcion.connect();
+    await testDatabaseConnetcion.connect();
   });
 
   afterAll(async () => {
-    await testMongooseDatabaseConnetcion.disconnect();
-    await testDatabaseConnection.getClient().close();
+    await testDatabaseConnetcion.disconnect();
   });
 
   beforeEach(async () => {

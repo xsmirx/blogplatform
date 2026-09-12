@@ -1,9 +1,5 @@
 import request from 'supertest';
-import {
-  createTestApp,
-  testDatabaseConnection,
-  testMongooseDatabaseConnetcion,
-} from '../../test-setup-app';
+import { createTestApp, testDatabaseConnetcion } from '../../test-setup-app';
 
 describe('Comment API', () => {
   const app = createTestApp();
@@ -57,7 +53,7 @@ describe('Comment API', () => {
   };
 
   beforeAll(async () => {
-    await testMongooseDatabaseConnetcion.connect();
+    await testDatabaseConnetcion.connect();
 
     await request(app).delete('/testing/all-data').expect(204);
 
@@ -98,8 +94,7 @@ describe('Comment API', () => {
   });
 
   afterAll(async () => {
-    await testMongooseDatabaseConnetcion.disconnect();
-    await testDatabaseConnection.getClient().close();
+    await testDatabaseConnetcion.disconnect();
   });
 
   describe('POST /posts/{postId}/comments', () => {

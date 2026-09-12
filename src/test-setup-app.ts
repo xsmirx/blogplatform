@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import express, { Express } from 'express';
 import { Container } from 'inversify';
 import { setupApp } from './setup-app';
-import { DatabaseConnection } from './db/mongo.db';
 import { MongoUserRepository } from './modules/user/infrastructure/user-repository';
 import { MongoBlogRepository } from './modules/blog/infrastucture/blog-repository';
 import { MongoPostRepository } from './modules/post/infrastructure/post-repository';
@@ -21,7 +20,7 @@ import { AUTH_USER_ACCESSOR } from './modules/auth/domain/ports/auth-user-access
 import { RECOVERY_REPOSITORY } from './modules/recovery/domain/ports/recovery-repository.interface';
 import { MongoRecoveryRepository } from './modules/recovery/infrastuucture/recovery-repository';
 import { RECOVERY_USER_REPOSITORY } from './modules/recovery/domain/ports/recovery-user-repository.interface';
-import { MongooseDatabaseConnection } from './db/mongoose.db';
+import { DatabaseConnection } from './db/mongoose.db';
 import { BLOG_MODEL, BlogModel } from './modules/blog/infrastucture/blog-model';
 import {
   DEVICE_MODEL,
@@ -52,12 +51,7 @@ export const mockMailService: jest.Mocked<MailAdapter> = {
   sendEmail: jest.fn().mockResolvedValue(true),
 } as unknown as jest.Mocked<MailAdapter>;
 
-export const testDatabaseConnection = new DatabaseConnection({
-  mongoURL: 'mongodb://admin:admin@localhost:27017',
-  dbName: 'blogplatform-test',
-});
-
-export const testMongooseDatabaseConnetcion = new MongooseDatabaseConnection(
+export const testDatabaseConnetcion = new DatabaseConnection(
   'mongodb://admin:admin@localhost:27017/blogplatform-test?authSource=admin',
 );
 
@@ -68,7 +62,6 @@ export const createTestApp = (): Express => {
     autobind: true,
     defaultScope: 'Singleton',
   });
-  container.bind(DatabaseConnection).toConstantValue(testDatabaseConnection);
 
   container.bind(USER_REPOSITORY).to(MongoUserRepository);
   container.bind(DEVICE_REPOSITORY).to(MongoDeviceRepository);
