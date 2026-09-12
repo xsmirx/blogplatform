@@ -18,6 +18,7 @@ export const logSchema = new Schema(
   },
   { timestamps: true },
 );
+logSchema.index({ createdAt: 1 }, { expireAfterSeconds: 10 });
 
 export const LogModel = model(LOG_COLLECTION_NAME, logSchema);
 

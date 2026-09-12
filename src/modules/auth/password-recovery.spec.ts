@@ -4,6 +4,7 @@ import {
   createTestApp,
   mockMailService,
   testDatabaseConnection,
+  testMongooseDatabaseConnetcion,
 } from '../../test-setup-app';
 
 /**
@@ -51,11 +52,12 @@ describe('Password Recovery API', () => {
   };
 
   beforeAll(async () => {
-    await testDatabaseConnection.connect();
+    await testMongooseDatabaseConnetcion.connect();
     await request(app).delete('/testing/all-data').expect(204);
   });
 
   afterAll(async () => {
+    await testMongooseDatabaseConnetcion.disconnect();
     await testDatabaseConnection.getClient().close();
   });
 
@@ -191,7 +193,10 @@ describe('Password Recovery API', () => {
     it('should return 400 when recoveryCode does not exist', async () => {
       const response = await request(app)
         .post('/auth/new-password')
-        .send({ newPassword: 'newPassword123', recoveryCode: 'non-existent-code' })
+        .send({
+          newPassword: 'newPassword123',
+          recoveryCode: 'non-existent-code',
+        })
         .expect(400);
 
       expect(response.body).toEqual({

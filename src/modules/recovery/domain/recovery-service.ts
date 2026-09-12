@@ -12,6 +12,8 @@ import { randomUUID } from 'crypto';
 import { emailExamples } from '../../../core/adapters/email-adapter/email-examples';
 import { DomainValidationError } from '../../../core/errors/domain-errors';
 import { BcryptAdapter } from '../../../core/adapters/bcrypt-adapter';
+import { Types } from 'mongoose';
+import { ValidationError } from '../../../core/errors/api-errors';
 
 @injectable()
 export class RecoveryService {
@@ -46,6 +48,13 @@ export class RecoveryService {
     recoveryCode: string,
     newPassword: string,
   ): Promise<void> {
+    if (!Types.UUID.isValid(recoveryCode)) {
+      throw new DomainValidationError(
+        'recoveryCode',
+        newPassword,
+        'invalid recovery code',
+      );
+    }
     const recovery = await this.recoveryRepository.findByCode(recoveryCode);
     if (!recovery) {
       throw new DomainValidationError(

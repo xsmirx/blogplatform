@@ -39,6 +39,10 @@ import {
   LOG_MODEL,
   LogModel,
 } from './modules/rateLimiting/infrastructure/log-model';
+import {
+  RECOVERY_MODEL,
+  RecoveryModel,
+} from './modules/recovery/infrastuucture/recovery-model';
 
 export const mockMailService: jest.Mocked<MailAdapter> = {
   sendEmail: jest.fn().mockResolvedValue(true),
@@ -79,6 +83,7 @@ export const createTestApp = (): Express => {
   container.bind(COMMENT_MODEL).toConstantValue(CommentModel);
   container.bind(DEVICE_MODEL).toConstantValue(DeviceModel);
   container.bind(LOG_MODEL).toConstantValue(LogModel);
+  container.bind(RECOVERY_MODEL).toConstantValue(RecoveryModel);
 
   setupApp(app, container);
 
