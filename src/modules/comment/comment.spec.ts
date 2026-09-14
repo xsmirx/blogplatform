@@ -182,6 +182,11 @@ describe('Comment API', () => {
           userLogin: expect.any(String),
         },
         createdAt: expect.any(String),
+        likesInfo: {
+          likesCount: 0,
+          dislikesCount: 0,
+          myStatus: 'None',
+        },
       });
     });
 
@@ -461,9 +466,73 @@ describe('Comment API', () => {
               userLogin: expect.any(String),
             }),
             createdAt: expect.any(String),
+            likesInfo: expect.objectContaining({
+              likesCount: expect.any(Number),
+              dislikesCount: expect.any(Number),
+              myStatus: expect.any(String),
+            }),
           }),
         ]),
       );
+    });
+
+    describe('likesInfo in list', () => {
+      it('should reflect current user own like status per comment in the list', async () => {
+        const comment1 = await request(app)
+          .post(`/posts/${postId}/comments`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ content: 'First comment for like status list test' })
+          .expect(201);
+
+        const comment2 = await request(app)
+          .post(`/posts/${postId}/comments`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ content: 'Second comment for like status list test' })
+          .expect(201);
+
+        await request(app)
+          .put(`/comments/${comment1.body.id}/like-status`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        const asAuthor = await request(app)
+          .get(`/posts/${postId}/comments`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .expect(200);
+
+        const likedItem = asAuthor.body.items.find(
+          (item: { id: string }) => item.id === comment1.body.id,
+        );
+        const untouchedItem = asAuthor.body.items.find(
+          (item: { id: string }) => item.id === comment2.body.id,
+        );
+
+        expect(likedItem.likesInfo).toEqual({
+          likesCount: 1,
+          dislikesCount: 0,
+          myStatus: 'Like',
+        });
+        expect(untouchedItem.likesInfo).toEqual({
+          likesCount: 0,
+          dislikesCount: 0,
+          myStatus: 'None',
+        });
+
+        const anonymous = await request(app)
+          .get(`/posts/${postId}/comments`)
+          .expect(200);
+
+        const likedItemAnonymous = anonymous.body.items.find(
+          (item: { id: string }) => item.id === comment1.body.id,
+        );
+
+        expect(likedItemAnonymous.likesInfo).toEqual({
+          likesCount: 1,
+          dislikesCount: 0,
+          myStatus: 'None',
+        });
+      });
     });
 
     describe('Pagination tests', () => {
@@ -659,6 +728,11 @@ describe('Comment API', () => {
           userLogin: expect.any(String),
         },
         createdAt: expect.any(String),
+        likesInfo: {
+          likesCount: 0,
+          dislikesCount: 0,
+          myStatus: 'None',
+        },
       });
     });
 
@@ -678,6 +752,68 @@ describe('Comment API', () => {
         .expect(200);
 
       expect(response.body.id).toBe(commentId);
+    });
+
+    describe('likesInfo defaults and per-user myStatus', () => {
+      it('should have default likesInfo (myStatus None) for freshly created comment without auth', async () => {
+        const response = await request(app)
+          .get(`/comments/${commentId}`)
+          .expect(200);
+
+        expect(response.body.likesInfo).toEqual({
+          likesCount: 0,
+          dislikesCount: 0,
+          myStatus: 'None',
+        });
+      });
+
+      it('should show myStatus for the user who liked the comment', async () => {
+        await request(app)
+          .put(`/comments/${commentId}/like-status`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        const response = await request(app)
+          .get(`/comments/${commentId}`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .expect(200);
+
+        expect(response.body.likesInfo).toEqual({
+          likesCount: 1,
+          dislikesCount: 0,
+          myStatus: 'Like',
+        });
+      });
+
+      it('should show likesCount to everyone but myStatus None for other users/anonymous', async () => {
+        await request(app)
+          .put(`/comments/${commentId}/like-status`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        const anonymousResponse = await request(app)
+          .get(`/comments/${commentId}`)
+          .expect(200);
+
+        expect(anonymousResponse.body.likesInfo).toEqual({
+          likesCount: 1,
+          dislikesCount: 0,
+          myStatus: 'None',
+        });
+
+        const otherUserResponse = await request(app)
+          .get(`/comments/${commentId}`)
+          .set('authorization', `Bearer ${accessToken2}`)
+          .expect(200);
+
+        expect(otherUserResponse.body.likesInfo).toEqual({
+          likesCount: 1,
+          dislikesCount: 0,
+          myStatus: 'None',
+        });
+      });
     });
   });
 
@@ -1034,6 +1170,315 @@ describe('Comment API', () => {
         .expect(204);
 
       await request(app).get(`/comments/${comment2Id}`).expect(200);
+    });
+  });
+
+  describe('PUT /comments/{commentId}/like-status', () => {
+    let commentId: string;
+    let otherCommentId: string;
+
+    beforeEach(async () => {
+      await request(app).delete('/testing/all-data').expect(204);
+
+      const blogResponse = await request(app)
+        .post('/blogs')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testBlog)
+        .expect(201);
+
+      blogId = blogResponse.body.id;
+      testPost.blogId = blogId;
+
+      const postResponse = await request(app)
+        .post('/posts')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testPost)
+        .expect(201);
+
+      postId = postResponse.body.id;
+
+      await request(app)
+        .post('/users')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testUser)
+        .expect(201);
+
+      await request(app)
+        .post('/users')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testUser2)
+        .expect(201);
+
+      accessToken = await getAccessToken(testUser.login, testUser.password);
+      accessToken2 = await getAccessToken(testUser2.login, testUser2.password);
+
+      const commentResponse = await request(app)
+        .post(`/posts/${postId}/comments`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send(validComment)
+        .expect(201);
+
+      commentId = commentResponse.body.id;
+
+      const otherCommentResponse = await request(app)
+        .post(`/posts/${postId}/comments`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ content: 'Another comment used to check isolation' })
+        .expect(201);
+
+      otherCommentId = otherCommentResponse.body.id;
+    });
+
+    const getLikesInfo = async (id: string, token?: string) => {
+      const req = request(app).get(`/comments/${id}`);
+      if (token) req.set('authorization', `Bearer ${token}`);
+      const response = await req.expect(200);
+      return response.body.likesInfo;
+    };
+
+    it('should return 401 when not authorized', async () => {
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .send({ likeStatus: 'Like' })
+        .expect(401);
+    });
+
+    it('should return 401 when invalid token provided', async () => {
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .set('authorization', 'Bearer invalidtoken')
+        .send({ likeStatus: 'Like' })
+        .expect(401);
+    });
+
+    it('should return 404 when comment does not exist', async () => {
+      await request(app)
+        .put('/comments/507f1f77bcf86cd799439011/like-status')
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ likeStatus: 'Like' })
+        .expect(404);
+    });
+
+    describe('Validation tests', () => {
+      it('should return 400 when likeStatus is missing', async () => {
+        const response = await request(app)
+          .put(`/comments/${commentId}/like-status`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({})
+          .expect(400);
+
+        expect(response.body).toEqual({
+          errorsMessages: expect.arrayContaining([
+            expect.objectContaining({
+              message: expect.any(String),
+              field: 'likeStatus',
+            }),
+          ]),
+        });
+      });
+
+      it('should return 400 when likeStatus has an invalid value', async () => {
+        const response = await request(app)
+          .put(`/comments/${commentId}/like-status`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ likeStatus: 'Something' })
+          .expect(400);
+
+        expect(response.body).toEqual({
+          errorsMessages: expect.arrayContaining([
+            expect.objectContaining({
+              message: expect.any(String),
+              field: 'likeStatus',
+            }),
+          ]),
+        });
+      });
+
+      it('should return 400 when likeStatus has wrong casing', async () => {
+        const response = await request(app)
+          .put(`/comments/${commentId}/like-status`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ likeStatus: 'like' })
+          .expect(400);
+
+        expect(response.body).toEqual({
+          errorsMessages: expect.arrayContaining([
+            expect.objectContaining({
+              message: expect.any(String),
+              field: 'likeStatus',
+            }),
+          ]),
+        });
+      });
+    });
+
+    it('should return 204 for a valid Like', async () => {
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+    });
+
+    it('should return 204 for a valid Dislike', async () => {
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ likeStatus: 'Dislike' })
+        .expect(204);
+    });
+
+    it('should return 204 for a valid None', async () => {
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ likeStatus: 'None' })
+        .expect(204);
+    });
+
+    it('should increase likesCount and set myStatus after Like', async () => {
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      const likesInfo = await getLikesInfo(commentId, accessToken);
+
+      expect(likesInfo).toEqual({
+        likesCount: 1,
+        dislikesCount: 0,
+        myStatus: 'Like',
+      });
+    });
+
+    it('should increase dislikesCount and set myStatus after Dislike', async () => {
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ likeStatus: 'Dislike' })
+        .expect(204);
+
+      const likesInfo = await getLikesInfo(commentId, accessToken);
+
+      expect(likesInfo).toEqual({
+        likesCount: 0,
+        dislikesCount: 1,
+        myStatus: 'Dislike',
+      });
+    });
+
+    it('should switch from Like to Dislike correctly', async () => {
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ likeStatus: 'Dislike' })
+        .expect(204);
+
+      const likesInfo = await getLikesInfo(commentId, accessToken);
+
+      expect(likesInfo).toEqual({
+        likesCount: 0,
+        dislikesCount: 1,
+        myStatus: 'Dislike',
+      });
+    });
+
+    it('should reset counters when switching to None', async () => {
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ likeStatus: 'Dislike' })
+        .expect(204);
+
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ likeStatus: 'None' })
+        .expect(204);
+
+      const likesInfo = await getLikesInfo(commentId, accessToken);
+
+      expect(likesInfo).toEqual({
+        likesCount: 0,
+        dislikesCount: 0,
+        myStatus: 'None',
+      });
+    });
+
+    it('should be idempotent when the same status is sent twice', async () => {
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      const likesInfo = await getLikesInfo(commentId, accessToken);
+
+      expect(likesInfo).toEqual({
+        likesCount: 1,
+        dislikesCount: 0,
+        myStatus: 'Like',
+      });
+    });
+
+    it('should aggregate likes/dislikes from multiple users independently', async () => {
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .set('authorization', `Bearer ${accessToken2}`)
+        .send({ likeStatus: 'Dislike' })
+        .expect(204);
+
+      const likesInfoForUser1 = await getLikesInfo(commentId, accessToken);
+      const likesInfoForUser2 = await getLikesInfo(commentId, accessToken2);
+
+      expect(likesInfoForUser1).toEqual({
+        likesCount: 1,
+        dislikesCount: 1,
+        myStatus: 'Like',
+      });
+      expect(likesInfoForUser2).toEqual({
+        likesCount: 1,
+        dislikesCount: 1,
+        myStatus: 'Dislike',
+      });
+    });
+
+    it('should not affect likesInfo of other comments', async () => {
+      await request(app)
+        .put(`/comments/${commentId}/like-status`)
+        .set('authorization', `Bearer ${accessToken}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      const untouchedLikesInfo = await getLikesInfo(
+        otherCommentId,
+        accessToken,
+      );
+
+      expect(untouchedLikesInfo).toEqual({
+        likesCount: 0,
+        dislikesCount: 0,
+        myStatus: 'None',
+      });
     });
   });
 
