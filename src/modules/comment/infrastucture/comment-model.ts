@@ -23,6 +23,16 @@ export const commentSchema = new Schema(
       type: Schema.Types.ObjectId,
       required: true,
     } satisfies SchemaTypeOptions<Schema.Types.ObjectId>,
+    likesCount: {
+      type: Number,
+      required: true,
+      default: 0,
+    } satisfies SchemaTypeOptions<number>,
+    dislikesCount: {
+      type: Number,
+      required: true,
+      default: 0,
+    } satisfies SchemaTypeOptions<number>,
   },
   { timestamps: true },
 );

@@ -27,19 +27,23 @@ export class CommentController {
     { postId: string },
     ListResponse<CommentOutputDTO>
   > = async (req, res) => {
+    const userId = req.appContext?.user?.userId;
     const { postId, pageNumber, pageSize, sortBy, sortDirection } =
       matchedData<CommentListQueryInput>(req);
 
     const post = await this.postQueryRepository.findById(postId);
     if (!post) throw new NotFoundError('Post', postId);
 
-    const result = await this.commentQueryRepository.findAllByPostId({
-      postId: post.id,
-      pageNumber,
-      pageSize,
-      sortBy,
-      sortDirection,
-    });
+    const result = await this.commentQueryRepository.findAllByPostId(
+      {
+        postId: post.id,
+        pageNumber,
+        pageSize,
+        sortBy,
+        sortDirection,
+      },
+      userId,
+    );
     return res.status(200).send(result);
   };
 
@@ -47,8 +51,9 @@ export class CommentController {
     req,
     res,
   ) => {
+    const userId = req.appContext?.user?.userId;
     const { id } = matchedData<{ id: string }>(req);
-    const comment = await this.commentQueryRepository.findById(id);
+    const comment = await this.commentQueryRepository.findById(id, userId);
     if (!comment) throw new NotFoundError('Comment', id);
     return res.status(200).send(comment);
   };

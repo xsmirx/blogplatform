@@ -2,17 +2,26 @@ import type { CommentListQueryInput, CommentOutputDTO } from '../api/types';
 import type { ListResponse } from '../../../core/types/list-response';
 import { inject, injectable } from 'inversify';
 import { COMMENT_MODEL } from './comment-model';
-import { Model } from 'mongoose';
 import { CommentDocument, CommentInput } from './types';
+import {
+  LIKE_MODEL,
+  type LikeStatus,
+  type LikeModel,
+} from '../../likes/domain/like-model';
+import { Model } from 'mongoose';
 
 @injectable()
 export class CommentQueryRepository {
   constructor(
     @inject(COMMENT_MODEL)
     protected readonly commentModel: Model<CommentInput>,
+    @inject(LIKE_MODEL) protected readonly likeModel: LikeModel,
   ) {}
 
-  private mapToOutputModel(comment: CommentDocument): CommentOutputDTO {
+  private mapToOutputModel(
+    comment: CommentDocument,
+    status: LikeStatus,
+  ): CommentOutputDTO {
     return {
       id: comment.id,
       content: comment.content,
@@ -21,29 +30,17 @@ export class CommentQueryRepository {
         userLogin: comment.userLogin,
       },
       createdAt: comment.createdAt.toISOString(),
-    };
-  }
-
-  private mapListToListResponseViewModel({
-    items,
-    queries,
-    totalCount,
-  }: {
-    items: CommentDocument[];
-    queries: CommentListQueryInput;
-    totalCount: number;
-  }): ListResponse<CommentOutputDTO> {
-    return {
-      page: queries.pageNumber,
-      pageSize: queries.pageSize,
-      pagesCount: Math.ceil(totalCount / queries.pageSize),
-      totalCount: totalCount,
-      items: items.map((comment) => this.mapToOutputModel(comment)),
+      likesInfo: {
+        likesCount: comment.likesCount,
+        dislikesCount: comment.dislikesCount,
+        myStatus: status,
+      },
     };
   }
 
   public async findAllByPostId(
     queries: CommentListQueryInput,
+    userId?: string,
   ): Promise<ListResponse<CommentOutputDTO>> {
     const { postId, pageNumber, pageSize, sortBy, sortDirection } = queries;
 
@@ -57,12 +54,36 @@ export class CommentQueryRepository {
 
     const totalCount = await this.commentModel.countDocuments(filter);
 
-    return this.mapListToListResponseViewModel({ items, queries, totalCount });
+    let likeStatuses: Map<string, LikeStatus> | null = null;
+
+    if (userId !== undefined) {
+      likeStatuses = await this.likeModel.findStatusesByParentIds(
+        userId,
+        items.map((like) => like.id),
+      );
+    }
+
+    return {
+      page: pageNumber,
+      pageSize: pageSize,
+      pagesCount: Math.ceil(totalCount / queries.pageSize),
+      totalCount: totalCount,
+      items: items.map((comment) =>
+        this.mapToOutputModel(comment, likeStatuses?.get(comment.id) ?? 'None'),
+      ),
+    };
   }
 
-  public async findById(id: string): Promise<CommentOutputDTO | null> {
+  public async findById(
+    id: string,
+    userId?: string,
+  ): Promise<CommentOutputDTO | null> {
     const comment = await this.commentModel.findById(id);
     if (!comment) return null;
-    return this.mapToOutputModel(comment);
+    let likeStatus: LikeStatus | null = null;
+    if (userId !== undefined) {
+      likeStatus = await this.likeModel.findStatus(userId, id);
+    }
+    return this.mapToOutputModel(comment, likeStatus || 'None');
   }
 }
