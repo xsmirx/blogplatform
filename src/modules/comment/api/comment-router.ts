@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   commentContentValidation,
   idValidation,
+  likeStatusValidation,
 } from '../middlewares/comment-validators';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
 import { createAccessTokenGuard } from '../../../core/guards/access-token-guard';
@@ -31,6 +32,14 @@ export const createCommentRouter = (container: Container) => {
       commentContentValidation,
       inputValidationResultMiddleware,
       commentController.updateComment,
+    )
+    .put(
+      '/:id/like-status',
+      createAccessTokenGuard({ jwtAdapter }),
+      idValidation,
+      likeStatusValidation,
+      inputValidationResultMiddleware,
+      commentController.updateLike,
     )
     .delete(
       '/:id',

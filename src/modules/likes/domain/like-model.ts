@@ -21,8 +21,8 @@ export type LikeModel = Model<Like> & LikeStatics;
 
 export const likeSchema = new Schema<Like, LikeModel>(
   {
-    userId: { type: Schema.Types.ObjectId, required: true, index: true },
-    parentId: { type: Schema.Types.ObjectId, required: true, index: true },
+    userId: { type: Schema.Types.ObjectId, required: true },
+    parentId: { type: Schema.Types.ObjectId, required: true },
     status: {
       type: String,
       enum: ['None', 'Like', 'Dislike'],
@@ -45,6 +45,8 @@ export const likeSchema = new Schema<Like, LikeModel>(
     },
   },
 );
+
+likeSchema.index({ userId: 1, parentId: 1 }, { unique: true });
 
 export type LikeDocument = HydratedDocument<Like>;
 

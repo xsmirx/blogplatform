@@ -27,3 +27,8 @@ export type CommentOutputDTO = {
     myStatus: 'None' | 'Like' | 'Dislike';
   };
 };
+
+export type LikeStatusDTO = 'None' | 'Like' | 'Dislike';
+export type LikeStatusInputDTO = {
+  likeStatus: LikeStatusDTO;
+};

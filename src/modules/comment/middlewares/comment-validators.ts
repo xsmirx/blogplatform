@@ -60,3 +60,9 @@ export const commentContentValidation = body('content')
   .trim()
   .isLength({ min: 20, max: 300 })
   .withMessage('Content must be between 20 and 300 characters');
+
+export const likeStatusValidation = body('likeStatus')
+  .exists()
+  .withMessage('likeStatus is required')
+  .isIn(['None', 'Like', 'Dislike'])
+  .withMessage('likeStatus must be one of: None, Like, Dislike');

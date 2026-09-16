@@ -16,6 +16,8 @@ import {
   type CommentRepository,
 } from './comment-repository.interface';
 import type { Comment, CreateCommentInput, UpdateCommentInput } from './types';
+import { LikeService } from '../../likes/domain/like-service';
+import { LikeStatus } from '../../likes/domain/like-model';
 
 @injectable()
 export class CommentService {
@@ -24,6 +26,7 @@ export class CommentService {
     @inject(POST_REPOSITORY) protected readonly postRepository: PostRepository,
     @inject(COMMENT_REPOSITORY)
     protected readonly commentRepository: CommentRepository,
+    @inject(LikeService) protected readonly likeService: LikeService,
   ) {}
 
   private async getCommentForOwner(
@@ -62,9 +65,29 @@ export class CommentService {
     userId: string,
     { content }: UpdateCommentInput,
   ): Promise<void> {
-    await this.getCommentForOwner(commentId, userId);
-    const result = await this.commentRepository.update(commentId, { content });
+    const comment = await this.getCommentForOwner(commentId, userId);
+    const result = await this.commentRepository.update(commentId, {
+      content,
+      likesCount: comment.likesCount,
+      dislikesCount: comment.dislikesCount,
+    });
     if (!result) throw new NotFoundError('Comment', commentId);
+  }
+
+  public async updateLikeStatus(
+    userId: string,
+    commentId: string,
+    likeStatus: LikeStatus,
+  ) {
+    const comment = await this.commentRepository.findById(commentId);
+    if (!comment) throw new NotFoundError('Comment', commentId);
+    await this.likeService.updateLikeStatus(userId, commentId, likeStatus);
+    const likesCount = await this.likeService.getLikesCount(commentId);
+    await this.commentRepository.update(commentId, {
+      content: comment.content,
+      likesCount: likesCount.likesCount,
+      dislikesCount: likesCount.dislikesCount,
+    });
   }
 
   public async deleteComment(id: string, userId: string): Promise<void> {

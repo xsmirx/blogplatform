@@ -4,6 +4,7 @@ import {
   CommentInputDTO,
   CommentListQueryInput,
   CommentOutputDTO,
+  LikeStatusInputDTO,
 } from './types';
 import { matchedData } from 'express-validator';
 import { CommentQueryRepository } from '../infrastucture/comment-query-repository';
@@ -83,6 +84,16 @@ export class CommentController {
         req,
       );
       await this.commentService.updateComment(id, userId, { content });
+      return res.status(204).send();
+    };
+
+  public updateLike: RequestHandler<{ id: string }, void, LikeStatusInputDTO> =
+    async (req, res) => {
+      const userId = req.appContext!.user!.userId;
+      const { id, likeStatus } = matchedData<
+        { id: string } & LikeStatusInputDTO
+      >(req);
+      await this.commentService.updateLikeStatus(userId, id, likeStatus);
       return res.status(204).send();
     };
 

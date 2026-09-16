@@ -20,6 +20,8 @@ export class MongoCommentRepository implements CommentRepository {
       userId: comment.userId.toString(),
       userLogin: comment.userLogin,
       createdAt: comment.createdAt,
+      likesCount: comment.likesCount,
+      dislikesCount: comment.dislikesCount,
     };
   }
 
@@ -46,11 +48,11 @@ export class MongoCommentRepository implements CommentRepository {
 
   public async update(
     id: string,
-    { content }: UpdateComment,
+    { content, likesCount, dislikesCount }: UpdateComment,
   ): Promise<boolean> {
     const result = await this.commentModel
       .findByIdAndUpdate(id)
-      .set({ content });
+      .set({ content, likesCount, dislikesCount });
     return result !== null;
   }
 

@@ -5,6 +5,8 @@ export type Comment = {
   userId: string;
   userLogin: string;
   createdAt: Date;
+  likesCount: number;
+  dislikesCount: number;
 };
 
 export type CreateCommentInput = {
@@ -13,7 +15,10 @@ export type CreateCommentInput = {
   content: string;
 };
 
-export type NewComment = Omit<Comment, 'id' | 'createdAt'>;
+export type NewComment = Omit<
+  Comment,
+  'id' | 'createdAt' | 'likesCount' | 'dislikesCount'
+>;
 
 export type UpdateCommentInput = {
   content: string;
