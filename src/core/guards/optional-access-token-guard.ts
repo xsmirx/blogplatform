@@ -1,19 +1,16 @@
 import { RequestHandler } from 'express';
 import { JwtAdapter } from '../adapters/jwt-adapter/jwt-adapter';
-import { UnauthorizedError } from '../errors/domain-errors';
 import { extractAccessTokenPayload } from './utils/extract-access-token-payload';
 
-export const createAccessTokenGuard =
+export const createOptionalAccessTokenGuard =
   ({ jwtAdapter }: { jwtAdapter: JwtAdapter }): RequestHandler =>
   (req, res, next) => {
     const payload = extractAccessTokenPayload(req, jwtAdapter);
 
-    if (!payload) {
-      throw new UnauthorizedError('bad accessToken');
+    if (payload) {
+      const { userId } = payload;
+      req.appContext = { ...req.appContext, user: { userId } };
     }
-
-    const { userId } = payload;
-    req.appContext = { ...req.appContext, user: { userId } };
 
     next();
 

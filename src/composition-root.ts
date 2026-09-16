@@ -41,6 +41,7 @@ import {
   USER_MODEL,
   UserModel,
 } from './modules/user/infrastructure/user-model';
+import { LIKE_MODEL, LikeModel } from './modules/likes/domain/like-model';
 
 export const container = new Container({
   autobind: true,
@@ -65,3 +66,4 @@ container.bind(COMMENT_MODEL).toConstantValue(CommentModel);
 container.bind(DEVICE_MODEL).toConstantValue(DeviceModel);
 container.bind(LOG_MODEL).toConstantValue(LogModel);
 container.bind(RECOVERY_MODEL).toConstantValue(RecoveryModel);
+container.bind(LIKE_MODEL).toConstantValue(LikeModel);

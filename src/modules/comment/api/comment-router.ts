@@ -5,6 +5,7 @@ import {
 } from '../middlewares/comment-validators';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
 import { createAccessTokenGuard } from '../../../core/guards/access-token-guard';
+import { createOptionalAccessTokenGuard } from '../../../core/guards/optional-access-token-guard';
 import { Container } from 'inversify';
 import { CommentController } from './comment-controller';
 import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
@@ -18,6 +19,7 @@ export const createCommentRouter = (container: Container) => {
   commentRouter
     .get(
       '/:id',
+      createOptionalAccessTokenGuard({ jwtAdapter }),
       idValidation,
       inputValidationResultMiddleware,
       commentController.getComment,

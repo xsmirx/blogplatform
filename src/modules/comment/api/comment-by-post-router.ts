@@ -8,6 +8,7 @@ import {
   sortDirectionValidation,
 } from '../middlewares/comment-validators';
 import { createAccessTokenGuard } from '../../../core/guards/access-token-guard';
+import { createOptionalAccessTokenGuard } from '../../../core/guards/optional-access-token-guard';
 import { inputValidationResultMiddleware } from '../../../core/middleware/input-validation-result.middleware';
 
 import { Container } from 'inversify';
@@ -23,6 +24,7 @@ export const createCommentByPostRouter = (container: Container) => {
   commentByPostRouter
     .get(
       '/',
+      createOptionalAccessTokenGuard({ jwtAdapter }),
       postIdValidation,
       pageNumberValidation,
       pageSizeValidation,
