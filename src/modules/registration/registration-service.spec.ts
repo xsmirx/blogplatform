@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { RegistrationService } from './domain/registrarion-service';
 import { RegistrationUserAccessor } from './domain/ports/reistration-user-accessor.interface';
 import { BcryptAdapter } from '../../core/adapters/bcrypt-adapter';
@@ -31,7 +32,7 @@ const buildUser = (overrides: Partial<User> = {}): User => ({
   passwordHash: 'hashed-password',
   createdAt: new Date('2024-01-01T00:00:00.000Z'),
   emailConfirmation: {
-    confirmationCode: 'confirmation-code',
+    confirmationCode: randomUUID(),
     expirationDate: new Date(Date.now() + 60 * 60 * 1000),
     isConfirmed: false,
   },
@@ -190,7 +191,7 @@ describe('RegistrationService (integration with mocks)', () => {
       userAccessor.updateEmailConfirmation.mockResolvedValue(true);
 
       await expect(
-        service.confirmRegistration({ code: 'valid-code' }),
+        service.confirmRegistration({ code: randomUUID() }),
       ).resolves.toBeUndefined();
 
       expect(userAccessor.updateEmailConfirmation).toHaveBeenCalledWith(
@@ -203,16 +204,17 @@ describe('RegistrationService (integration with mocks)', () => {
       userAccessor.findByCode.mockResolvedValue(null);
 
       await expect(
-        service.confirmRegistration({ code: 'missing-code' }),
+        service.confirmRegistration({ code: randomUUID() }),
       ).rejects.toBeInstanceOf(NotFoundError);
 
       expect(userAccessor.updateEmailConfirmation).not.toHaveBeenCalled();
     });
 
     it('throws DomainValidationError when the code is already confirmed (=> 400)', async () => {
+      const code = randomUUID();
       const user = buildUser({
         emailConfirmation: {
-          confirmationCode: 'confirmation-code',
+          confirmationCode: code,
           expirationDate: new Date(Date.now() + 60 * 60 * 1000),
           isConfirmed: true,
         },
@@ -220,16 +222,17 @@ describe('RegistrationService (integration with mocks)', () => {
       userAccessor.findByCode.mockResolvedValue(user);
 
       await expect(
-        service.confirmRegistration({ code: 'confirmation-code' }),
+        service.confirmRegistration({ code }),
       ).rejects.toBeInstanceOf(DomainValidationError);
 
       expect(userAccessor.updateEmailConfirmation).not.toHaveBeenCalled();
     });
 
     it('throws DomainValidationError when the code is expired (=> 400)', async () => {
+      const code = randomUUID();
       const user = buildUser({
         emailConfirmation: {
-          confirmationCode: 'confirmation-code',
+          confirmationCode: code,
           expirationDate: new Date(Date.now() - 1000),
           isConfirmed: false,
         },
@@ -237,7 +240,7 @@ describe('RegistrationService (integration with mocks)', () => {
       userAccessor.findByCode.mockResolvedValue(user);
 
       await expect(
-        service.confirmRegistration({ code: 'confirmation-code' }),
+        service.confirmRegistration({ code }),
       ).rejects.toBeInstanceOf(DomainValidationError);
 
       expect(userAccessor.updateEmailConfirmation).not.toHaveBeenCalled();

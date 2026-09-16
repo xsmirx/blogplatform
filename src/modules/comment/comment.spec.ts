@@ -533,6 +533,35 @@ describe('Comment API', () => {
           myStatus: 'None',
         });
       });
+
+      it('should treat invalid access token as anonymous in the list (no 401, myStatus None)', async () => {
+        const comment = await request(app)
+          .post(`/posts/${postId}/comments`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ content: 'Comment for invalid token list test here' })
+          .expect(201);
+
+        await request(app)
+          .put(`/comments/${comment.body.id}/like-status`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        const response = await request(app)
+          .get(`/posts/${postId}/comments`)
+          .set('authorization', 'Bearer invalidtoken')
+          .expect(200);
+
+        const item = response.body.items.find(
+          (i: { id: string }) => i.id === comment.body.id,
+        );
+
+        expect(item.likesInfo).toEqual({
+          likesCount: 1,
+          dislikesCount: 0,
+          myStatus: 'None',
+        });
+      });
     });
 
     describe('Pagination tests', () => {
@@ -691,7 +720,14 @@ describe('Comment API', () => {
         .send(testUser)
         .expect(201);
 
+      await request(app)
+        .post('/users')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testUser2)
+        .expect(201);
+
       accessToken = await getAccessToken(testUser.login, testUser.password);
+      accessToken2 = await getAccessToken(testUser2.login, testUser2.password);
 
       const commentResponse = await request(app)
         .post(`/posts/${postId}/comments`)
@@ -813,6 +849,34 @@ describe('Comment API', () => {
           dislikesCount: 0,
           myStatus: 'None',
         });
+      });
+
+      it('should treat invalid/malformed access token as anonymous (no 401, myStatus None)', async () => {
+        await request(app)
+          .put(`/comments/${commentId}/like-status`)
+          .set('authorization', `Bearer ${accessToken}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        const response = await request(app)
+          .get(`/comments/${commentId}`)
+          .set('authorization', 'Bearer invalidtoken')
+          .expect(200);
+
+        expect(response.body.likesInfo).toEqual({
+          likesCount: 1,
+          dislikesCount: 0,
+          myStatus: 'None',
+        });
+      });
+
+      it('should treat malformed authorization header (no Bearer prefix) as anonymous', async () => {
+        const response = await request(app)
+          .get(`/comments/${commentId}`)
+          .set('authorization', accessToken)
+          .expect(200);
+
+        expect(response.body.likesInfo.myStatus).toBe('None');
       });
     });
   });
