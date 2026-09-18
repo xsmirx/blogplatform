@@ -1,34 +1,34 @@
 import { inject, injectable } from 'inversify';
 import { LIKE_MODEL, LikeModel, LikeStatus } from './like-model';
+import { LikeRepository } from '../infrastucture/like-repository';
 
 @injectable()
 export class LikeService {
-  constructor(@inject(LIKE_MODEL) protected readonly likeModel: LikeModel) {}
+  constructor(
+    @inject(LikeRepository) protected readonly likeRepository: LikeRepository,
+    @inject(LIKE_MODEL) protected readonly LikeModel: LikeModel,
+  ) {}
 
   public async updateLikeStatus(
     userId: string,
     parentId: string,
     status: LikeStatus,
   ): Promise<void> {
-    await this.likeModel.updateOne(
-      { userId, parentId },
-      { $set: { status } },
-      { upsert: true },
-    );
+    await this.likeRepository.updateLikeStatus(userId, parentId, status);
   }
 
   public async getLikesCount(parentId: string): Promise<{
     likesCount: number;
     dislikesCount: number;
   }> {
-    const likesCountPromise = this.likeModel.countDocuments({
+    const likesCountPromise = this.likeRepository.findLikeCount(
       parentId,
-      status: 'Like',
-    });
-    const dislikesCountPromise = this.likeModel.countDocuments({
+      'Like',
+    );
+    const dislikesCountPromise = this.likeRepository.findLikeCount(
       parentId,
-      status: 'Dislike',
-    });
+      'Dislike',
+    );
     const [likesCount, dislikesCount] = await Promise.all([
       likesCountPromise,
       dislikesCountPromise,

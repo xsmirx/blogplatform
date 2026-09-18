@@ -19,7 +19,7 @@ export const setupApp = (app: Express, container: Container) => {
 
   // основной роут
   app.get('/', (req, res) => {
-    res.status(200).send('Hello world! h11');
+    res.status(200).send('Hello world! h12');
   });
 
   app.use('/security', createSecurityRouter(container));
