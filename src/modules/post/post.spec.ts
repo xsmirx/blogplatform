@@ -102,6 +102,12 @@ describe('Post API', () => {
             blogId: expect.any(String),
             blogName: expect.any(String),
             createdAt: expect.any(String),
+            extendedLikesInfo: {
+              likesCount: expect.any(Number),
+              dislikesCount: expect.any(Number),
+              myStatus: expect.any(String),
+              newestLikes: expect.any(Array),
+            },
           }),
         ]),
       );
@@ -355,6 +361,12 @@ describe('Post API', () => {
         blogId: testPost.blogId,
         blogName: testBlog.name,
         createdAt: expect.any(String),
+        extendedLikesInfo: {
+          likesCount: 0,
+          dislikesCount: 0,
+          myStatus: 'None',
+          newestLikes: [],
+        },
       });
       expect(postId).toBeDefined();
 
@@ -930,6 +942,12 @@ describe('Post API', () => {
         blogId: testPost.blogId,
         blogName: testBlog.name,
         createdAt: expect.any(String),
+        extendedLikesInfo: {
+          likesCount: 0,
+          dislikesCount: 0,
+          myStatus: 'None',
+          newestLikes: [],
+        },
       });
 
       // Verify all required fields are present
@@ -940,6 +958,7 @@ describe('Post API', () => {
       expect(response.body).toHaveProperty('blogId');
       expect(response.body).toHaveProperty('blogName');
       expect(response.body).toHaveProperty('createdAt');
+      expect(response.body).toHaveProperty('extendedLikesInfo');
 
       // Verify createdAt is valid ISO 8601 date-time format
       expect(new Date(response.body.createdAt).toISOString()).toBe(
@@ -1347,6 +1366,11 @@ describe('Post API', () => {
           userLogin: expect.any(String),
         },
         createdAt: expect.any(String),
+        likesInfo: {
+          likesCount: 0,
+          dislikesCount: 0,
+          myStatus: 'None',
+        },
       });
     });
 
@@ -1487,6 +1511,11 @@ describe('Post API', () => {
           userLogin: testUser.login,
         },
         createdAt: expect.any(String),
+        likesInfo: {
+          likesCount: 0,
+          dislikesCount: 0,
+          myStatus: 'None',
+        },
       });
 
       // Verify createdAt is valid ISO date
@@ -1610,6 +1639,803 @@ describe('Post API', () => {
 
       expect(commentsResponse.body.totalCount).toBe(2);
       expect(commentsResponse.body.items.length).toBe(2);
+    });
+  });
+
+  describe('PUT /posts/{postId}/like-status', () => {
+    let likeTestPostId: string;
+    let otherPostId: string;
+    let accessToken1: string;
+    let accessToken2: string;
+
+    const likeUser1 = {
+      login: 'likeuser1',
+      password: 'password123',
+      email: 'likeuser1@example.dev',
+    };
+
+    const likeUser2 = {
+      login: 'likeuser2',
+      password: 'password123',
+      email: 'likeuser2@example.dev',
+    };
+
+    const getAccessToken = async (
+      login: string,
+      password: string,
+    ): Promise<string> => {
+      const response = await request(app)
+        .post('/auth/login')
+        .send({ loginOrEmail: login, password })
+        .expect(200);
+      return response.body.accessToken;
+    };
+
+    beforeEach(async () => {
+      await request(app).delete('/testing/all-data').expect(204);
+
+      const blogResponse = await request(app)
+        .post('/blogs')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testBlog)
+        .expect(201);
+
+      const newBlogId = blogResponse.body.id;
+
+      const postResponse = await request(app)
+        .post('/posts')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send({ ...testPost, blogId: newBlogId })
+        .expect(201);
+
+      likeTestPostId = postResponse.body.id;
+
+      const otherPostResponse = await request(app)
+        .post('/posts')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send({ ...testPost, blogId: newBlogId, title: 'Untouched post' })
+        .expect(201);
+
+      otherPostId = otherPostResponse.body.id;
+
+      await request(app)
+        .post('/users')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(likeUser1)
+        .expect(201);
+
+      await request(app)
+        .post('/users')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(likeUser2)
+        .expect(201);
+
+      accessToken1 = await getAccessToken(likeUser1.login, likeUser1.password);
+      accessToken2 = await getAccessToken(likeUser2.login, likeUser2.password);
+    });
+
+    const getExtendedLikesInfo = async (id: string, token?: string) => {
+      const req = request(app).get(`/posts/${id}`);
+      if (token) req.set('authorization', `Bearer ${token}`);
+      const response = await req.expect(200);
+      return response.body.extendedLikesInfo;
+    };
+
+    it('should return 401 when not authorized', async () => {
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .send({ likeStatus: 'Like' })
+        .expect(401);
+    });
+
+    it('should return 401 when invalid token provided', async () => {
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', 'Bearer invalidtoken')
+        .send({ likeStatus: 'Like' })
+        .expect(401);
+    });
+
+    it('should return 401 for a non-existent post when not authorized', async () => {
+      // Authorization is checked before the post existence check
+      await request(app)
+        .put('/posts/507f1f77bcf86cd799439011/like-status')
+        .send({ likeStatus: 'Like' })
+        .expect(401);
+    });
+
+    it('should return 404 when post does not exist', async () => {
+      await request(app)
+        .put('/posts/507f1f77bcf86cd799439011/like-status')
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'Like' })
+        .expect(404);
+    });
+
+    describe('Validation tests', () => {
+      it('should return 400 when likeStatus is missing', async () => {
+        const response = await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .send({})
+          .expect(400);
+
+        expect(response.body).toEqual({
+          errorsMessages: expect.arrayContaining([
+            expect.objectContaining({
+              message: expect.any(String),
+              field: 'likeStatus',
+            }),
+          ]),
+        });
+      });
+
+      it('should return 400 when likeStatus has an invalid value', async () => {
+        const response = await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .send({ likeStatus: 'Something' })
+          .expect(400);
+
+        expect(response.body).toEqual({
+          errorsMessages: expect.arrayContaining([
+            expect.objectContaining({
+              message: expect.any(String),
+              field: 'likeStatus',
+            }),
+          ]),
+        });
+      });
+
+      it('should return 400 when likeStatus has wrong casing', async () => {
+        const response = await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .send({ likeStatus: 'like' })
+          .expect(400);
+
+        expect(response.body).toEqual({
+          errorsMessages: expect.arrayContaining([
+            expect.objectContaining({
+              message: expect.any(String),
+              field: 'likeStatus',
+            }),
+          ]),
+        });
+      });
+    });
+
+    it('should return 204 for a valid Like', async () => {
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+    });
+
+    it('should return 204 for a valid Dislike', async () => {
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'Dislike' })
+        .expect(204);
+    });
+
+    it('should return 204 for a valid None', async () => {
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'None' })
+        .expect(204);
+    });
+
+    it('should increase likesCount and set myStatus after Like', async () => {
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      const likesInfo = await getExtendedLikesInfo(
+        likeTestPostId,
+        accessToken1,
+      );
+
+      expect(likesInfo.likesCount).toBe(1);
+      expect(likesInfo.dislikesCount).toBe(0);
+      expect(likesInfo.myStatus).toBe('Like');
+    });
+
+    it('should increase dislikesCount and set myStatus after Dislike', async () => {
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'Dislike' })
+        .expect(204);
+
+      const likesInfo = await getExtendedLikesInfo(
+        likeTestPostId,
+        accessToken1,
+      );
+
+      expect(likesInfo.likesCount).toBe(0);
+      expect(likesInfo.dislikesCount).toBe(1);
+      expect(likesInfo.myStatus).toBe('Dislike');
+    });
+
+    it('should switch from Like to Dislike correctly', async () => {
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'Dislike' })
+        .expect(204);
+
+      const likesInfo = await getExtendedLikesInfo(
+        likeTestPostId,
+        accessToken1,
+      );
+
+      expect(likesInfo.likesCount).toBe(0);
+      expect(likesInfo.dislikesCount).toBe(1);
+      expect(likesInfo.myStatus).toBe('Dislike');
+    });
+
+    it('should reset counters when switching to None', async () => {
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'None' })
+        .expect(204);
+
+      const likesInfo = await getExtendedLikesInfo(
+        likeTestPostId,
+        accessToken1,
+      );
+
+      expect(likesInfo.likesCount).toBe(0);
+      expect(likesInfo.dislikesCount).toBe(0);
+      expect(likesInfo.myStatus).toBe('None');
+    });
+
+    it('should be idempotent when the same status is sent twice', async () => {
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      const likesInfo = await getExtendedLikesInfo(
+        likeTestPostId,
+        accessToken1,
+      );
+
+      expect(likesInfo.likesCount).toBe(1);
+      expect(likesInfo.dislikesCount).toBe(0);
+    });
+
+    it('should aggregate likes/dislikes from multiple users independently', async () => {
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken2}`)
+        .send({ likeStatus: 'Dislike' })
+        .expect(204);
+
+      const likesInfoForUser1 = await getExtendedLikesInfo(
+        likeTestPostId,
+        accessToken1,
+      );
+      const likesInfoForUser2 = await getExtendedLikesInfo(
+        likeTestPostId,
+        accessToken2,
+      );
+
+      expect(likesInfoForUser1.likesCount).toBe(1);
+      expect(likesInfoForUser1.dislikesCount).toBe(1);
+      expect(likesInfoForUser1.myStatus).toBe('Like');
+
+      expect(likesInfoForUser2.likesCount).toBe(1);
+      expect(likesInfoForUser2.dislikesCount).toBe(1);
+      expect(likesInfoForUser2.myStatus).toBe('Dislike');
+    });
+
+    it('should not affect extendedLikesInfo of other posts', async () => {
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      const untouchedLikesInfo = await getExtendedLikesInfo(
+        otherPostId,
+        accessToken1,
+      );
+
+      expect(untouchedLikesInfo.likesCount).toBe(0);
+      expect(untouchedLikesInfo.dislikesCount).toBe(0);
+      expect(untouchedLikesInfo.myStatus).toBe('None');
+    });
+  });
+
+  describe('extendedLikesInfo', () => {
+    let likeTestPostId: string;
+    let likeTestBlogId: string;
+    let accessToken1: string;
+    let accessToken2: string;
+    let accessToken3: string;
+    let accessToken4: string;
+
+    const likeUser1 = {
+      login: 'newest1',
+      password: 'password123',
+      email: 'newest1@example.dev',
+    };
+    const likeUser2 = {
+      login: 'newest2',
+      password: 'password123',
+      email: 'newest2@example.dev',
+    };
+    const likeUser3 = {
+      login: 'newest3',
+      password: 'password123',
+      email: 'newest3@example.dev',
+    };
+    const likeUser4 = {
+      login: 'newest4',
+      password: 'password123',
+      email: 'newest4@example.dev',
+    };
+
+    const getAccessToken = async (
+      login: string,
+      password: string,
+    ): Promise<string> => {
+      const response = await request(app)
+        .post('/auth/login')
+        .send({ loginOrEmail: login, password })
+        .expect(200);
+      return response.body.accessToken;
+    };
+
+    beforeEach(async () => {
+      await request(app).delete('/testing/all-data').expect(204);
+
+      const blogResponse = await request(app)
+        .post('/blogs')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send(testBlog)
+        .expect(201);
+
+      likeTestBlogId = blogResponse.body.id;
+
+      const postResponse = await request(app)
+        .post('/posts')
+        .set('authorization', VALID_AUTH_HEADER)
+        .send({ ...testPost, blogId: likeTestBlogId })
+        .expect(201);
+
+      likeTestPostId = postResponse.body.id;
+
+      for (const user of [likeUser1, likeUser2, likeUser3, likeUser4]) {
+        await request(app)
+          .post('/users')
+          .set('authorization', VALID_AUTH_HEADER)
+          .send(user)
+          .expect(201);
+      }
+
+      accessToken1 = await getAccessToken(likeUser1.login, likeUser1.password);
+      accessToken2 = await getAccessToken(likeUser2.login, likeUser2.password);
+      accessToken3 = await getAccessToken(likeUser3.login, likeUser3.password);
+      accessToken4 = await getAccessToken(likeUser4.login, likeUser4.password);
+    });
+
+    it('should return default extendedLikesInfo right after post creation', async () => {
+      const response = await request(app)
+        .get(`/posts/${likeTestPostId}`)
+        .expect(200);
+
+      expect(response.body.extendedLikesInfo).toEqual({
+        likesCount: 0,
+        dislikesCount: 0,
+        myStatus: 'None',
+        newestLikes: [],
+      });
+    });
+
+    it('should return default extendedLikesInfo for post created via POST /blogs/{blogId}/posts', async () => {
+      const response = await request(app)
+        .post(`/blogs/${likeTestBlogId}/posts`)
+        .set('authorization', VALID_AUTH_HEADER)
+        .send({
+          title: 'Nested post',
+          shortDescription: 'Nested post description',
+          content: 'Nested post content',
+        })
+        .expect(201);
+
+      expect(response.body.extendedLikesInfo).toEqual({
+        likesCount: 0,
+        dislikesCount: 0,
+        myStatus: 'None',
+        newestLikes: [],
+      });
+    });
+
+    it('should show likesCount/dislikesCount to everyone but myStatus only to the liking user', async () => {
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      const ownerResponse = await request(app)
+        .get(`/posts/${likeTestPostId}`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .expect(200);
+
+      expect(ownerResponse.body.extendedLikesInfo.likesCount).toBe(1);
+      expect(ownerResponse.body.extendedLikesInfo.myStatus).toBe('Like');
+
+      const otherUserResponse = await request(app)
+        .get(`/posts/${likeTestPostId}`)
+        .set('authorization', `Bearer ${accessToken2}`)
+        .expect(200);
+
+      expect(otherUserResponse.body.extendedLikesInfo.likesCount).toBe(1);
+      expect(otherUserResponse.body.extendedLikesInfo.myStatus).toBe('None');
+
+      const anonymousResponse = await request(app)
+        .get(`/posts/${likeTestPostId}`)
+        .expect(200);
+
+      expect(anonymousResponse.body.extendedLikesInfo.likesCount).toBe(1);
+      expect(anonymousResponse.body.extendedLikesInfo.myStatus).toBe('None');
+    });
+
+    it('should reflect per-user myStatus in GET /posts list', async () => {
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      const asOwner = await request(app)
+        .get('/posts')
+        .set('authorization', `Bearer ${accessToken1}`)
+        .expect(200);
+
+      const ownerItem = asOwner.body.items.find(
+        (post: { id: string }) => post.id === likeTestPostId,
+      );
+      expect(ownerItem.extendedLikesInfo.myStatus).toBe('Like');
+      expect(ownerItem.extendedLikesInfo.likesCount).toBe(1);
+
+      const asAnonymous = await request(app).get('/posts').expect(200);
+
+      const anonymousItem = asAnonymous.body.items.find(
+        (post: { id: string }) => post.id === likeTestPostId,
+      );
+      expect(anonymousItem.extendedLikesInfo.myStatus).toBe('None');
+      expect(anonymousItem.extendedLikesInfo.likesCount).toBe(1);
+    });
+
+    it('should reflect extendedLikesInfo in GET /blogs/{blogId}/posts', async () => {
+      await request(app)
+        .put(`/posts/${likeTestPostId}/like-status`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .send({ likeStatus: 'Like' })
+        .expect(204);
+
+      const response = await request(app)
+        .get(`/blogs/${likeTestBlogId}/posts`)
+        .set('authorization', `Bearer ${accessToken1}`)
+        .expect(200);
+
+      const item = response.body.items.find(
+        (post: { id: string }) => post.id === likeTestPostId,
+      );
+      expect(item.extendedLikesInfo.likesCount).toBe(1);
+      expect(item.extendedLikesInfo.myStatus).toBe('Like');
+    });
+
+    describe('newestLikes', () => {
+      it('should contain the liking user with addedAt, userId and login', async () => {
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        const response = await request(app)
+          .get(`/posts/${likeTestPostId}`)
+          .expect(200);
+
+        expect(response.body.extendedLikesInfo.newestLikes).toEqual([
+          {
+            addedAt: expect.any(String),
+            userId: expect.any(String),
+            login: likeUser1.login,
+          },
+        ]);
+
+        const addedAt = response.body.extendedLikesInfo.newestLikes[0].addedAt;
+        expect(new Date(addedAt).toISOString()).toBe(addedAt);
+      });
+
+      it('should not include Dislike or None statuses', async () => {
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .send({ likeStatus: 'Dislike' })
+          .expect(204);
+
+        const response = await request(app)
+          .get(`/posts/${likeTestPostId}`)
+          .expect(200);
+
+        expect(response.body.extendedLikesInfo.newestLikes).toEqual([]);
+      });
+
+      it('should order likes from newest to oldest', async () => {
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken2}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken3}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        const response = await request(app)
+          .get(`/posts/${likeTestPostId}`)
+          .expect(200);
+
+        const logins = response.body.extendedLikesInfo.newestLikes.map(
+          (like: { login: string }) => like.login,
+        );
+        expect(logins).toEqual([
+          likeUser3.login,
+          likeUser2.login,
+          likeUser1.login,
+        ]);
+      });
+
+      it('should keep only the last 3 likes when more users liked the post', async () => {
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken2}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken3}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken4}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        const response = await request(app)
+          .get(`/posts/${likeTestPostId}`)
+          .expect(200);
+
+        expect(response.body.extendedLikesInfo.likesCount).toBe(4);
+        expect(response.body.extendedLikesInfo.newestLikes).toHaveLength(3);
+
+        const logins = response.body.extendedLikesInfo.newestLikes.map(
+          (like: { login: string }) => like.login,
+        );
+        expect(logins).toEqual([
+          likeUser4.login,
+          likeUser3.login,
+          likeUser2.login,
+        ]);
+      });
+
+      it('should remove a user from newestLikes when they switch away from Like', async () => {
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .send({ likeStatus: 'None' })
+          .expect(204);
+
+        const response = await request(app)
+          .get(`/posts/${likeTestPostId}`)
+          .expect(200);
+
+        expect(response.body.extendedLikesInfo.newestLikes).toEqual([]);
+      });
+
+      it('should update newestLikes ordering when a user re-likes after unliking', async () => {
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken2}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        // user1 unlikes then likes again -> should move to the front
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .send({ likeStatus: 'None' })
+          .expect(204);
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        const response = await request(app)
+          .get(`/posts/${likeTestPostId}`)
+          .expect(200);
+
+        const logins = response.body.extendedLikesInfo.newestLikes.map(
+          (like: { login: string }) => like.login,
+        );
+        expect(logins).toEqual([likeUser1.login, likeUser2.login]);
+      });
+
+      it('should reappear as the newest like after falling out of top 3, then unliking and liking again', async () => {
+        // user1 likes first, then gets pushed out of the top 3 by users 2, 3, 4
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken2}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken3}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken4}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        // Sanity check: user1 liked but is no longer in the top 3, though still counted
+        const beforeUnlike = await request(app)
+          .get(`/posts/${likeTestPostId}`)
+          .expect(200);
+
+        expect(beforeUnlike.body.extendedLikesInfo.likesCount).toBe(4);
+        expect(
+          beforeUnlike.body.extendedLikesInfo.newestLikes.map(
+            (like: { login: string }) => like.login,
+          ),
+        ).toEqual([likeUser4.login, likeUser3.login, likeUser2.login]);
+
+        // user1 unlikes while already outside the top 3
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .send({ likeStatus: 'None' })
+          .expect(204);
+
+        const afterUnlike = await request(app)
+          .get(`/posts/${likeTestPostId}`)
+          .expect(200);
+
+        expect(afterUnlike.body.extendedLikesInfo.likesCount).toBe(3);
+        expect(
+          afterUnlike.body.extendedLikesInfo.newestLikes.map(
+            (like: { login: string }) => like.login,
+          ),
+        ).toEqual([likeUser4.login, likeUser3.login, likeUser2.login]);
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        // user1 likes again -> must be treated as a brand new like, not silently
+        // ignored as "already liked before", and must reappear as the newest one
+        await request(app)
+          .put(`/posts/${likeTestPostId}/like-status`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .send({ likeStatus: 'Like' })
+          .expect(204);
+
+        const afterRelike = await request(app)
+          .get(`/posts/${likeTestPostId}`)
+          .expect(200);
+
+        expect(afterRelike.body.extendedLikesInfo.likesCount).toBe(4);
+        expect(afterRelike.body.extendedLikesInfo.myStatus).toBe('None'); // anonymous request
+        expect(
+          afterRelike.body.extendedLikesInfo.newestLikes.map(
+            (like: { login: string }) => like.login,
+          ),
+        ).toEqual([likeUser1.login, likeUser4.login, likeUser3.login]);
+
+        const myStatusResponse = await request(app)
+          .get(`/posts/${likeTestPostId}`)
+          .set('authorization', `Bearer ${accessToken1}`)
+          .expect(200);
+
+        expect(myStatusResponse.body.extendedLikesInfo.myStatus).toBe('Like');
+      });
     });
   });
 });
