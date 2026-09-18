@@ -1,12 +1,11 @@
 import { inject, injectable } from 'inversify';
-import { LIKE_MODEL, LikeModel, LikeStatus } from './like-model';
+import { LikeStatus } from './like-model';
 import { LikeRepository } from '../infrastucture/like-repository';
 
 @injectable()
 export class LikeService {
   constructor(
     @inject(LikeRepository) protected readonly likeRepository: LikeRepository,
-    @inject(LIKE_MODEL) protected readonly LikeModel: LikeModel,
   ) {}
 
   public async updateLikeStatus(
