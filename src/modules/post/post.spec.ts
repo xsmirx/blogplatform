@@ -2305,7 +2305,7 @@ describe('Post API', () => {
         expect(response.body.extendedLikesInfo.newestLikes).toEqual([]);
       });
 
-      it('should update newestLikes ordering when a user re-likes after unliking', async () => {
+      it('should not move a user to the front when they re-like after unliking (order is based on original like date)', async () => {
         await request(app)
           .put(`/posts/${likeTestPostId}/like-status`)
           .set('authorization', `Bearer ${accessToken1}`)
@@ -2320,7 +2320,8 @@ describe('Post API', () => {
           .send({ likeStatus: 'Like' })
           .expect(204);
 
-        // user1 unlikes then likes again -> should move to the front
+        // user1 unlikes then likes again -> position stays based on the
+        // original like date, re-liking must NOT bump them to the front
         await request(app)
           .put(`/posts/${likeTestPostId}/like-status`)
           .set('authorization', `Bearer ${accessToken1}`)
@@ -2342,10 +2343,10 @@ describe('Post API', () => {
         const logins = response.body.extendedLikesInfo.newestLikes.map(
           (like: { login: string }) => like.login,
         );
-        expect(logins).toEqual([likeUser1.login, likeUser2.login]);
+        expect(logins).toEqual([likeUser2.login, likeUser1.login]);
       });
 
-      it('should reappear as the newest like after falling out of top 3, then unliking and liking again', async () => {
+      it('should not reappear at the top after falling out of top 3, then unliking and liking again (position stays based on original like date)', async () => {
         // user1 likes first, then gets pushed out of the top 3 by users 2, 3, 4
         await request(app)
           .put(`/posts/${likeTestPostId}/like-status`)
@@ -2409,8 +2410,9 @@ describe('Post API', () => {
 
         await new Promise((resolve) => setTimeout(resolve, 10));
 
-        // user1 likes again -> must be treated as a brand new like, not silently
-        // ignored as "already liked before", and must reappear as the newest one
+        // user1 likes again -> position is determined by the original like
+        // date, which is still the oldest, so user1 must NOT reappear in the
+        // top 3, even though their myStatus is 'Like' again
         await request(app)
           .put(`/posts/${likeTestPostId}/like-status`)
           .set('authorization', `Bearer ${accessToken1}`)
@@ -2427,7 +2429,7 @@ describe('Post API', () => {
           afterRelike.body.extendedLikesInfo.newestLikes.map(
             (like: { login: string }) => like.login,
           ),
-        ).toEqual([likeUser1.login, likeUser4.login, likeUser3.login]);
+        ).toEqual([likeUser4.login, likeUser3.login, likeUser2.login]);
 
         const myStatusResponse = await request(app)
           .get(`/posts/${likeTestPostId}`)

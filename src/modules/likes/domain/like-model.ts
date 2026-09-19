@@ -59,7 +59,7 @@ export const likeSchema = new Schema<Like, LikeModel>(
           .sort({ ['createdAt']: -1 })
           .limit(listLength);
         const users = await UserModel.find({
-          id: { $in: likes.map((like) => like.userId.toString()) },
+          _id: { $in: likes.map((like) => like.userId.toString()) },
         });
         const logins = new Map(users.map((user) => [user.id, user.login]));
         return likes.map((like) => ({

@@ -13,14 +13,18 @@ import {
 } from '../middlewares/post-validators';
 import { Container } from 'inversify';
 import { PostController } from './post-controller';
+import { createOptionalAccessTokenGuard } from '../../../core/guards/optional-access-token-guard';
+import { JwtAdapter } from '../../../core/adapters/jwt-adapter/jwt-adapter';
 
 export const createPostByBlogRouter = (container: Container) => {
   const postController = container.get(PostController);
+  const jwtAdapter = container.get(JwtAdapter);
   const postByBlogRouter: Router = Router({ mergeParams: true });
 
   postByBlogRouter
     .get(
       '/',
+      createOptionalAccessTokenGuard({ jwtAdapter }),
       blogIdParamValidation,
       pageNumberValidation,
       pageSizeValidation,
