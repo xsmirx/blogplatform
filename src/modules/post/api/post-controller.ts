@@ -1,12 +1,17 @@
 import { RequestHandler } from 'express';
 import { inject, injectable } from 'inversify';
 import { ListResponse } from '../../../core/types/list-response';
-import { PostInputDTO, PostListQueryInput, PostOutputDTO } from './types';
+import {
+  LikeStatusInputDTO,
+  PostInputDTO,
+  PostListQueryInput,
+  PostOutputDTO,
+} from './types';
 import { BlogQueryRepository } from '../../blog/infrastucture/blog-query-repository';
 import { PostQueryRepository } from '../infrastructure/post-query-repository';
 import { matchedData } from 'express-validator';
 import { NotFoundError } from '../../../core/errors/domain-errors';
-import { PostService } from '../domain/post-service';
+import { PostService } from '../application/post-service';
 
 @injectable()
 export class PostController {
@@ -22,6 +27,7 @@ export class PostController {
     { blogId?: string },
     ListResponse<PostOutputDTO>
   > = async (req, res) => {
+    const userId = req.appContext?.user?.userId;
     const { pageNumber, pageSize, sortBy, sortDirection, blogId } =
       matchedData<PostListQueryInput>(req);
 
@@ -30,13 +36,16 @@ export class PostController {
       if (!blog) throw new NotFoundError('Blog', blogId);
     }
 
-    const result = await this.postQueryRepository.findAll({
-      pageNumber,
-      pageSize,
-      sortBy,
-      sortDirection,
-      blogId,
-    });
+    const result = await this.postQueryRepository.findAll(
+      {
+        pageNumber,
+        pageSize,
+        sortBy,
+        sortDirection,
+        blogId,
+      },
+      userId,
+    );
 
     return res.status(200).send(result);
   };
@@ -45,8 +54,9 @@ export class PostController {
     req,
     res,
   ) => {
+    const userId = req.appContext?.user?.userId;
     const { id: postId } = matchedData<{ id: string }>(req);
-    const post = await this.postQueryRepository.findById(postId);
+    const post = await this.postQueryRepository.findById(postId, userId);
     if (!post) throw new NotFoundError('Post', postId);
     return res.status(200).send(post);
   };
@@ -92,6 +102,16 @@ export class PostController {
         blogId,
       });
 
+      return res.status(204).send();
+    };
+
+  public updateLike: RequestHandler<{ id: string }, void, LikeStatusInputDTO> =
+    async (req, res) => {
+      const userId = req.appContext!.user!.userId;
+      const { id, likeStatus } = matchedData<
+        { id: string } & LikeStatusInputDTO
+      >(req);
+      await this.postService.updateLikeStatus(userId, id, likeStatus);
       return res.status(204).send();
     };
 

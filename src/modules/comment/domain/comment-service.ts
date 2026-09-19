@@ -4,10 +4,6 @@ import {
   NotFoundError,
 } from '../../../core/errors/domain-errors';
 import {
-  POST_REPOSITORY,
-  type PostRepository,
-} from '../../post/domain/post-repository.interface';
-import {
   USER_REPOSITORY,
   type UserRepository,
 } from '../../user/domain/user-repository.interface';
@@ -16,14 +12,16 @@ import {
   type CommentRepository,
 } from './comment-repository.interface';
 import type { Comment, CreateCommentInput, UpdateCommentInput } from './types';
-import { LikeService } from '../../likes/domain/like-service';
+import { LikeService } from '../../likes/application/like-service';
 import { LikeStatus } from '../../likes/domain/like-model';
+import { MongoPostRepository } from '../../post/infrastructure/post-repository';
 
 @injectable()
 export class CommentService {
   constructor(
     @inject(USER_REPOSITORY) protected readonly userRepository: UserRepository,
-    @inject(POST_REPOSITORY) protected readonly postRepository: PostRepository,
+    @inject(MongoPostRepository)
+    protected readonly postRepository: MongoPostRepository,
     @inject(COMMENT_REPOSITORY)
     protected readonly commentRepository: CommentRepository,
     @inject(LikeService) protected readonly likeService: LikeService,

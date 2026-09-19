@@ -18,6 +18,13 @@ export type PostInputDTO = {
   blogId: string;
 };
 
+export type LikeStatusDTO = 'None' | 'Like' | 'Dislike';
+export type NewestLikeDTO = {
+  addedAt: string;
+  userId: string;
+  login: string;
+};
+
 export type PostOutputDTO = {
   id: string;
   title: string;
@@ -26,4 +33,14 @@ export type PostOutputDTO = {
   blogId: string;
   blogName: string;
   createdAt: string;
+  extendedLikesInfo: {
+    likesCount: number;
+    dislikesCount: number;
+    myStatus: LikeStatusDTO;
+    newestLikes: NewestLikeDTO[];
+  };
+};
+
+export type LikeStatusInputDTO = {
+  likeStatus: 'None' | 'Like' | 'Dislike';
 };

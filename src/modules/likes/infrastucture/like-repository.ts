@@ -14,6 +14,10 @@ export class LikeRepository {
     return await this.LikeModel.countDocuments({ parentId, status });
   }
 
+  public async findNewestLikes(parentId: string) {
+    return await this.LikeModel.findNewestLikes(parentId, 3);
+  }
+
   public async updateLikeStatus(
     userId: string,
     parentId: string,

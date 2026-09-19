@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { LikeStatus } from './like-model';
+import { LikeStatus } from '../domain/like-model';
 import { LikeRepository } from '../infrastucture/like-repository';
 
 @injectable()
@@ -33,5 +33,9 @@ export class LikeService {
       dislikesCountPromise,
     ]);
     return { likesCount, dislikesCount };
+  }
+
+  public async getNewestLikes(parentId: string) {
+    return await this.likeRepository.findNewestLikes(parentId);
   }
 }

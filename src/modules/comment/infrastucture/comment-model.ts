@@ -25,11 +25,13 @@ export const commentSchema = new Schema(
     } satisfies SchemaTypeOptions<Schema.Types.ObjectId>,
     likesCount: {
       type: Number,
+      min: 0,
       required: true,
       default: 0,
     } satisfies SchemaTypeOptions<number>,
     dislikesCount: {
       type: Number,
+      min: 0,
       required: true,
       default: 0,
     } satisfies SchemaTypeOptions<number>,

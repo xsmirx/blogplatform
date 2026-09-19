@@ -6,9 +6,15 @@ export type Post = {
   blogId: string;
   blogName: string;
   createdAt: Date;
+  likesCount: number;
+  dislikesCount: number;
+  newestLikes: { userId: string; login: string; addedAt: Date }[];
 };
 
-export type NewPost = Omit<Post, 'id'>;
+export type NewPost = Omit<
+  Post,
+  'id' | 'createdAt' | 'likesCount' | 'dislikesCount' | 'newestLikes'
+>;
 
 export type CreatePostInput = {
   blogId: string;

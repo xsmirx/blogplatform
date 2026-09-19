@@ -95,6 +95,12 @@ export const blogIdValidation = body('blogId')
   .isMongoId()
   .withMessage('Blog ID must be a valid Mongo ID');
 
+export const likeStatusValidation = body('likeStatus')
+  .exists()
+  .withMessage('likeStatus is required')
+  .isIn(['None', 'Like', 'Dislike'])
+  .withMessage('likeStatus must be one of: None, Like, Dislike');
+
 export const postDTOValidation = [
   titleValidation,
   shortDescriptionValidation,
